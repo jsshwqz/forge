@@ -1,6 +1,6 @@
 //! Session 存储接口与内存实现。
 
-use crate::model::{Session, SessionEvent, SessionEventKind, SessionState};
+use crate::model::{Session, SessionEvent, SessionEventKind};
 use async_trait::async_trait;
 use chrono::Utc;
 use forge_core::{ForgeError, ForgeResult, SessionId, TaskId};
@@ -29,25 +29,6 @@ pub trait SessionStore: Send + Sync {
     async fn list(&self) -> ForgeResult<Vec<SessionId>>;
 }
 
-/// 根据 event kind 与当前状态计算目标状态。
-///
-/// 返回 None 表示无需迁移（事件合法，状态不变）。
-/// 返回 Some(state) 表示需要迁移——若迁移非法，transition 会返回 InvalidState。
-fn target_state_for(kind: &SessionEventKind, current: SessionState) -> Option<SessionState> {
-    match (current, kind) {
-        (SessionState::Active, SessionEventKind::Completed) => Some(SessionState::Completed),
-        (SessionState::Active, SessionEventKind::Failed) => Some(SessionState::Failed),
-        (SessionState::Active, SessionEventKind::Recovered) => Some(SessionState::Recovering),
-        (SessionState::Active, _) => None,
-        (SessionState::Failed, SessionEventKind::Recovered) => Some(SessionState::Recovering),
-        (SessionState::Failed, _) => Some(SessionState::Active),
-        (SessionState::Recovering, SessionEventKind::Completed) => Some(SessionState::Completed),
-        (SessionState::Recovering, SessionEventKind::Failed) => Some(SessionState::Failed),
-        (SessionState::Recovering, SessionEventKind::Recovered) => Some(SessionState::Recovering),
-        (SessionState::Recovering, _) => Some(SessionState::Active),
-        (SessionState::Completed, _) => Some(SessionState::Active),
-    }
-}
 
 /// 基于 `tokio::sync::RwLock<HashMap>` 的内存会话存储。
 #[derive(Default)]
@@ -72,9 +53,7 @@ impl SessionStore for InMemorySessionStore {
     ) -> ForgeResult<SessionEvent> {
         let mut guard = self.sessions.write().await;
         let session = guard.get_mut(id).ok_or_else(|| ForgeError::NotFound(format!("session: {}", id)))?;
-        if let Some(target) = target_state_for(&kind, session.state) {
-            session.transition(target)?;
-        }
+        session.apply_event_kind(&kind)?;
         let seq = session.events.last().map(|e| e.seq + 1).unwrap_or(1);
         let event = SessionEvent { seq, at: Utc::now(), kind, payload };
         session.events.push(event.clone());
@@ -94,6 +73,7 @@ impl SessionStore for InMemorySessionStore {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::model::SessionState;
 
     #[tokio::test]
     async fn test_create_and_append() {

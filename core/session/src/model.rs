@@ -93,4 +93,41 @@ impl Session {
         self.state = to;
         Ok(())
     }
+
+    /// 根据 event kind 应用状态变更。无需迁移时返回 Ok。
+    pub(crate) fn apply_event_kind(
+        &mut self,
+        kind: &SessionEventKind,
+    ) -> forge_core::ForgeResult<()> {
+        if let Some(target) = target_state_for(kind, self.state) {
+            self.transition(target)?;
+        }
+        Ok(())
+    }
+}
+
+/// 根据 event kind 与当前状态计算目标状态。
+///
+/// 返回 `None` 表示无需迁移（事件合法，状态不变）。
+/// 返回 `Some(state)` 表示需要迁移——若迁移非法，`transition` 会返回 `InvalidState`。
+fn target_state_for(
+    kind: &SessionEventKind,
+    current: SessionState,
+) -> Option<SessionState> {
+    match (current, kind) {
+        (SessionState::Active, SessionEventKind::Completed) => Some(SessionState::Completed),
+        (SessionState::Active, SessionEventKind::Failed) => Some(SessionState::Failed),
+        (SessionState::Active, SessionEventKind::Recovered) => Some(SessionState::Recovering),
+        (SessionState::Active, _) => None,
+
+        (SessionState::Failed, SessionEventKind::Recovered) => Some(SessionState::Recovering),
+        (SessionState::Failed, _) => Some(SessionState::Active),
+
+        (SessionState::Recovering, SessionEventKind::Completed) => Some(SessionState::Completed),
+        (SessionState::Recovering, SessionEventKind::Failed) => Some(SessionState::Failed),
+        (SessionState::Recovering, SessionEventKind::Recovered) => Some(SessionState::Recovering),
+        (SessionState::Recovering, _) => Some(SessionState::Active),
+
+        (SessionState::Completed, _) => Some(SessionState::Active),
+    }
 }
