@@ -110,3 +110,13 @@
 
 ---
 
+## [R1-005] ✅ 成功 · 2026-08-23 · DATA-001 数据迁移至 JSON 事实源 · 成功
+
+- **任务 ID**：DATA-001
+- **DoD**：167 tests 全绿；forge-worklog 正确解析三个 JSON 并导出 Markdown
+- **迁移内容**：33 条任务（24 AF + 4 COMP/DATA + 5 PH2）、12+1 条工作记录、交接快照
+- **规范修订**：AI_WORKFLOW.md v1.0→v1.1（第8节改为 JSON 事实源，见 R6-002）
+- **提交 Hash**：03d78fa
+
+---
+

@@ -94,5 +94,13 @@
     "task_id": null,
     "id": "R6-002",
     "body": "- **依据**：用户明确指令\"为了便于统一，尽量使用 rust 来写\"\n- **决策**：progress/worklog/handoff 以 JSON 为唯一事实源；PROGRESS.md/WORKLOG.md/HANDOFF.md 由 forge-worklog export 自动生成，禁止手改\n- **影响**：AI_WORKFLOW.md 第 8 节同步修订（v1.0 → v1.1）"
+  },
+  {
+    "title": "DATA-001 数据迁移至 JSON 事实源 · 成功",
+    "kind": "R1Completed",
+    "date": "2026-08-23",
+    "task_id": "DATA-001",
+    "id": "R1-005",
+    "body": "- **DoD**：167 tests 全绿；forge-worklog 正确解析三个 JSON 并导出 Markdown\n- **迁移内容**：33 条任务（24 AF + 4 COMP/DATA + 5 PH2）、12+1 条工作记录、交接快照\n- **规范修订**：AI_WORKFLOW.md v1.0→v1.1（第8节改为 JSON 事实源，见 R6-002）\n- **提交 Hash**：03d78fa"
   }
 ]
