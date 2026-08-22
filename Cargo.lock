@@ -240,6 +240,25 @@ dependencies = [
 ]
 
 [[package]]
+name = "forge-tests"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "forge-agent",
+ "forge-artifact",
+ "forge-core",
+ "forge-dag",
+ "forge-event",
+ "forge-exec",
+ "forge-planner",
+ "forge-sandbox",
+ "forge-session",
+ "forge-task",
+ "serde_json",
+ "tokio",
+]
+
+[[package]]
 name = "futures-core"
 version = "0.3.34"
 source = "registry+https://github.com/rust-lang/crates.io-index"
