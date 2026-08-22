@@ -1,0 +1,17 @@
+[package]
+name = "forge-skill"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+forge-core = { path = "../../core/runtime" }
+forge-exec = { path = "../../execution/runtime" }
+forge-cap = { path = "../registry" }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+async-trait = "0.1"
+
+[dev-dependencies]
+tokio = { version = "1", features = ["macros", "rt", "time", "rt-multi-thread"] }
+tempfile = "3"
