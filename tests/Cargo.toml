@@ -19,7 +19,12 @@ forge-verify = { path = "../verification/verifier" }
 forge-evidence = { path = "../verification/evidence" }
 forge-gates = { path = "../verification/gates" }
 forge-recovery = { path = "../recovery" }
+forge-cap = { path = "../capability/registry" }
+forge-skill = { path = "../capability/skill" }
+forge-mcp = { path = "../capability/mcp" }
+forge-product = { path = "../products/manifest" }
 tokio = { version = "1", features = ["macros", "rt", "rt-multi-thread", "time", "sync"] }
 serde_json = "1"
 async-trait = "0.1"
 chrono = { version = "0.4", features = ["serde"] }
+tempfile = "3"
