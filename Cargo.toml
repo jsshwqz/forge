@@ -10,6 +10,8 @@ members = [
     "execution/sandbox",
     "planning/planner",
     "planning/dag",
+    "verification/verifier",
+    "recovery",
     "tests",
     "cli",
 ]
