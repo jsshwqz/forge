@@ -1,6 +1,9 @@
 [workspace]
 members = [
     "core/runtime",
+    "core/session",
+    "core/event",
+    "core/artifact",
     "cli",
 ]
 resolver = "2"
