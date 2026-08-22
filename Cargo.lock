@@ -297,16 +297,21 @@ name = "forge-tests"
 version = "0.1.0"
 dependencies = [
  "async-trait",
+ "chrono",
  "forge-agent",
  "forge-artifact",
  "forge-core",
  "forge-dag",
  "forge-event",
+ "forge-evidence",
  "forge-exec",
+ "forge-gates",
  "forge-planner",
+ "forge-recovery",
  "forge-sandbox",
  "forge-session",
  "forge-task",
+ "forge-verify",
  "serde_json",
  "tokio",
 ]
