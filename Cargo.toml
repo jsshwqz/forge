@@ -14,6 +14,10 @@ members = [
     "verification/evidence",
     "verification/gates",
     "recovery",
+    "capability/registry",
+    "capability/skill",
+    "capability/mcp",
+    "products/manifest",
     "tests",
     "cli",
 ]
