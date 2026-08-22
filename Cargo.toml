@@ -4,6 +4,9 @@ members = [
     "core/session",
     "core/event",
     "core/artifact",
+    "core/agent",
+    "core/task",
+    "execution/runtime",
     "cli",
 ]
 resolver = "2"
