@@ -34,17 +34,18 @@
 
 **里程碑**：M1 ✅ / M2 ✅ / M3 ✅ / M4 ✅ · 总验收通过（159 tests, clippy 0 warnings）
 
-## 技术栈合规（发现但未完成）—— 📌 WIP / 🚧 阻塞
+## 技术栈合规 —— 冻结项落地进度
 
 | 任务 ID | 名称 | 状态 | owner | 最近记录 | 提交 |
 |---|---|---|---|---|---|
-| COMP-001 | CLI 接入 clap | ⬜ 未开始 | - | - | - |
+| COMP-001 | CLI 接入 clap | ✅ 完成 | builder-a | WORKLOG R1-004 | 6396107 |
 | COMP-002 | 集成 tracing 可观测 | ⬜ 未开始 | - | - | - |
-| COMP-003 | Rust 版工作记录工具 | ✅ 完成 | builder-a | WORKLOG R1-003 | 待提交 |
+| COMP-003 | Rust 版工作记录工具 | ✅ 完成 | builder-a | WORKLOG R1-003 | 28a3d13 后并入 b5b9c90 |
+| DATA-001 | Markdown 数据迁移到 JSON（forge-worklog） | ⬜ 未开始 | - | - | - |
 
-> 说明：COMP-001/002 为冻结技术栈中未落地的合规项，已在 WORKLOG 记录偏差。
-> COMP-003 已实现并验证（8 tests, clippy 0 warnings），`tools/worklog` 已加入 workspace。
+> 说明：COMP-003 已实现并验证（8 tests, clippy 0 warnings），`tools/worklog` 已加入 workspace。
 > 环境已恢复：cargo 1.94.0 可用（已加入用户 PATH）。
+> 剩余偏差：tracing 未落地（COMP-002）；anyhow 未使用（可接受，库代码用 thiserror）。
 
 ## 第二阶段（未开始）—— ⬜
 

@@ -7,18 +7,18 @@
 
 **项目**：Aion Forge 2.0 · 第一阶段 MVP ✅ 已完成
 **最后验证**：167 tests all green（159 + 8 worklog），clippy 0 warnings
-**环境**：✅ cargo 1.94.0 已恢复（`.cargo\bin` 已加入用户 PATH）
+**环境**：✅ cargo 1.94.0 / git 2.51.2 已恢复（均已加入用户 PATH）
+**HEAD 提交**：`6396107 COMP-001: forge-cli 接入 clap`
 
 ## 🚧 当前阻塞
 
-- （无环境阻塞）
+- （无）
 
 ## 📌 待继续任务（按优先级）
 
-1. **COMP-001**（P0）：主 forge-cli 接入 clap —— 环境已就绪，可重做。
-2. **COMP-002**（P1）：集成 tracing 可观测。
-3. **数据迁移**（P2）：用 `forge-worklog` 将现有手写 Markdown 数据录入 JSON，统一事实源。
-4. **第二阶段**（P3）：需人工提供第二阶段施工包规格，禁止臆测实现。
+1. **COMP-002**（P0）：集成 tracing 可观测 —— 在 exec/recovery/agent 库埋点。
+2. **DATA-001**（P1）：用 `forge-worklog` 将现有手写 Markdown 数据录入 JSON，统一事实源。
+3. **第二阶段**（P2）：需人工提供第二阶段施工包规格，禁止臆测实现。
 
 ## 📦 新工具：forge-worklog（Rust 统一记录）
 
@@ -32,7 +32,7 @@
 
 - `route()` 返回 `Arc<dyn Tool>`（规范写 `&dyn Tool`）→ 待人工确认
 - `PermissionPolicy` trait 在 forge-exec（规范写 sandbox）→ 待人工确认
-- clap / tracing / anyhow 冻结项未落地 → COMP-001/002
+- tracing / anyhow 冻结项未落地 → COMP-002（clap 已于 COMP-001 完成）
 
 ## 📁 关键文件
 
@@ -48,4 +48,4 @@
 
 1. 先读 `AI_WORKFLOW.md` 规范。
 2. 确认 `cargo --version` 可用；不可用则写 R3 阻塞记录并等人工。
-3. 环境就绪后从 **COMP-001（clap）** 开始，完成后跑 DoD、提交、更新三个状态文件。
+3. 下一个任务从 **COMP-002（tracing 可观测）** 开始，完成后跑 DoD、提交、更新三个状态文件。

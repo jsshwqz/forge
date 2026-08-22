@@ -4,6 +4,25 @@
 > 对应规范：`AI_WORKFLOW.md`
 
 ---
+## [R1-004] 2026-08-23 · COMP-001 · 成功
+
+- **任务 ID**：COMP-001
+- **任务名称**：forge-cli 接入 clap（冻结技术栈合规）
+- **执行 AI**：builder-a
+- **DoD 结果**：
+  - `cargo build --workspace` 通过
+  - `cargo test --workspace` 167 passed, 0 FAILED
+  - `cargo clippy --workspace` 0 warnings
+  - CLI 验证：`forge` / `forge version` / `forge --version` / `forge --help` 四种调用全部正常，
+    默认输出 `forge 0.1.0`（满足 DoD"输出含 forge"要求）
+- **提交 Hash**：`6396107`
+- **交付摘要**：
+  - cli/Cargo.toml 增加 clap = { version = "4", features = ["derive"] }
+  - main.rs 使用 clap Parser + Subcommand：无参数与 version 子命令输出版本行；
+    --version/--help 由 clap 自动提供
+- **遗留事项**：后续可按需扩展子命令（如 task/handoff 管理入口）
+
+---
 
 ## [R1-003] 2026-08-23 · 环境恢复 + COMP-003 · 成功
 
