@@ -179,6 +179,30 @@ dependencies = [
 ]
 
 [[package]]
+name = "forge-planner"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "forge-core",
+ "forge-task",
+ "serde",
+ "serde_json",
+ "tokio",
+]
+
+[[package]]
+name = "forge-sandbox"
+version = "0.1.0"
+dependencies = [
+ "forge-agent",
+ "forge-core",
+ "forge-exec",
+ "serde",
+ "serde_json",
+ "tokio",
+]
+
+[[package]]
 name = "forge-session"
 version = "0.1.0"
 dependencies = [
