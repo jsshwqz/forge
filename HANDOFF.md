@@ -1,51 +1,33 @@
-# HANDOFF · 交接快照（最新）
+# HANDOFF · 交接快照（由 forge-worklog 自动生成）
 
-> 给下一个 AI 的第一眼信息。每次工作结束后重写。
-> 对应规范：`AI_WORKFLOW.md`
+- **更新时间**：2026-08-23
+- **当前状态**：第一阶段MVP完成(167 tests全绿)；环境正常(cargo/git已入PATH)；HEAD=DATA-001数据迁移
 
-## 📍 当前状态
+## 🚧 阻塞项
 
-**项目**：Aion Forge 2.0 · 第一阶段 MVP ✅ 已完成
-**最后验证**：167 tests all green（159 + 8 worklog），clippy 0 warnings
-**环境**：✅ cargo 1.94.0 / git 2.51.2 已恢复（均已加入用户 PATH）
-**HEAD 提交**：`6396107 COMP-001: forge-cli 接入 clap`
+- 第二阶段施工包规格未提供——等人工
+- COMP-002(tracing)属自立项任务，按规则4需人工批准后才执行
 
-## 🚧 当前阻塞
+## 🗓️ 下一步
 
-- （无）
+| 优先级 | 任务 ID | 名称 | 前置 | 动作 | 验收 |
+|---|---|---|---|---|---|
+| P0 | PH2-* | 第二阶段施工 | 人工提供第二阶段施工包规格 | 按规格逐包执行 | 按施工包DoD |
+| P1 | COMP-002 | 集成tracing可观测 | 人工批准立项 | exec/recovery/agent埋点 | clippy零警告+测试全绿 |
 
-## 📌 待继续任务（按优先级）
+## ⚠️ 风险/偏差
 
-1. **COMP-002**（P0）：集成 tracing 可观测 —— 在 exec/recovery/agent 库埋点。
-2. **DATA-001**（P1）：用 `forge-worklog` 将现有手写 Markdown 数据录入 JSON，统一事实源。
-3. **第二阶段**（P2）：需人工提供第二阶段施工包规格，禁止臆测实现。
-
-## 📦 新工具：forge-worklog（Rust 统一记录）
-
-- 位置：`aion-forge/tools/worklog/`（已加入 workspace）
-- 数据源：`progress.json` / `worklog.json` / `handoff.json`
-- Markdown：由 `forge-worklog export` 自动生成（当前手写 Markdown 为过渡，待迁移）
-- 命令：`init / task list|add|start|complete|fail|block / log add|list / handoff show|update / export`
-- 状态：✅ 已验证（8 tests, clippy 0 warnings），详见 WORKLOG R1-003
-
-## ⚠️ 已知偏差与风险（详见 WORKLOG R7-001/002/003）
-
-- `route()` 返回 `Arc<dyn Tool>`（规范写 `&dyn Tool`）→ 待人工确认
-- `PermissionPolicy` trait 在 forge-exec（规范写 sandbox）→ 待人工确认
-- tracing / anyhow 冻结项未落地 → COMP-002（clap 已于 COMP-001 完成）
+- route()返回Arc<dyn Tool>与规范不符(R7-001)待确认
+- PermissionPolicy位置与规范不符(R7-002)待确认
 
 ## 📁 关键文件
 
-| 文件 | 说明 |
-|---|---|
-| `AI_WORKFLOW.md` | 多 AI 协作规范（必读） |
-| `PROGRESS.md` | 任务状态索引（单一事实源） |
-| `WORKLOG.md` | 工作日志（R1~R7） |
-| `build_a.md` / `build_b.md` / `build_c.md` | 第一阶段施工包 |
-| `aion-forge/` | 代码仓库 |
+- `AI_WORKFLOW.md`：多AI协作规范v1.1(必读)
+- `build_a/build_b/build_c.md`：第一阶段施工包
+- `handoff.json`：交接快照事实源
+- `progress.json`：任务状态事实源
+- `worklog.json`：工作日志事实源
 
-## 🚀 给下一个 AI 的建议
+## 🚀 建议
 
-1. 先读 `AI_WORKFLOW.md` 规范。
-2. 确认 `cargo --version` 可用；不可用则写 R3 阻塞记录并等人工。
-3. 下一个任务从 **COMP-002（tracing 可观测）** 开始，完成后跑 DoD、提交、更新三个状态文件。
+更新状态请用 forge-worklog 命令后执行 export；Markdown视图勿手改；新依赖/新立项必须先报人工确认

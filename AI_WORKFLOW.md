@@ -195,9 +195,24 @@
 | 文件 | 作用 | 维护规则 |
 |---|---|---|
 | `AI_WORKFLOW.md` | 本规范 | 修改需人工确认 |
-| `PROGRESS.md` | 任务状态索引（单一事实源） | 每个任务结束后更新 |
-| `WORKLOG.md` | 追加式工作日志（含 R1~R7） | 每次工作追加，不删除历史 |
-| `HANDOFF.md` | 最新交接快照 | 每次工作结束后重写为“下一位 AI 第一眼要看的” |
+| `progress.json` | **任务状态事实源**（Rust 结构化） | 用 `forge-worklog task ...` 命令更新 |
+| `worklog.json` | **工作日志事实源**（R1~R7 记录） | 用 `forge-worklog log add` 追加 |
+| `handoff.json` | **交接快照事实源** | 用 `forge-worklog handoff update` 更新 |
+| `PROGRESS.md` / `WORKLOG.md` / `HANDOFF.md` | 由 `forge-worklog export` 生成的**只读视图** | 禁止手改，会被覆盖 |
+
+> **v1.1 变更（2026-08-23，依据用户"尽量使用 rust 统一"指令，见 WORKLOG R6-002）**：
+> 事实源从 Markdown 切换为 JSON；Markdown 一律由 Rust 工具生成。
+
+### 常用命令
+
+```bash
+cargo run -p forge-worklog -- task list                     # 查看任务状态
+cargo run -p forge-worklog -- task start --id T-1 --owner me
+cargo run -p forge-worklog -- task complete --id T-1 --commit abc1234
+cargo run -p forge-worklog -- log add --kind R1 --task T-1 --title "..." --body "..."
+cargo run -p forge-worklog -- handoff update --status "..." 
+cargo run -p forge-worklog -- export                        # 重新生成三个 Markdown 视图
+```
 
 ### PROGRESS.md 任务状态表
 
@@ -253,4 +268,4 @@
 
 ---
 
-*本规范 v1.0 · 建立日期 2026-08-22 · 后续修改需人工确认并记录于 WORKLOG*
+*本规范 v1.1 · 建立 2026-08-22 · v1.1 修订 2026-08-23（JSON 事实源，见 R6-002）· 后续修改需人工确认并记录于 WORKLOG*
