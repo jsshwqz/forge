@@ -4,7 +4,9 @@
 //! 后续所有 Agent（Builder/Tester/Reviewer）都是该 trait 的实现。
 
 pub mod model;
+pub mod turn;
 
 pub use model::{
     Agent, AgentAction, AgentConfig, AgentOutcome, AgentRole, TurnInput,
 };
+pub use turn::{ActionDispatcher, TerminateReason, TurnEngine, TurnReport};
