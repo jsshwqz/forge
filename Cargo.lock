@@ -154,6 +154,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "forge-dag"
+version = "0.1.0"
+dependencies = [
+ "forge-core",
+ "forge-planner",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "forge-event"
 version = "0.1.0"
 dependencies = [
@@ -172,7 +182,10 @@ version = "0.1.0"
 dependencies = [
  "async-trait",
  "chrono",
+ "forge-agent",
+ "forge-artifact",
  "forge-core",
+ "forge-session",
  "serde",
  "serde_json",
  "tokio",

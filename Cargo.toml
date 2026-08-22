@@ -9,6 +9,7 @@ members = [
     "execution/runtime",
     "execution/sandbox",
     "planning/planner",
+    "planning/dag",
     "cli",
 ]
 resolver = "2"

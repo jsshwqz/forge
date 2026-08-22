@@ -1,28 +1,10 @@
 //! 权限策略实现。
 
-use forge_agent::AgentRole;
-use forge_core::{ForgeError, ForgeResult, SessionId};
-use forge_exec::PermissionLevel;
-use serde::{Deserialize, Serialize};
+use forge_core::{ForgeError, ForgeResult};
+use forge_exec::{PermissionLevel, PermissionPolicy, PolicyContext};
 
-/// 策略上下文。
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct PolicyContext {
-    /// 会话 ID。
-    pub session_id: SessionId,
-    /// 工具名称。
-    pub tool_name: String,
-    /// 请求者角色。
-    pub requester_role: AgentRole,
-}
-
-/// 权限策略 trait。
-///
-/// 允许返回 `Ok(())`；拒绝返回 `ForgeError::PermissionDenied(原因)`。
-pub trait PermissionPolicy: Send + Sync {
-    /// 检查权限。
-    fn check(&self, level: PermissionLevel, ctx: &PolicyContext) -> ForgeResult<()>;
-}
+// 重新导出 PolicyContext 供测试使用
+pub use forge_exec::PolicyContext as _PolicyContext;
 
 /// 拒绝所有请求的策略。
 pub struct DenyAllPolicy;
@@ -107,6 +89,8 @@ impl PermissionPolicy for PolicyChain {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use forge_agent::AgentRole;
+    use forge_core::SessionId;
 
     fn make_ctx(tool_name: &str) -> PolicyContext {
         PolicyContext {
