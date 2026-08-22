@@ -1,0 +1,11 @@
+[package]
+name = "forge-gates"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+forge-core = { path = "../../core/runtime" }
+forge-verify = { path = "../verifier" }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"

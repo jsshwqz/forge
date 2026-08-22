@@ -11,6 +11,8 @@ members = [
     "planning/planner",
     "planning/dag",
     "verification/verifier",
+    "verification/evidence",
+    "verification/gates",
     "recovery",
     "tests",
     "cli",
