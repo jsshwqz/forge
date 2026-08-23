@@ -15,8 +15,8 @@
 
 ## ⚠️ 风险/偏差
 
-- route()返回Arc<dyn Tool>与规范不符(R7-001)待确认
-- PermissionPolicy位置与规范不符(R7-002)待确认
+- route()返回Arc<dyn Tool>与规范不符(R7-001)——已经人工确认维持现状(R6-003)
+- PermissionPolicy位置与规范不符(R7-002)——已经人工确认维持现状(R6-003)
 
 ## 📁 关键文件
 
@@ -28,4 +28,4 @@
 
 ## 🚀 建议
 
-下一任务=PH2-*第二阶段(需人工规格)；更新状态请用forge-worklog命令+export
+冻结目录树已100%落地，等待新指令/新规格(P8人工立项)；更新状态用forge-worklog命令+export；多会话并行施工时共享状态文件写入前先git status探测对方WIP

@@ -281,22 +281,6 @@
   },
   {
     "task_id": "INT-001",
-    "name": "server 接入 PG 持久化(env 驱动)",
-    "status": "Completed",
-    "owner": "builder-a",
-    "last_record": null,
-    "commit": "ffd86a8"
-  },
-  {
-    "task_id": "CLEAN-001",
-    "name": "旧 forge 目录 PATH 清理(留备份)",
-    "status": "Completed",
-    "owner": null,
-    "last_record": null,
-    "commit": "n/a(非代码)"
-  },
-  {
-    "task_id": "INT-001",
     "name": "server 接入 PG 持久化",
     "status": "Completed",
     "owner": "builder-a",
@@ -317,15 +301,7 @@
     "status": "Completed",
     "owner": "builder-a",
     "last_record": "R1-016",
-    "commit": "01926b8"
-  },
-  {
-    "task_id": "Q-002",
-    "name": "SenseNova配额恢复后复验",
-    "status": "Completed",
-    "owner": "builder-a",
-    "last_record": "R1-016",
-    "commit": null
+    "commit": "83ae7ae"
   },
   {
     "task_id": "DOC-001",
@@ -339,33 +315,9 @@
     "task_id": "SRV-002",
     "name": "forge serve + 全链路e2e",
     "status": "Completed",
-    "owner": null,
-    "last_record": null,
-    "commit": "12259f9"
-  },
-  {
-    "task_id": "SRV-002",
-    "name": "forge serve + 全链路e2e",
-    "status": "Completed",
     "owner": "builder-a",
     "last_record": "R1-018",
     "commit": "12259f9"
-  },
-  {
-    "task_id": "SCHED-001",
-    "name": "波次调度器",
-    "status": "Completed",
-    "owner": "builder-a",
-    "last_record": null,
-    "commit": "3de8b74"
-  },
-  {
-    "task_id": "WKSP-001",
-    "name": "托管工作目录管理器",
-    "status": "Completed",
-    "owner": null,
-    "last_record": null,
-    "commit": "c7c2924"
   },
   {
     "task_id": "SDK-001",
