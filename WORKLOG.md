@@ -423,3 +423,18 @@ run_from_env 启动时 try_init（幂等），RUST_LOG 过滤默认 info。
 
 ---
 
+## [R1-023] ✅ 成功 · 2026-08-23 · PH2-004 选型切换官方6.7/6.8 · 成功
+
+- **任务 ID**：PH2-004
+用户指令：选用商汤官方模型 sensenova-6.7/6.8。
+实现：
+- OFFICIAL_MODEL_PREFS 常量 = [sensenova-6.8, sensenova-6.7, glm, chat]（6.8最新优先，glm/chat兜底）
+- LlmAgent::connect 与 live 测试统一改用该偏好；FORGE_LLM_MODEL 仍可覆盖
+- extract_content 增加 trim()——6.7/6.8 为推理模型，content 常带前导换行（思考过程在新增的 reasoning 字段）
+- 新增 chat_raw() 返回完整原始响应（诊断/后续工具调用扩展用）
+实测证据（live 2/2, 4.89s）：自动选中 sensenova-6.8-flash-lite，回复非空且已 trim；
+探针确认 6.7/6.8 双模型均 finish_reason=stop 正常出字。
+单测：+2（官方偏好序断言 / 推理空白trim断言），forge-api 离线13条全绿。
+
+---
+

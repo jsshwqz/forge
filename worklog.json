@@ -294,5 +294,13 @@
     "task_id": "OBS-001",
     "title": "OBS-001 日志订阅器 · 成功",
     "body": "交付：server/cli 二进制接入 tracing-subscriber(env-filter)；\nrun_from_env 启动时 try_init（幂等），RUST_LOG 过滤默认 info。\n真实验证：RUST_LOG=debug 下 forge serve 输出 sqlx DEBUG 查询与迁移 INFO 日志（截图存档于会话记录）。\n意义：COMP-002 埋点自此端到端可见；生产排障就绪。新增依赖 tracing-subscriber 0.3（env-filter）。"
+  },
+  {
+    "id": "R1-023",
+    "kind": "R1Completed",
+    "date": "2026-08-23",
+    "task_id": "PH2-004",
+    "title": "PH2-004 选型切换官方6.7/6.8 · 成功",
+    "body": "用户指令：选用商汤官方模型 sensenova-6.7/6.8。\n实现：\n- OFFICIAL_MODEL_PREFS 常量 = [sensenova-6.8, sensenova-6.7, glm, chat]（6.8最新优先，glm/chat兜底）\n- LlmAgent::connect 与 live 测试统一改用该偏好；FORGE_LLM_MODEL 仍可覆盖\n- extract_content 增加 trim()——6.7/6.8 为推理模型，content 常带前导换行（思考过程在新增的 reasoning 字段）\n- 新增 chat_raw() 返回完整原始响应（诊断/后续工具调用扩展用）\n实测证据（live 2/2, 4.89s）：自动选中 sensenova-6.8-flash-lite，回复非空且已 trim；\n探针确认 6.7/6.8 双模型均 finish_reason=stop 正常出字。\n单测：+2（官方偏好序断言 / 推理空白trim断言），forge-api 离线13条全绿。"
   }
 ]

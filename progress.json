@@ -252,8 +252,8 @@
     "name": "真实模型接入",
     "status": "Completed",
     "owner": "builder-a",
-    "last_record": "R1-014",
-    "commit": "a357c7d"
+    "last_record": "R1-023",
+    "commit": "2e9eea5"
   },
   {
     "task_id": "PH2-005",
