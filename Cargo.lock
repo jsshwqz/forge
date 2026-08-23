@@ -728,6 +728,8 @@ name = "forge-server"
 version = "0.1.0"
 dependencies = [
  "axum",
+ "chrono",
+ "forge-artifact",
  "forge-core",
  "forge-evidence",
  "forge-exec",

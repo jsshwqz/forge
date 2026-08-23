@@ -422,5 +422,13 @@
     "owner": null,
     "last_record": null,
     "commit": "19606a2"
+  },
+  {
+    "task_id": "SRV-FIX-001",
+    "name": "server 测试覆盖整改(R7-005)",
+    "status": "Completed",
+    "owner": "builder-a",
+    "last_record": null,
+    "commit": "662ac23"
   }
 ]
