@@ -49,7 +49,7 @@
 | SCHED-001 | 波次调度器 | ✅ 完成 | builder-a | R1-019 | 3de8b74 |
 | WKSP-001 | 托管工作目录管理器 | ✅ 完成 | builder-a | R1-020 | c7c2924 |
 | LIVE-E2E | 真实模型×Agent trait 验证 | ✅ 完成 | builder-a | R1-024 | c2be261 |
-| SDK-002 | SDK 调度链路集成测试(planner→dag→scheduler) | ✅ 完成 | builder-a | R1-025 | 5b4ddf5 |
-| DOC-002 | README crate 表补全(4行) | ✅ 完成 | builder-a | R1-026 | 5b4ddf5 |
+| SDK-002 | SDK 调度链路集成测试(planner→dag→scheduler) | ✅ 完成 | builder-a | R1-027 | 5b4ddf5 |
+| DOC-002 | README crate 表补全(4行) | ✅ 完成 | builder-a | R1-028 | 5b4ddf5 |
 | COMP-003b | forge-worklog 并发加固(原子写/文件锁/读时自愈) | ✅ 完成 | integrator | - | 5b4ddf5 |
 | ORCH-001 | goal注入编排落地(R7-004解决) | ✅ 完成 | builder-a | R1-027 | 70d7737 |

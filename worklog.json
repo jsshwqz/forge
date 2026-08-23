@@ -342,5 +342,29 @@
     "task_id": "ORCH-001",
     "title": "ORCH-001 goal注入 · 成功（真实模型给出精确命令）",
     "body": "DoD：workspace 240 tests 全绿（含3条live真实调用）；clippy --all-targets 零告警。\n交付：LlmAgent::with_task_goal / with_system_prompt 构造器（pub system_prompt 载体）；\n     live_agent 第三场景实测——注入目标后 6.8 模型直接给出精确命令：\n     Run echo \"Hello AionForge\" > hello.txt\nR7-004 状态：已解决（方案=system_prompt 注入；R6-009 决策依据）。\n单测：+2（goal 注入断言/全量覆盖式 prompt 断言），forge-api 离线 15 条全绿。"
+  },
+  {
+    "id": "R1-027",
+    "kind": "R1Completed",
+    "date": "2026-08-23",
+    "task_id": "SDK-002",
+    "title": "SDK-002 调度链路集成 · 成功（补录）",
+    "body": "【补录】原超时轮未落盘。\nDoD：sdk/tests/scheduler_flow 通过（3验收→3链式步骤→3波次顺序完成→会话可追溯）。\n意义：SDK 层打通 任务→计划→DAG→波次调度 全编排链；\n     EchoStepExecutor 为对接 ExecutionEngine 的参考实现。\n编号说明：本条与下条为补录；R1-025 已被并行协作方(行天/COMP-003b)合法占用。"
+  },
+  {
+    "id": "R1-028",
+    "kind": "R1Completed",
+    "date": "2026-08-23",
+    "task_id": "DOC-002",
+    "title": "DOC-002 README 表补全 · 成功（补录）",
+    "body": "【补录】README crate 表新增 scheduler/workspace/capability-api/sdk 四行；\n并修复前一次嵌套字符串替换造成的表格破损（按行区间整体重写）。"
+  },
+  {
+    "id": "R6-010",
+    "kind": "R6Decision",
+    "date": "2026-08-23",
+    "task_id": "GENERAL",
+    "title": "并发写入冲突仲裁与规范增补建议(v1.2)",
+    "body": "事件：与并行 AI(行天) 同时写状态文件——其 COMP-003b 抢占 R1-025，\n     我方超时轮两条记录丢失后补录为 R1-027/028（现序列无重复无缺口）。\n决议：1) 双方记录均合法有效；\n     2) 规范增补建议(待人工批准升v1.2)：写前 pull--rebase+重读尾部3条；\n        task start 即软锁；编号冲突后写方自动顺延(已天然支持)；\n     3) 本次无需改代码。"
   }
 ]

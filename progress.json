@@ -364,7 +364,7 @@
     "name": "SDK 调度链路集成测试(planner→dag→scheduler)",
     "status": "Completed",
     "owner": "builder-a",
-    "last_record": "R1-025",
+    "last_record": "R1-027",
     "commit": "5b4ddf5"
   },
   {
@@ -372,7 +372,7 @@
     "name": "README crate 表补全(4行)",
     "status": "Completed",
     "owner": "builder-a",
-    "last_record": "R1-026",
+    "last_record": "R1-028",
     "commit": "5b4ddf5"
   },
   {
