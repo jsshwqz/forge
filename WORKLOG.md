@@ -143,3 +143,31 @@ DoD：build 通过、167 tests 全绿、clippy 零警告。
 
 ---
 
+## [R6-004] ⚖️ 决策 · 2026-08-23 · 人工授权第二阶段开工；任务分解与规格来源入档
+
+- **任务 ID**：PH2-002
+授权：用户指示"按文档中既定的继续"——以施工包既有冻结决策作为第二阶段规格来源。
+第二阶段任务分解（严格取自文档）：
+- PH2-001 持久化：PostgreSQL+sqlx 接入 SessionStore/ArtifactStore/EvidenceStore；对象存储走 MinIO(S3)【需外部服务，排后】
+- PH2-002 axum HTTP server（本次执行）：技术栈冻结表明确 axum+server crate，可离线验收
+- PH2-003 MCP 完整协议：stdio握手/list-tools/调用转发（边界见B-03）
+- PH2-004 真实模型接入：文档未指定任何模型供应商=规格不足，维持阻塞待人工补充
+- PH2-005 Skill 签名校验：文档未指定签名算法=规格不足，维持阻塞待人工补充
+依赖说明：新增 axum(冻结表已列)；测试侧 tower/http-body-util 为 axum 生态标准件，一并声明。
+
+---
+
+## [R1-007] ✅ 成功 · 2026-08-23 · PH2-002 axum server · 成功
+
+- **任务 ID**：PH2-002
+DoD：build 通过、172 tests 全绿(167+5 API)、clippy 零警告、真实启动冒烟通过(/health=200、未知任务=404)。
+交付：server crate(forge-server) 已入 workspace，端点：
+- GET /health
+- POST /tasks（创建任务，含验收标准）
+- GET /tasks/{id}、GET /sessions/{id}（NotFound→404、InvalidState→409 映射）
+架构：路由层仅依赖 Core 的 trait(InMemory 实现)，PH2-001 换 PostgreSQL 时只替换 State 组装(AP-015)。
+规格来源：技术栈冻结表 axum + B-02；授权依据 R6-004。
+遗留：tracing-subscriber 未接(白名单)；鉴权/TLS/更多端点待后续任务包定义。
+
+---
+

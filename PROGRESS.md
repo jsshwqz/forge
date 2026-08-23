@@ -33,7 +33,7 @@
 | COMP-003 | Rust 版工作记录工具 | ✅ 完成 | builder-a | R1-003 | b5b9c90 |
 | DATA-001 | Markdown 数据迁移到 JSON 事实源 | ✅ 完成 | builder-a | R1-005 | - |
 | PH2-001 | PostgreSQL/MinIO 持久化接入 | ⬜ 未开始 | - | - | - |
-| PH2-002 | axum HTTP server | ⬜ 未开始 | - | - | - |
+| PH2-002 | axum HTTP server | ✅ 完成 | - | R1-007 | 42325de |
 | PH2-003 | MCP 完整协议 | ⬜ 未开始 | - | - | - |
 | PH2-004 | 真实模型接入 | ⬜ 未开始 | - | - | - |
 | PH2-005 | Skill 签名/完整性校验 | ⬜ 未开始 | - | - | - |

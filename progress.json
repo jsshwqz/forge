@@ -234,10 +234,10 @@
   {
     "task_id": "PH2-002",
     "name": "axum HTTP server",
-    "status": "NotStarted",
+    "status": "Completed",
     "owner": null,
-    "last_record": null,
-    "commit": null
+    "last_record": "R1-007",
+    "commit": "42325de"
   },
   {
     "task_id": "PH2-003",
