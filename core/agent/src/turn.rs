@@ -7,6 +7,7 @@ use crate::model::{Agent, AgentAction, AgentOutcome, TurnInput};
 use async_trait::async_trait;
 use forge_core::{ForgeResult, SessionId};
 use serde::{Deserialize, Serialize};
+use tracing::info;
 
 /// 动作分发器 trait。
 #[async_trait]
@@ -129,6 +130,14 @@ impl<A: Agent> TurnEngine<A> {
                 }
             }
         }
+
+        info!(
+            session_id = %session_id,
+            turns_used = actions.len() as u32,
+            ?outcome,
+            ?reason,
+            "turn engine finished"
+        );
 
         Ok(TurnReport {
             turns_used: actions.len() as u32,

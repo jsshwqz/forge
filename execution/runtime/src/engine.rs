@@ -9,6 +9,7 @@ use forge_session::{SessionEventKind, SessionStore};
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use std::time::Duration;
+use tracing::{info, warn};
 
 /// 执行请求。
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -96,11 +97,19 @@ impl ExecutionEngine {
                 }),
             )
             .await;
+        info!(
+            execution_id = %req.execution_id,
+            tool = %req.tool,
+            step_id = %req.step_id,
+            session_id = %req.session_id,
+            "execution started"
+        );
 
         // 路由工具
         let tool = match self.router.route(&req.tool) {
             Ok(t) => t,
             Err(e) => {
+                warn!(execution_id = %req.execution_id, tool = %req.tool, error = %e, "tool routing failed");
                 let finished_at = Utc::now();
                 let result = ExecutionResult {
                     execution_id: req.execution_id,
@@ -123,11 +132,19 @@ impl ExecutionEngine {
         };
 
         if let Err(e) = self.policy.check(tool.descriptor().permission, &ctx) {
+            let reason = e.to_string();
+            warn!(
+                execution_id = %req.execution_id,
+                tool = %req.tool,
+                required_level = ?tool.descriptor().permission,
+                reason = %reason,
+                "permission denied"
+            );
             let finished_at = Utc::now();
             let result = ExecutionResult {
                 execution_id: req.execution_id,
                 status: ExecutionStatus::PermissionDenied,
-                output: serde_json::json!({"error": e.to_string()}),
+                output: serde_json::json!({"error": reason}),
                 artifact_ids: vec![],
                 started_at,
                 finished_at,
@@ -152,6 +169,13 @@ impl ExecutionEngine {
         };
 
         let finished_at = Utc::now();
+        info!(
+            execution_id = %req.execution_id,
+            tool = %req.tool,
+            ?status,
+            duration_ms = (finished_at - started_at).num_milliseconds(),
+            "execution finished"
+        );
         let result = ExecutionResult {
             execution_id: req.execution_id,
             status,

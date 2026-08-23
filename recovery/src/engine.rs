@@ -5,6 +5,7 @@ use forge_core::ForgeResult;
 use forge_event::{Event, EventBus, Topic};
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
+use tracing::info;
 
 /// 恢复动作。
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -81,6 +82,14 @@ impl RecoveryEngine {
         attempts: u32,
     ) -> ForgeResult<RecoveryAction> {
         let action = self.strategy.decide(&record, attempts);
+        info!(
+            execution_id = %record.execution_id,
+            category = ?record.category,
+            retriable = record.retriable,
+            attempts,
+            ?action,
+            "recovery decision made"
+        );
 
         // 发布恢复事件
         let event = Event::new(
