@@ -212,8 +212,6 @@ mod tests {
     use crate::router::{EchoTool, ToolRouter};
     use forge_core::{ExecutionId, ForgeError, SessionId, TaskId};
     use forge_session::InMemorySessionStore;
-    use std::collections::HashMap;
-    use std::sync::RwLock;
 
     /// 测试夹具：允许所有权限。
     struct AllowAllPolicy;

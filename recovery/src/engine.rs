@@ -110,7 +110,7 @@ impl RecoveryEngine {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::classify::{classify, FailureCategory};
+    use crate::classify::classify;
     use forge_core::ExecutionId;
     use forge_event::InMemoryEventBus;
     use forge_exec::ExecutionStatus;

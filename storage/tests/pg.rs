@@ -76,7 +76,7 @@ async fn sessions_full_state_machine_flow() {
     assert!(err.is_err(), "completed session must reject further events");
 
     // list 包含该会话
-    assert!(store.list().await.unwrap().iter().any(|x| *x == s.id));
+    assert!(store.list().await.unwrap().contains(&s.id));
 }
 
 #[tokio::test]

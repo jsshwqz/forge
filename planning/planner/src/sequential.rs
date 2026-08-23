@@ -68,7 +68,7 @@ impl Planner for SequentialPlanner {
 mod tests {
     use super::*;
     use forge_core::TaskId;
-    use forge_task::{AcceptanceCriterion, CheckSpec, Task, TaskStatus};
+    use forge_task::{AcceptanceCriterion, CheckSpec, Task};
 
     fn make_task(acceptance: Vec<AcceptanceCriterion>) -> Task {
         Task::new(
