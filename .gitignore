@@ -1,1 +1,5 @@
 /target
+
+# 秘密配置（API Key 等）——禁止入库
+.env
+*.local.env

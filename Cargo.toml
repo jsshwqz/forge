@@ -21,6 +21,7 @@ members = [
     "tools/worklog",
     "server",
     "storage",
+    "capability/api",
     "tests",
     "cli",
 ]

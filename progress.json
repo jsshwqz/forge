@@ -250,8 +250,8 @@
   {
     "task_id": "PH2-004",
     "name": "真实模型接入",
-    "status": "NotStarted",
-    "owner": null,
+    "status": "Wip",
+    "owner": "builder-a",
     "last_record": null,
     "commit": null
   },
@@ -304,11 +304,11 @@
     "commit": "ffd86a8"
   },
   {
-    "last_record": "R1-013",
-    "name": "旧 forge 目录 PATH 清理",
-    "commit": "n/a",
     "task_id": "CLEAN-001",
+    "name": "旧 forge 目录 PATH 清理",
     "status": "Completed",
-    "owner": "builder-a"
+    "owner": "builder-a",
+    "last_record": "R1-013",
+    "commit": "n/a"
   }
 ]
