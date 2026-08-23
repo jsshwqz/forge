@@ -124,11 +124,21 @@ impl LlmClient {
         unreachable!("retry loop always returns")
     }
 
+    /// 调用 chat 并返回完整原始响应（供诊断/高级用途；常规取文本用 [`LlmBackend::chat`]）。
+    pub async fn chat_raw(
+        &self,
+        model: &str,
+        messages: &[ChatMessage],
+    ) -> ForgeResult<serde_json::Value> {
+        let body = serde_json::json!({ "model": model, "messages": messages });
+        self.post_json_retry_429("chat/completions", &body).await
+    }
     /// 从响应 JSON 提取 choices[0].message.content。
     pub(crate) fn extract_content(v: &serde_json::Value) -> ForgeResult<String> {
         v.pointer("/choices/0/message/content")
             .and_then(|c| c.as_str())
-            .map(|s| s.to_string())
+            // 推理型模型(6.7/6.8)的 content 常带前后空白/换行，统一 trim
+            .map(|s| s.trim().to_string())
             .ok_or_else(|| {
                 ForgeError::InvalidState("llm: missing choices[0].message.content".into())
             })
@@ -159,6 +169,9 @@ impl LlmBackend for LlmClient {
     }
 }
 
+/// 商汤官方模型偏好序（用户指定：6.8 为最新优先，其次 6.7；glm/chat 兜底）。
+pub const OFFICIAL_MODEL_PREFS: &[&str] = &["sensenova-6.8", "sensenova-6.7", "glm", "chat"];
+
 /// 模型自动选择：按偏好子串序列依次匹配（大小写不敏感），否则排序第一个；空列表报错。
 ///
 /// 默认偏好 `["glm", "chat"]` 来源：2026-08-23 对 SenseNova 实测——
@@ -176,9 +189,9 @@ pub fn pick_model_with_prefs(ids: &[String], prefer: &[&str]) -> ForgeResult<Str
         .ok_or_else(|| ForgeError::NotFound("no models available from provider".into()))
 }
 
-/// 兼容入口：仅按 `chat` 偏好。
+/// 兼容入口：商汤官方模型优先（用户指定 6.7/6.8）。
 pub fn pick_default_model(ids: &[String]) -> ForgeResult<String> {
-    pick_model_with_prefs(ids, &["chat"])
+    pick_model_with_prefs(ids, OFFICIAL_MODEL_PREFS)
 }
 
 #[cfg(test)]
@@ -193,6 +206,35 @@ mod tests {
             "chat-pro-max".to_string(),
         ];
         assert_eq!(pick_default_model(&ids).unwrap(), "SenseChat-Turbo");
+    }
+
+    #[test]
+    fn pick_prefers_sensenova_official_68_then_67() {
+        let ids = vec![
+            "glm-5.2".to_string(),
+            "sensenova-6.7-flash-lite".to_string(),
+            "deepseek-v4-flash".to_string(),
+            "sensenova-6.8-flash-lite".to_string(),
+        ];
+        // 用户指定：商汤官方 6.7/6.8 优先；实现取 6.8（最新）在前
+        assert_eq!(
+            pick_model_with_prefs(&ids, OFFICIAL_MODEL_PREFS).unwrap(),
+            "sensenova-6.8-flash-lite"
+        );
+        // 仅剩 6.7 时回退到 6.7
+        let only67 = vec!["sensenova-6.7-flash-lite".to_string(), "glm-5.2".to_string()];
+        assert_eq!(
+            pick_model_with_prefs(&only67, OFFICIAL_MODEL_PREFS).unwrap(),
+            "sensenova-6.7-flash-lite"
+        );
+    }
+
+    #[test]
+    fn extract_content_trims_reasoning_model_whitespace() {
+        let v = serde_json::json!({
+            "choices": [ { "message": { "role": "assistant", "content": "\n\nOK" } } ]
+        });
+        assert_eq!(LlmClient::extract_content(&v).unwrap(), "OK");
     }
 
     #[test]

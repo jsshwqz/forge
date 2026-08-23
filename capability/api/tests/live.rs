@@ -7,7 +7,7 @@
 //! cargo test -p forge-api --test live
 //! ```
 
-use forge_api::{pick_model_with_prefs, LlmBackend, LlmClient};
+use forge_api::{pick_model_with_prefs, LlmBackend, LlmClient, OFFICIAL_MODEL_PREFS};
 
 fn client() -> Option<LlmClient> {
     // 双重开关：需 KEY 且显式 FORGE_LLM_LIVE=1。
@@ -35,7 +35,7 @@ async fn live_list_models_and_auto_pick() {
     for m in models.iter().take(5) {
         println!("  - {m}");
     }
-    let picked = pick_model_with_prefs(&models, &["glm", "chat"]).unwrap();
+    let picked = pick_model_with_prefs(&models, OFFICIAL_MODEL_PREFS).unwrap();
     println!("自动选择: {picked}");
 }
 
@@ -43,7 +43,7 @@ async fn live_list_models_and_auto_pick() {
 async fn live_chat_roundtrip() {
     let Some(c) = client() else { return };
     let models = c.list_models().await.unwrap();
-    let model = pick_model_with_prefs(&models, &["glm", "chat"]).unwrap();
+    let model = pick_model_with_prefs(&models, OFFICIAL_MODEL_PREFS).unwrap();
 
     use forge_api::ChatMessage;
     let reply = c

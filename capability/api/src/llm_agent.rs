@@ -6,7 +6,7 @@
 //!   （多轮任务编排属后续编排层；循环/上限护栏由 TurnEngine 兜底）
 //! - 模型自动发现：connect 时 list_models → pick_default_model
 
-use crate::{pick_model_with_prefs, ChatMessage, LlmBackend};
+use crate::{pick_model_with_prefs, ChatMessage, LlmBackend, OFFICIAL_MODEL_PREFS};
 use async_trait::async_trait;
 use forge_agent::{
     Agent, AgentAction, AgentConfig, AgentRole, TurnInput,
@@ -43,7 +43,7 @@ impl<B: LlmBackend> LlmAgent<B> {
         let ids = backend.list_models().await?;
         let model = match model_override {
             Some(m) => m,
-            None => pick_model_with_prefs(&ids, &["glm", "chat"])?,
+            None => pick_model_with_prefs(&ids, OFFICIAL_MODEL_PREFS)?,
         };
         Ok(Self::new(config, backend, model))
     }
