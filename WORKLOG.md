@@ -438,3 +438,54 @@ run_from_env 启动时 try_init（幂等），RUST_LOG 过滤默认 info。
 
 ---
 
+## [R1-024] ✅ 成功 · 2026-08-23 · LIVE-E2E 真实模型×Agent trait · 成功
+
+- **任务 ID**：LIVE-E2E
+DoD：live_agent 测试通过（FORGE_LLM_LIVE=1，7.09s 真实调用）。
+证据：选中 sensenova-6.8-flash-lite；
+首回合 Reply 合理索要任务详情；次回合基于观察正确回应。
+意义：B-05 最终闭环——真模型经 connect(自动发现官方偏好)→AgentConfig→act(TurnInput)
+完整走通生产调用入口（TurnEngine 每回合即调此处）。
+新发现（R7-004）：TurnInput 无 goal 字段致模型不知任务目标——第一阶段冻结面不改动，
+编排层应经 observation/history 携带目标；未来版本可评估接口扩展（需人工批准）。
+
+---
+
+## [R7-004] ⚠️ 偏差/风险 · 2026-08-23 · TurnInput 无 goal 字段的编排课题
+
+- **任务 ID**：LIVE-E2E
+现象：live_agent 两回合中模型均表示缺少任务目标描述。
+根因：TurnInput（施工包§4.7冻结）仅含 session/turn/history/observation，无 goal 字段；
+     SequentialPlanner 的 goal 在 StepAction.input 内但未进入模型提示。
+处置建议：编排层组装 TurnInput 时将任务目标作为首条 history/observation 注入（无需改冻结面）；
+         或未来版本经人工批准扩展 TurnInput。
+
+---
+
+## [R6-009] ⚖️ 决策 · 2026-08-23 · R7-004 解决方案定稿：goal 经 system_prompt 注入
+
+- **任务 ID**：LIVE-E2E
+落实 R7-004 建议的替代实现（更优）：
+原建议：编排层经 observation/history 注入 goal。
+最终方案：不改任何冻结面/编排层——LlmAgent 自有的 pub system_prompt 字段即
+        任务目标的正确载体；新增 with_task_goal(goal) 构造器一键注入。
+理由：system prompt 是 LLM 语义上承载"角色+任务背景"的标准位置；
+     observation 应留给工具执行结果，避免语义混杂。
+新增：with_task_goal / with_system_prompt 构造器 + 单测；
+live_agent 追加第三场景：设 goal 后模型应围绕目标工作（而非索要目标）。
+
+---
+
+## [R1-025] ✅ 成功 · 2026-08-23 · COMP-003b 并发加固 · 成功
+
+- **任务 ID**：COMP-003b
+根因：多会话对状态文件做无互斥的整文件读改写，且闭环流程追加新行导致重复行累积。
+修复(store.rs重写+main.rs加锁)：
+1. 原子写——tmp+rename 替代直接 fs::write；
+2. 跨进程锁 .worklog.lock(含时间戳,陈旧锁120s自动接管)，CLI 变更命令全程持锁；
+3. 读时自愈——load_progress 按保真度合并重复 task_id 行。
+测试：+5 并发专项测试；cargo test --workspace 237 全绿 0 失败；clippy --all-targets 全仓零告警(顺清 live_agent 未用导入)。
+归属说明：代码经并行会话的清扫式提交入库(store.rs/main.rs=5b4ddf5, live_agent=8d04e58)，本记录补立任务档案。教训：并行会话共享仓库时，未提交窗口是最大风险面。
+
+---
+

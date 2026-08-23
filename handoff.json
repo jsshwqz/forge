@@ -1,15 +1,15 @@
 {
-  "updated_at": "2026-08-23",
-  "current_status": "全任务完成；默认模型=商汤官方sensenova-6.8/6.7；230 tests全绿",
+  "updated_at": "2026-08-23 16:18",
+  "current_status": "冻结目录树100%落地；COMP-003b 工具并发加固完成(原子写/锁/自愈去重)；237 tests 全绿；无阻塞",
   "blockers": [],
   "next_tasks": [
     {
-      "acceptance": "-",
-      "actions": "-",
+      "priority": "P0",
+      "task_id": "NEXT-*",
       "name": "等待新指令或新规格",
       "prerequisites": "-",
-      "task_id": "NEXT-*",
-      "priority": "P0"
+      "actions": "-",
+      "acceptance": "-"
     }
   ],
   "risks": [
@@ -23,5 +23,5 @@
     "progress.json": "任务状态事实源",
     "worklog.json": "工作日志事实源"
   },
-  "advice": "冻结目录树已100%落地，等待新指令/新规格(P8人工立项)；更新状态用forge-worklog命令+export；多会话并行施工时共享状态文件写入前先git status探测对方WIP"
+  "advice": "等待新指令/新规格(P8人工立项)；更新状态务必用 forge-worklog 命令+export(现已并发安全)；多会话并行时仍应尽量缩短未提交窗口"
 }

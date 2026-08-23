@@ -374,5 +374,21 @@
     "owner": "builder-a",
     "last_record": "R1-026",
     "commit": "5b4ddf5"
+  },
+  {
+    "task_id": "ORCH-001",
+    "name": "goal注入编排层落地",
+    "status": "Wip",
+    "owner": "builder-a",
+    "last_record": null,
+    "commit": null
+  },
+  {
+    "task_id": "COMP-003b",
+    "name": "forge-worklog 并发加固(原子写/文件锁/读时自愈)",
+    "status": "Completed",
+    "owner": "integrator",
+    "last_record": null,
+    "commit": "5b4ddf5"
   }
 ]
