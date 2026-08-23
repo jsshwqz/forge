@@ -250,10 +250,10 @@
   {
     "task_id": "PH2-004",
     "name": "真实模型接入",
-    "status": "Wip",
+    "status": "Completed",
     "owner": "builder-a",
-    "last_record": null,
-    "commit": null
+    "last_record": "R1-014",
+    "commit": "a357c7d"
   },
   {
     "task_id": "PH2-005",
@@ -314,17 +314,17 @@
   {
     "task_id": "Q-002",
     "name": "SenseNova 配额恢复后复验 live 测试",
-    "status": "NotStarted",
-    "owner": null,
-    "last_record": null,
-    "commit": null
+    "status": "Completed",
+    "owner": "builder-a",
+    "last_record": "R1-016",
+    "commit": "01926b8"
   },
   {
     "task_id": "Q-002",
     "name": "SenseNova配额恢复后复验",
-    "status": "Blocked",
-    "owner": null,
-    "last_record": null,
+    "status": "Completed",
+    "owner": "builder-a",
+    "last_record": "R1-016",
     "commit": null
   }
 ]

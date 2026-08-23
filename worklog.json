@@ -230,5 +230,13 @@
     "task_id": "PH2-004",
     "title": "PH2-004 LLM集成 · 代码完成(验收待配额Q-002)",
     "body": "代码交付完成（提交至 PH2-005 前 HEAD）：\n- capability/api(forge-api)：LlmClient(OpenAI兼容,models发现+chat含429三次指数退避)、\n  pick_model_with_prefs 偏好序选择、LlmAgent(B: LlmBackend 可mock)\n- 单测11 + live双开关测试2（KEY+FORGE_LLM_LIVE=1 才真跑）\n真实验证结果：\n✓ list_models 返回5模型（sensenova-6.7-flash-lite/deepseek-v4-flash/glm-5.2/u1-fast/6.8-flash-lite）\n✓ glm-5.2 推理成功返回\"OK. How can I help you today?\"（探针实测）\n✗ deepseek-v4-flash 429配额；u1-fast 列表存在但404 → 已在偏好序规避\n阻塞：workspace级配额耗尽致live_chat默认不可跑（Q-002/R3-002）；KEY充值或更换后\n  设 FORGE_LLM_LIVE=1 即可复验。\n状态：PH2-004=Wip(代码完,验收待配额)。"
+  },
+  {
+    "id": "R1-016",
+    "kind": "R1Completed",
+    "date": "2026-08-23",
+    "task_id": "PH2-004",
+    "title": "PH2-004 验收转正 · 配额恢复后全绿",
+    "body": "复验结果（FORGE_LLM_LIVE=1）：live 测试 2/2 通过。\n- list_models：5模型返回\n- 自动选型 glm-5.2\n- chat 回复 \"FORGE-LIVE-OK\"（精确匹配指令）——端到端真实推理确认\nPH2-004 随之整体 Completed。此前 429 为临时 workspace 配额限制。"
   }
 ]
