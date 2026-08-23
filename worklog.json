@@ -190,5 +190,13 @@
     "task_id": "INT-001",
     "title": "INT-001 server×PG 端到端 · 成功",
     "body": "DoD：workspace 198 tests 全绿（新增\"重启存活\"e2e：实例A经HTTP建任务→释放池→实例B全新池仍GET到）；clippy --all-targets 零告警。\n交付：\n- storage 新增 PgTaskStore（tasks 表入迁移；update_status 走 FOR UPDATE + Task::transition 校验，空验收禁令在PG路径同样生效）\n- server AppState 字段泛化为 Arc<dyn TaskStore/SessionStore>；main 按 FORGE_PG_URL 组装 PG 或内存\n- server/tests/pg_persistence.rs 双连接池模拟进程重启\n意义：B-01\"实际接入\"完成闭环——API 层数据真正落库并跨重启存活。"
+  },
+  {
+    "id": "R1-013",
+    "kind": "R1Completed",
+    "date": "2026-08-23",
+    "task_id": "CLEAN-001",
+    "title": "CLEAN-001 旧 PATH 清理 · 成功（含备份）",
+    "body": "执行：①修改前快照 User+Machine 两级 PATH 至 新forge\\backups\\path-backup-20260823-105804.txt（含恢复方法）；\n②两级 PATH 均移除 D:\\test\\aionui\\forge 条目；③验证：旧条目已消失，\n.cargo\\bin 与 Git\\bin（User）及 system32（Machine）关键项完好。\n说明：仅改环境变量，旧目录文件一个未动（比删除更安全的\"留备份\"）；\n当前已开着的终端不受影响，新开终端生效。\n风险提示：旧目录内 aion-forge.exe 等仍存在，若曾手工加过其它引用需自行排查。"
   }
 ]

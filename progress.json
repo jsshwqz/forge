@@ -290,16 +290,24 @@
   {
     "task_id": "CLEAN-001",
     "name": "旧 forge 目录 PATH 清理(留备份)",
-    "status": "NotStarted",
+    "status": "Completed",
     "owner": null,
     "last_record": null,
-    "commit": null
+    "commit": "n/a(非代码)"
   },
   {
-    "last_record": "R1-012",
-    "name": "server 接入 PG 持久化",
-    "commit": "ffd86a8",
     "task_id": "INT-001",
+    "name": "server 接入 PG 持久化",
+    "status": "Completed",
+    "owner": "builder-a",
+    "last_record": "R1-012",
+    "commit": "ffd86a8"
+  },
+  {
+    "last_record": "R1-013",
+    "name": "旧 forge 目录 PATH 清理",
+    "commit": "n/a",
+    "task_id": "CLEAN-001",
     "status": "Completed",
     "owner": "builder-a"
   }

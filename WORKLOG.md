@@ -236,3 +236,39 @@ DoD：196 tests 全绿（新增 pg_replay 兼容测试1条）；clippy --workspa
 
 ---
 
+## [R6-006] ⚖️ 决策 · 2026-08-23 · 授权确认与执行计划（含备份规则）
+
+- **任务 ID**：INT-001
+用户授权："按你建议的方向来做…直接干就行，删除类的最好留备份"。
+据此执行两项：
+INT-001 server State 切 PG（env驱动，默认内存不变）；需先补 PgTaskStore（此前三store缺task）。
+CLEAN-001 旧 D:\test\aionui\forge 从 PATH 移除；不删文件只改环境变量，
+且修改前将 User/Machine 两级 PATH 快照备份至 新forge\backups\。
+PH2-004/005 仍等规格，不在本轮范围。
+
+---
+
+## [R1-012] ✅ 成功 · 2026-08-23 · INT-001 server×PG 端到端 · 成功
+
+- **任务 ID**：INT-001
+DoD：workspace 198 tests 全绿（新增"重启存活"e2e：实例A经HTTP建任务→释放池→实例B全新池仍GET到）；clippy --all-targets 零告警。
+交付：
+- storage 新增 PgTaskStore（tasks 表入迁移；update_status 走 FOR UPDATE + Task::transition 校验，空验收禁令在PG路径同样生效）
+- server AppState 字段泛化为 Arc<dyn TaskStore/SessionStore>；main 按 FORGE_PG_URL 组装 PG 或内存
+- server/tests/pg_persistence.rs 双连接池模拟进程重启
+意义：B-01"实际接入"完成闭环——API 层数据真正落库并跨重启存活。
+
+---
+
+## [R1-013] ✅ 成功 · 2026-08-23 · CLEAN-001 旧 PATH 清理 · 成功（含备份）
+
+- **任务 ID**：CLEAN-001
+执行：①修改前快照 User+Machine 两级 PATH 至 新forge\backups\path-backup-20260823-105804.txt（含恢复方法）；
+②两级 PATH 均移除 D:\test\aionui\forge 条目；③验证：旧条目已消失，
+.cargo\bin 与 Git\bin（User）及 system32（Machine）关键项完好。
+说明：仅改环境变量，旧目录文件一个未动（比删除更安全的"留备份"）；
+当前已开着的终端不受影响，新开终端生效。
+风险提示：旧目录内 aion-forge.exe 等仍存在，若曾手工加过其它引用需自行排查。
+
+---
+

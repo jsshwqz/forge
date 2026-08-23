@@ -1,6 +1,6 @@
 {
   "updated_at": "2026-08-23",
-  "current_status": "文档既定任务全部完成(含PH2-001b/Q-001)；196 tests全绿；--all-targets零告警",
+  "current_status": "全部可自主任务完成(INT-001/CLEAN-001收尾)；198 tests全绿；PH2-004/005等人工规格",
   "blockers": [
     "第二阶段剩余任务：PH2-001持久化需PostgreSQL/MinIO服务；PH2-003 MCP协议可开工；PH2-004/005规格不足待人工补充"
   ],

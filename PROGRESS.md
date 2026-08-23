@@ -39,3 +39,7 @@
 | PH2-005 | Skill 签名/完整性校验 | ⬜ 未开始 | - | - | - |
 | PH2-001b | MinIO(S3) 对象存储接入 | ✅ 完成 | builder-a | R1-010 | b9cf677 |
 | Q-001 | 测试卫生+持久化回放兼容验证 | ✅ 完成 | - | R1-011 | 3b8b5c9 |
+| INT-001 | server 接入 PG 持久化(env 驱动) | ✅ 完成 | builder-a | - | ffd86a8 |
+| CLEAN-001 | 旧 forge 目录 PATH 清理(留备份) | ✅ 完成 | - | - | n/a(非代码) |
+| INT-001 | server 接入 PG 持久化 | ✅ 完成 | builder-a | R1-012 | ffd86a8 |
+| CLEAN-001 | 旧 forge 目录 PATH 清理 | ✅ 完成 | builder-a | R1-013 | n/a |
