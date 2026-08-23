@@ -1,266 +1,266 @@
 [
   {
-    "last_record": "R1-001",
-    "name": "Workspace 与基础库",
-    "commit": "5b71095",
     "task_id": "AF-CORE-001",
+    "name": "Workspace 与基础库",
     "status": "Completed",
-    "owner": "builder-a"
+    "owner": "builder-a",
+    "last_record": "R1-001",
+    "commit": "5b71095"
   },
   {
-    "last_record": "R1-001",
-    "name": "Session 模型",
-    "commit": "4ff32e9",
     "task_id": "AF-CORE-002",
+    "name": "Session 模型",
     "status": "Completed",
-    "owner": "builder-a"
+    "owner": "builder-a",
+    "last_record": "R1-001",
+    "commit": "4ff32e9"
   },
   {
-    "last_record": "R1-001",
-    "name": "事件总线",
-    "commit": "784ca40",
     "task_id": "AF-CORE-003",
+    "name": "事件总线",
     "status": "Completed",
-    "owner": "builder-a"
+    "owner": "builder-a",
+    "last_record": "R1-001",
+    "commit": "784ca40"
   },
   {
-    "last_record": "R1-001",
-    "name": "Artifact 模型",
-    "commit": "304a31d",
     "task_id": "AF-CORE-004",
+    "name": "Artifact 模型",
     "status": "Completed",
-    "owner": "builder-a"
+    "owner": "builder-a",
+    "last_record": "R1-001",
+    "commit": "304a31d"
   },
   {
-    "last_record": "R1-001",
-    "name": "Session 回放",
-    "commit": "83f7692",
     "task_id": "AF-CORE-005",
+    "name": "Session 回放",
     "status": "Completed",
-    "owner": "builder-a"
+    "owner": "builder-a",
+    "last_record": "R1-001",
+    "commit": "83f7692"
   },
   {
-    "last_record": "R1-001",
-    "name": "Agent 接口",
-    "commit": "1a6421b",
     "task_id": "AF-AGENT-001",
+    "name": "Agent 接口",
     "status": "Completed",
-    "owner": "builder-a"
+    "owner": "builder-a",
+    "last_record": "R1-001",
+    "commit": "1a6421b"
   },
   {
-    "last_record": "R1-001",
-    "name": "回合引擎",
-    "commit": "6a3fed9",
     "task_id": "AF-AGENT-002",
+    "name": "回合引擎",
     "status": "Completed",
-    "owner": "builder-a"
+    "owner": "builder-a",
+    "last_record": "R1-001",
+    "commit": "6a3fed9"
   },
   {
-    "last_record": "R1-001",
-    "name": "Task 模型",
-    "commit": "f832f0b",
     "task_id": "AF-TASK-001",
+    "name": "Task 模型",
     "status": "Completed",
-    "owner": "builder-a"
+    "owner": "builder-a",
+    "last_record": "R1-001",
+    "commit": "f832f0b"
   },
   {
-    "last_record": "R1-001",
-    "name": "Planner 接口与顺序规划器",
-    "commit": "990acee",
     "task_id": "AF-PLAN-001",
+    "name": "Planner 接口与顺序规划器",
     "status": "Completed",
-    "owner": "builder-a"
+    "owner": "builder-a",
+    "last_record": "R1-001",
+    "commit": "990acee"
   },
   {
-    "last_record": "R1-001",
-    "name": "DAG 规划器",
-    "commit": "c6d412c",
     "task_id": "AF-PLAN-002",
+    "name": "DAG 规划器",
     "status": "Completed",
-    "owner": "builder-a"
+    "owner": "builder-a",
+    "last_record": "R1-001",
+    "commit": "c6d412c"
   },
   {
-    "last_record": "R1-001",
-    "name": "工具路由与权限分级",
-    "commit": "5123e8f",
     "task_id": "AF-EXEC-001",
+    "name": "工具路由与权限分级",
     "status": "Completed",
-    "owner": "builder-a"
+    "owner": "builder-a",
+    "last_record": "R1-001",
+    "commit": "5123e8f"
   },
   {
-    "last_record": "R1-001",
-    "name": "执行运行时",
-    "commit": "6be6b53",
     "task_id": "AF-EXEC-002",
+    "name": "执行运行时",
     "status": "Completed",
-    "owner": "builder-a"
+    "owner": "builder-a",
+    "last_record": "R1-001",
+    "commit": "6be6b53"
   },
   {
-    "last_record": "R1-001",
-    "name": "权限策略引擎",
-    "commit": "27bd638",
     "task_id": "AF-EXEC-003",
+    "name": "权限策略引擎",
     "status": "Completed",
-    "owner": "builder-a"
+    "owner": "builder-a",
+    "last_record": "R1-001",
+    "commit": "27bd638"
   },
   {
-    "last_record": "R1-001",
-    "name": "Verifier 接口与内置验证器",
-    "commit": null,
     "task_id": "AF-VERIFY-001",
+    "name": "Verifier 接口与内置验证器",
     "status": "Completed",
-    "owner": "builder-a"
+    "owner": "builder-a",
+    "last_record": "R1-001",
+    "commit": null
   },
   {
-    "last_record": "R1-001",
-    "name": "证据链存储",
-    "commit": null,
     "task_id": "AF-VERIFY-002",
+    "name": "证据链存储",
     "status": "Completed",
-    "owner": "builder-a"
+    "owner": "builder-a",
+    "last_record": "R1-001",
+    "commit": null
   },
   {
-    "last_record": "R1-001",
-    "name": "质量门禁 Gate",
-    "commit": null,
     "task_id": "AF-VERIFY-003",
+    "name": "质量门禁 Gate",
     "status": "Completed",
-    "owner": "builder-a"
+    "owner": "builder-a",
+    "last_record": "R1-001",
+    "commit": null
   },
   {
-    "last_record": "R1-001",
-    "name": "失败分类器",
-    "commit": null,
     "task_id": "AF-RECOVERY-001",
+    "name": "失败分类器",
     "status": "Completed",
-    "owner": "builder-a"
+    "owner": "builder-a",
+    "last_record": "R1-001",
+    "commit": null
   },
   {
-    "last_record": "R1-001",
-    "name": "恢复引擎",
-    "commit": null,
     "task_id": "AF-RECOVERY-002",
+    "name": "恢复引擎",
     "status": "Completed",
-    "owner": "builder-a"
+    "owner": "builder-a",
+    "last_record": "R1-001",
+    "commit": null
   },
   {
-    "last_record": "R1-001",
-    "name": "能力注册表",
-    "commit": null,
     "task_id": "AF-CAP-001",
+    "name": "能力注册表",
     "status": "Completed",
-    "owner": "builder-a"
+    "owner": "builder-a",
+    "last_record": "R1-001",
+    "commit": null
   },
   {
-    "last_record": "R1-001",
-    "name": "Skill 加载器",
-    "commit": null,
     "task_id": "AF-CAP-002",
+    "name": "Skill 加载器",
     "status": "Completed",
-    "owner": "builder-a"
+    "owner": "builder-a",
+    "last_record": "R1-001",
+    "commit": null
   },
   {
-    "last_record": "R1-001",
-    "name": "MCP 适配器骨架",
-    "commit": null,
     "task_id": "AF-CAP-003",
+    "name": "MCP 适配器骨架",
     "status": "Completed",
-    "owner": "builder-a"
+    "owner": "builder-a",
+    "last_record": "R1-001",
+    "commit": null
   },
   {
-    "last_record": "R1-001",
-    "name": "ProductManifest",
-    "commit": null,
     "task_id": "AF-PRODUCT-001",
+    "name": "ProductManifest",
     "status": "Completed",
-    "owner": "builder-a"
+    "owner": "builder-a",
+    "last_record": "R1-001",
+    "commit": null
   },
   {
-    "last_record": "R1-001",
-    "name": "产品模板实例化",
-    "commit": null,
     "task_id": "AF-PRODUCT-002",
+    "name": "产品模板实例化",
     "status": "Completed",
-    "owner": "builder-a"
-  },
-  {
+    "owner": "builder-a",
     "last_record": "R1-001",
-    "name": "产品装配器",
-    "commit": null,
+    "commit": null
+  },
+  {
     "task_id": "AF-PRODUCT-003",
+    "name": "产品装配器",
     "status": "Completed",
-    "owner": "builder-a"
+    "owner": "builder-a",
+    "last_record": "R1-001",
+    "commit": null
   },
   {
-    "last_record": "R1-004",
-    "name": "CLI 接入 clap",
-    "commit": "6396107",
     "task_id": "COMP-001",
+    "name": "CLI 接入 clap",
     "status": "Completed",
-    "owner": "builder-a"
+    "owner": "builder-a",
+    "last_record": "R1-004",
+    "commit": "6396107"
   },
   {
-    "last_record": null,
-    "name": "集成 tracing 可观测",
-    "commit": null,
     "task_id": "COMP-002",
-    "status": "NotStarted",
-    "owner": null
+    "name": "集成 tracing 可观测",
+    "status": "Completed",
+    "owner": "builder-a",
+    "last_record": "R1-006",
+    "commit": "ea0109f"
   },
   {
-    "last_record": "R1-003",
-    "name": "Rust 版工作记录工具",
-    "commit": "b5b9c90",
     "task_id": "COMP-003",
+    "name": "Rust 版工作记录工具",
     "status": "Completed",
-    "owner": "builder-a"
+    "owner": "builder-a",
+    "last_record": "R1-003",
+    "commit": "b5b9c90"
   },
   {
-    "last_record": "R1-005",
-    "name": "Markdown 数据迁移到 JSON 事实源",
-    "commit": null,
     "task_id": "DATA-001",
+    "name": "Markdown 数据迁移到 JSON 事实源",
     "status": "Completed",
-    "owner": "builder-a"
+    "owner": "builder-a",
+    "last_record": "R1-005",
+    "commit": null
   },
   {
-    "last_record": null,
-    "name": "PostgreSQL/MinIO 持久化接入",
-    "commit": null,
     "task_id": "PH2-001",
+    "name": "PostgreSQL/MinIO 持久化接入",
     "status": "NotStarted",
-    "owner": null
+    "owner": null,
+    "last_record": null,
+    "commit": null
   },
   {
-    "last_record": null,
-    "name": "axum HTTP server",
-    "commit": null,
     "task_id": "PH2-002",
+    "name": "axum HTTP server",
     "status": "NotStarted",
-    "owner": null
+    "owner": null,
+    "last_record": null,
+    "commit": null
   },
   {
-    "last_record": null,
-    "name": "MCP 完整协议",
-    "commit": null,
     "task_id": "PH2-003",
+    "name": "MCP 完整协议",
     "status": "NotStarted",
-    "owner": null
+    "owner": null,
+    "last_record": null,
+    "commit": null
   },
   {
-    "last_record": null,
-    "name": "真实模型接入",
-    "commit": null,
     "task_id": "PH2-004",
+    "name": "真实模型接入",
     "status": "NotStarted",
-    "owner": null
+    "owner": null,
+    "last_record": null,
+    "commit": null
   },
   {
-    "last_record": null,
-    "name": "Skill 签名/完整性校验",
-    "commit": null,
     "task_id": "PH2-005",
+    "name": "Skill 签名/完整性校验",
     "status": "NotStarted",
-    "owner": null
+    "owner": null,
+    "last_record": null,
+    "commit": null
   }
 ]

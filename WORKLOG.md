@@ -120,3 +120,26 @@
 
 ---
 
+## [R6-003] ⚖️ 决策 · 2026-08-23 · 人工授权：批准 COMP-002 立项；偏差维持现状
+
+- **任务 ID**：COMP-002
+决策1（P8 首次应用）：用户指示"按你建议，继续下个任务"——视为正式批准 COMP-002(tracing) 立项执行。
+决策2：R7-001(route返回Arc)/R7-002(PermissionPolicy位置) 维持现状不整改（第一阶段全部门禁已验证通过）；后续若需整改另立任务。
+依据：施工包1.1冻结技术栈"日志=tracing可观测"；依赖白名单含 tracing。
+
+---
+
+## [R1-006] ✅ 成功 · 2026-08-23 · COMP-002 tracing 集成 · 成功
+
+- **任务 ID**：COMP-002
+DoD：build 通过、167 tests 全绿、clippy 零警告。
+实现：forge-exec/forge-recovery/forge-agent 增加 tracing=0.1 埋点。
+- ExecutionEngine.execute：started/finished(info)、路由失败与权限拒绝(warn，含工具名/所需级别)、超时(warn)
+- RecoveryEngine.handle：恢复决策(info，含类别/retriable/attempts/action)
+- TurnEngine.run：回合结束汇总(info，含 turns/outcome/终止原因)
+边界说明：tracing-subscriber 不在白名单，未安装订阅器——事件当前为 no-op，
+订阅器安装属应用层职责(第二阶段 server/cli 时需扩白名单再议)。
+授权依据：R6-003（人工批准立项）。
+
+---
+

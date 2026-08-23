@@ -29,7 +29,7 @@
 | AF-PRODUCT-002 | 产品模板实例化 | ✅ 完成 | builder-a | R1-001 | - |
 | AF-PRODUCT-003 | 产品装配器 | ✅ 完成 | builder-a | R1-001 | - |
 | COMP-001 | CLI 接入 clap | ✅ 完成 | builder-a | R1-004 | 6396107 |
-| COMP-002 | 集成 tracing 可观测 | ⬜ 未开始 | - | - | - |
+| COMP-002 | 集成 tracing 可观测 | ✅ 完成 | builder-a | R1-006 | ea0109f |
 | COMP-003 | Rust 版工作记录工具 | ✅ 完成 | builder-a | R1-003 | b5b9c90 |
 | DATA-001 | Markdown 数据迁移到 JSON 事实源 | ✅ 完成 | builder-a | R1-005 | - |
 | PH2-001 | PostgreSQL/MinIO 持久化接入 | ⬜ 未开始 | - | - | - |
