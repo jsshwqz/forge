@@ -225,11 +225,11 @@
   },
   {
     "task_id": "PH2-001",
-    "name": "PostgreSQL/MinIO 持久化接入",
-    "status": "Wip",
+    "name": "持久化：PostgreSQL(sqlx) 三store",
+    "status": "Completed",
     "owner": "builder-a",
-    "last_record": null,
-    "commit": null
+    "last_record": "R1-009",
+    "commit": "f649fce"
   },
   {
     "task_id": "PH2-002",
@@ -262,5 +262,13 @@
     "owner": null,
     "last_record": null,
     "commit": null
+  },
+  {
+    "last_record": null,
+    "name": "MinIO(S3) 对象存储接入",
+    "commit": null,
+    "task_id": "PH2-001b",
+    "status": "NotStarted",
+    "owner": null
   }
 ]

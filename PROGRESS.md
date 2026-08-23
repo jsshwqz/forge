@@ -32,8 +32,9 @@
 | COMP-002 | 集成 tracing 可观测 | ✅ 完成 | builder-a | R1-006 | ea0109f |
 | COMP-003 | Rust 版工作记录工具 | ✅ 完成 | builder-a | R1-003 | b5b9c90 |
 | DATA-001 | Markdown 数据迁移到 JSON 事实源 | ✅ 完成 | builder-a | R1-005 | - |
-| PH2-001 | PostgreSQL/MinIO 持久化接入 | ⬜ 未开始 | - | - | - |
+| PH2-001 | 持久化：PostgreSQL(sqlx) 三store | ✅ 完成 | builder-a | R1-009 | f649fce |
 | PH2-002 | axum HTTP server | ✅ 完成 | - | R1-007 | 42325de |
 | PH2-003 | MCP 完整协议 | ✅ 完成 | builder-a | R1-008 | 20b8f4d |
 | PH2-004 | 真实模型接入 | ⬜ 未开始 | - | - | - |
 | PH2-005 | Skill 签名/完整性校验 | ⬜ 未开始 | - | - | - |
+| PH2-001b | MinIO(S3) 对象存储接入 | ⬜ 未开始 | - | - | - |

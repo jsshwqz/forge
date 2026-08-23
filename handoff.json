@@ -1,6 +1,6 @@
 {
   "updated_at": "2026-08-23",
-  "current_status": "第一阶段MVP+COMP-001/002/003+DATA-001+PH2-002(axum)+PH2-003(MCP stdio)完成；180 tests全绿",
+  "current_status": "第一阶段MVP+COMP×3+DATA-001+PH2-002(axum)+PH2-003(MCP)+PH2-001(PG持久化)完成；183 tests全绿",
   "blockers": [
     "第二阶段剩余任务：PH2-001持久化需PostgreSQL/MinIO服务；PH2-003 MCP协议可开工；PH2-004/005规格不足待人工补充"
   ],

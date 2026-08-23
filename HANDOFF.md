@@ -1,7 +1,7 @@
 # HANDOFF · 交接快照（由 forge-worklog 自动生成）
 
 - **更新时间**：2026-08-23
-- **当前状态**：第一阶段MVP+COMP-001/002/003+DATA-001+PH2-002(axum)+PH2-003(MCP stdio)完成；180 tests全绿
+- **当前状态**：第一阶段MVP+COMP×3+DATA-001+PH2-002(axum)+PH2-003(MCP)+PH2-001(PG持久化)完成；183 tests全绿
 
 ## 🚧 阻塞项
 

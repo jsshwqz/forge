@@ -185,3 +185,18 @@ DoD：172→180 tests 全绿（forge-mcp 新增13单元+3集成）、clippy 零�
 
 ---
 
+## [R1-009] ✅ 成功 · 2026-08-23 · PH2-001 PostgreSQL 持久化 · 成功
+
+- **任务 ID**：PH2-001
+DoD：workspace 183 tests 全绿（含 3 个真实 PostgreSQL 集成测试）、clippy 零警告。
+交付：新 crate storage(forge-storage)——sqlx 运行时 API 实现三 trait：
+- PgSessionStore：事务+FOR UPDATE 行锁保证并发 seq 连续；迁移逻辑复用 Session::transition 校验（target_state_for 镜像并注明同步义务）
+- PgArtifactStore：BYTEA 内容 + SHA-256 checksum
+- PgEvidenceStore：不可变、at零值补齐语义与内存版一致
+基础设施：Podman machine(WSL) 启动 + postgres:16-alpine 容器 forge-pg@15432（镜像经 daocloud 镜像源绕过失效代理拉取）。
+踩坑记录：①WSL端口转发仅绑::1，连接串必须用 localhost；②并发建表 pg_type 竞态→OnceCell改Mutex+pg_advisory_xact_lock 双重串行化；③by_criterion 曾漏读回id列（自测发现即修）。
+拆分说明：MinIO 对象存储拆为独立小任务 PH2-001b（S3 SDK/SigV4 选型需单独评估），本任务聚焦文档冻结的 PostgreSQL+sqlx 主体。
+架构决策：新建 storage crate 承载重依赖，Core 保持零存储依赖。
+
+---
+

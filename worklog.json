@@ -142,5 +142,13 @@
     "task_id": "PH2-003",
     "title": "PH2-003 MCP stdio 协议 · 成功",
     "body": "DoD：172→180 tests 全绿（forge-mcp 新增13单元+3集成）、clippy 零警告。\n交付：\n- jsonrpc.rs：请求/通知构造 + 响应/通知判别（7个单元测试）\n- client.rs：McpClient——spawn子进程、initialize握手、notifications/initialized、tools/list、tools/call、按id匹配响应、10s超时、优雅关闭(关stdin→等3s→kill)\n- mock_mcp_server.rs：离线测试夹具二进制(CARGO_BIN_EXE引用)，支持echo工具与未知工具-32601\n- 集成测试3例：全链路握手/list/call/shutdown；未知方法错误映射；空command快速失败\n协议版本：2024-11-05。规格来源：B-03边界定义。授权依据：R6-004。\n遗留：服务端发起的请求(ping/sampling)当前忽略；资源/提示词能力未涉及(文档未列)。"
+  },
+  {
+    "id": "R1-009",
+    "kind": "R1Completed",
+    "date": "2026-08-23",
+    "task_id": "PH2-001",
+    "title": "PH2-001 PostgreSQL 持久化 · 成功",
+    "body": "DoD：workspace 183 tests 全绿（含 3 个真实 PostgreSQL 集成测试）、clippy 零警告。\n交付：新 crate storage(forge-storage)——sqlx 运行时 API 实现三 trait：\n- PgSessionStore：事务+FOR UPDATE 行锁保证并发 seq 连续；迁移逻辑复用 Session::transition 校验（target_state_for 镜像并注明同步义务）\n- PgArtifactStore：BYTEA 内容 + SHA-256 checksum\n- PgEvidenceStore：不可变、at零值补齐语义与内存版一致\n基础设施：Podman machine(WSL) 启动 + postgres:16-alpine 容器 forge-pg@15432（镜像经 daocloud 镜像源绕过失效代理拉取）。\n踩坑记录：①WSL端口转发仅绑::1，连接串必须用 localhost；②并发建表 pg_type 竞态→OnceCell改Mutex+pg_advisory_xact_lock 双重串行化；③by_criterion 曾漏读回id列（自测发现即修）。\n拆分说明：MinIO 对象存储拆为独立小任务 PH2-001b（S3 SDK/SigV4 选型需单独评估），本任务聚焦文档冻结的 PostgreSQL+sqlx 主体。\n架构决策：新建 storage crate 承载重依赖，Core 保持零存储依赖。"
   }
 ]
