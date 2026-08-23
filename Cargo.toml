@@ -19,6 +19,7 @@ members = [
     "capability/mcp",
     "products/manifest",
     "tools/worklog",
+    "server",
     "tests",
     "cli",
 ]

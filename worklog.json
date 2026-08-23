@@ -118,5 +118,13 @@
     "task_id": "COMP-002",
     "title": "COMP-002 tracing 集成 · 成功",
     "body": "DoD：build 通过、167 tests 全绿、clippy 零警告。\n实现：forge-exec/forge-recovery/forge-agent 增加 tracing=0.1 埋点。\n- ExecutionEngine.execute：started/finished(info)、路由失败与权限拒绝(warn，含工具名/所需级别)、超时(warn)\n- RecoveryEngine.handle：恢复决策(info，含类别/retriable/attempts/action)\n- TurnEngine.run：回合结束汇总(info，含 turns/outcome/终止原因)\n边界说明：tracing-subscriber 不在白名单，未安装订阅器——事件当前为 no-op，\n订阅器安装属应用层职责(第二阶段 server/cli 时需扩白名单再议)。\n授权依据：R6-003（人工批准立项）。"
+  },
+  {
+    "id": "R6-004",
+    "kind": "R6Decision",
+    "date": "2026-08-23",
+    "task_id": "PH2-002",
+    "title": "人工授权第二阶段开工；任务分解与规格来源入档",
+    "body": "授权：用户指示\"按文档中既定的继续\"——以施工包既有冻结决策作为第二阶段规格来源。\n第二阶段任务分解（严格取自文档）：\n- PH2-001 持久化：PostgreSQL+sqlx 接入 SessionStore/ArtifactStore/EvidenceStore；对象存储走 MinIO(S3)【需外部服务，排后】\n- PH2-002 axum HTTP server（本次执行）：技术栈冻结表明确 axum+server crate，可离线验收\n- PH2-003 MCP 完整协议：stdio握手/list-tools/调用转发（边界见B-03）\n- PH2-004 真实模型接入：文档未指定任何模型供应商=规格不足，维持阻塞待人工补充\n- PH2-005 Skill 签名校验：文档未指定签名算法=规格不足，维持阻塞待人工补充\n依赖说明：新增 axum(冻结表已列)；测试侧 tower/http-body-util 为 axum 生态标准件，一并声明。"
   }
 ]
