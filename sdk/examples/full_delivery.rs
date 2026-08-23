@@ -13,7 +13,7 @@
 
 use forge_core::ForgeResult;
 use forge_exec::{
-    ExecutionEngine, ExecutionRequest, PermissionLevel, PermissionPolicy, PolicyContext,
+    PermissionLevel, PermissionPolicy, PolicyContext,
     Tool, ToolDescriptor, ToolRouter,
 };
 use forge_evidence::InMemoryEvidenceStore;
@@ -78,9 +78,9 @@ impl Tool for WriteFileTool {
         let full = std::path::Path::new(path);
         if let Some(parent) = full.parent() {
             std::fs::create_dir_all(parent)
-                .map_err(|e| forge_core::ForgeError::Io(e))?;
+                .map_err(forge_core::ForgeError::Io)?;
         }
-        std::fs::write(full, content).map_err(|e| forge_core::ForgeError::Io(e))?;
+        std::fs::write(full, content).map_err(forge_core::ForgeError::Io)?;
 
         Ok(serde_json::json!({
             "written": path,
@@ -106,11 +106,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("[1] 工具注册完成: write_file (WorkspaceWrite)");
 
     // ---- 3. 创建任务（Command 验收——验证阶段独立于执行阶段运行）----
-    let verify_cmd = if cfg!(target_os = "windows") {
-        "echo Hello AionForge"
-    } else {
-        "echo Hello AionForge"
-    };
+    let verify_cmd = "echo Hello AionForge"; // 跨平台一致（原 cfg! 分支两臂相同）
     let task = sdk
         .create_task(
             "输出 Hello AionForge".to_string(),
