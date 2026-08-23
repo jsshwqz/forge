@@ -266,9 +266,9 @@
   {
     "task_id": "PH2-001b",
     "name": "MinIO(S3) 对象存储接入",
-    "status": "Wip",
+    "status": "Completed",
     "owner": "builder-a",
-    "last_record": null,
-    "commit": null
+    "last_record": "R1-010",
+    "commit": "b9cf677"
   }
 ]

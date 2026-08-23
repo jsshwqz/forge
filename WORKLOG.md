@@ -200,3 +200,27 @@ DoD：workspace 183 tests 全绿（含 3 个真实 PostgreSQL 集成测试）、
 
 ---
 
+## [R6-005] ⚖️ 决策 · 2026-08-23 · 依赖选型决策：手写SigV4+轻量reqwest
+
+- **任务 ID**：PH2-001b
+依赖选型（用户授权"按建议继续不停"后由 builder-a 定夺）：
+- 拒绝 aws-sdk-s3：+200 依赖树、编译时长不可接受
+- 采用：手写 SigV4(hmac=0.12 + 既有sha2) + reqwest 0.12(default-features=false 纯HTTP，本机容器无TLS需求)
+- 影响面：仅 forge-storage；签名实现配确定性单测 + MinIO 真实容器集成验收双保险
+范围：ArtifactStore 的 Minio 实现（PUT/GET/HEAD + ensure_bucket）；Session/Evidence 维持 PostgreSQL。
+
+---
+
+## [R1-010] ✅ 成功 · 2026-08-23 · PH2-001b MinIO 对象存储 · 成功
+
+- **任务 ID**：PH2-001b
+DoD：workspace 185 tests 全绿（新增 MinIO 集成2条+SigV4单测3条）、clippy 零警告。
+交付：storage/src/s3.rs——MinioArtifactStore(S3Config+SigV4 path-style PUT/GET/HEAD/建桶409容错)；
+元数据经 x-amz-meta-*；>1MB 大负载验证通过。
+选型执行：R6-005 决策落地（hmac+sha2 手写签名，reqwest 关默认特性纯HTTP，未引入 aws-sdk）。
+验收环境：forge-minio 容器 @19000（daocloud 镜像），bucket 按测试时间戳隔离。
+诚实记录：曾出现"跳过即假绿"（未设env时集成测试早退仍报ok）——已用真实环境变量重跑确认为真绿；
+另发现 --all-targets 下历史测试告警若干（非本次DoD范围，建议后续专项清理）。
+
+---
+
