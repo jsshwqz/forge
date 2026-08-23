@@ -438,5 +438,13 @@
     "task_id": "SRV-FIX-001",
     "title": "V3.0 立项批准：AF-ROADMAP-002 五任务包开工",
     "body": "用户审阅 AF-ROADMAP-002 后指示继续工作=批准 V3.0 可信服务化立项。执行顺序：SRV-FIX-001(测试覆盖整改)必须最先合入；API-001~004 随后可并行。新增依赖申报表已审阅(tokio-stream/futures/tower-http/tower)。"
+  },
+  {
+    "id": "R1-033",
+    "kind": "R1Completed",
+    "date": "2026-08-24",
+    "task_id": "SRV-FIX-001",
+    "title": "SRV-FIX-001+SRV-003 API扩展",
+    "body": "build=0 errors, test=0 failed, clippy=0 warnings. SRV-FIX-001 6场景矩阵全绿; server新增 POST /orchestrate + GET /tasks列表 + POST/GET /api/evidence端点"
   }
 ]
