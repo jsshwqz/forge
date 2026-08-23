@@ -6,6 +6,7 @@
 //! 秘密纪律：API KEY 仅经环境变量注入，不入库不入日志。
 
 pub mod llm_agent;
+pub use llm_agent::LlmAgent;
 
 use async_trait::async_trait;
 use forge_core::{ForgeError, ForgeResult};

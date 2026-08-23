@@ -350,5 +350,13 @@
     "owner": "builder-a",
     "last_record": "R1-020",
     "commit": "c7c2924"
+  },
+  {
+    "task_id": "LIVE-E2E",
+    "name": "真实模型×Agent trait×回合链路验证",
+    "status": "Wip",
+    "owner": "builder-a",
+    "last_record": null,
+    "commit": null
   }
 ]
