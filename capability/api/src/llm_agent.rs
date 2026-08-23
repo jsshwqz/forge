@@ -51,6 +51,23 @@ impl<B: LlmBackend> LlmAgent<B> {
     pub fn model(&self) -> &str {
         &self.model
     }
+
+    /// 注入任务目标（R7-004 落地）：把 goal 写入系统提示词，
+    /// 使模型从首回合起即围绕目标工作；不触碰冻结的 TurnInput。
+    pub fn with_task_goal(mut self, goal: impl AsRef<str>) -> Self {
+        self.system_prompt = format!(
+            "{}\n\nTask goal: {}",
+            default_system_prompt(self.config.role),
+            goal.as_ref()
+        );
+        self
+    }
+
+    /// 自定义完整系统提示词（覆盖默认模板）。
+    pub fn with_system_prompt(mut self, prompt: impl Into<String>) -> Self {
+        self.system_prompt = prompt.into();
+        self
+    }
 }
 
 fn default_system_prompt(role: AgentRole) -> String {
@@ -152,6 +169,30 @@ mod tests {
 
     fn turn_input(observation: Option<serde_json::Value>, history: Vec<serde_json::Value>) -> TurnInput {
         TurnInput { session_id: SessionId::new_session_id(), turn: 1, history, observation }
+    }
+
+    #[tokio::test]
+    async fn with_task_goal_injects_goal_into_system_prompt() {
+        let backend = MockBackend::new("working on it");
+        let agent = LlmAgent::new(AgentConfig::default(), backend, "m")
+            .with_task_goal("生成 output.txt 并写入 FORGE");
+        assert!(agent.system_prompt.contains("Task goal: 生成 output.txt"));
+        assert!(agent.system_prompt.contains(&format!("{:?}", AgentRole::Builder)));
+
+        // 触发一次 act，确认 system 提示词确实携带 goal 发给后端
+        let input = turn_input(None, vec![]);
+        let _ = agent.act(&input).await.unwrap();
+        let sent = agent.backend.last_messages.lock().unwrap();
+        assert_eq!(sent[0].role, "system");
+        assert!(sent[0].content.contains("生成 output.txt"));
+    }
+
+    #[tokio::test]
+    async fn with_system_prompt_full_override() {
+        let backend = MockBackend::new("ok");
+        let agent = LlmAgent::new(AgentConfig::default(), backend, "m")
+            .with_system_prompt("CUSTOM");
+        assert_eq!(agent.system_prompt, "CUSTOM");
     }
 
     #[tokio::test]

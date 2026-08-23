@@ -9,7 +9,6 @@
 use forge_api::{LlmAgent, LlmBackend, LlmClient};
 use forge_agent::{Agent, AgentAction};
 use forge_core::SessionId;
-use std::collections::HashMap;
 
 fn client_or_skip() -> Option<LlmClient> {
     if std::env::var("FORGE_LLM_LIVE").as_deref() != Ok("1") {
@@ -78,6 +77,50 @@ async fn real_model_drives_agent_trait() {
     }
 }
 
+#[tokio::test]
+async fn real_model_works_toward_injected_goal() {
+    let Some(client) = client_or_skip() else { return };
+    let models = client.list_models().await.unwrap();
+    let picked = pick_from(&models);
+
+    let config = forge_agent::AgentConfig {
+        id: forge_core::new_agent_id(),
+        name: "goal-builder".into(),
+        role: forge_agent::AgentRole::Builder,
+        max_turns: 3,
+    };
+    // 关键差异：注入任务目标（R7-004 落地）
+    let agent = LlmAgent::connect(config, client, Some(picked))
+        .await
+        .unwrap()
+        .with_task_goal("创建文件 hello.txt，内容为 Hello AionForge");
+
+    let input = forge_agent::TurnInput {
+        session_id: SessionId::new_session_id(),
+        turn: 1,
+        history: vec![],
+        observation: Some(serde_json::json!({
+            "available_tool": "echo",
+            "hint": "describe the command you would run"
+        })),
+    };
+    let action = agent.act(&input).await.unwrap();
+    match action {
+        AgentAction::Reply(t) => {
+            println!("带目标回复: {}", t.chars().take(300).collect::<String>());
+            assert!(!t.trim().is_empty());
+            // 软断言：回复应与目标相关（提到文件/命令/创建等关键词之一，
+            // 中英文任一即可），而非再次索要目标
+            let lower = t.to_lowercase();
+            let relevant = ["hello.txt", "创建", "写", "echo", "file", "command", "touch"]
+                .iter()
+                .any(|k| lower.contains(k) || t.contains(k));
+            assert!(relevant, "reply should reference the goal, got: {t}");
+        }
+        other => panic!("expected Reply, got {other:?}"),
+    }
+}
+
 fn pick_from(ids: &[String]) -> String {
     // 与 OFFICIAL_MODEL_PREFS 相同启发式的本地复刻（避免导出测试专用依赖方向）
     for p in ["sensenova-6.8", "sensenova-6.7", "glm", "chat"] {
@@ -88,8 +131,3 @@ fn pick_from(ids: &[String]) -> String {
     ids.first().cloned().expect("provider returned no models")
 }
 
-// HashMap 引用占位：保持与 mock 测试一致的导入风格（未来扩展用）
-#[allow(unused)]
-fn _h() -> std::collections::HashMap<String, String> {
-    HashMap::new()
-}

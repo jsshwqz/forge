@@ -2,7 +2,7 @@
 
 > AI 交付流水线核心 —— 以"验证即完成条件"为纪律的 Rust 实现版。
 
-[![tests](https://img.shields.io/badge/tests-217%20passing-brightgreen)]() [![clippy](https://img.shields.io/badge/clippy-all--targets%20clean-blue)]()
+[![tests](https://img.shields.io/badge/tests-240%20passing-brightgreen)]() [![clippy](https://img.shields.io/badge/clippy-all--targets%20clean-blue)]()
 
 ## 这是什么
 
