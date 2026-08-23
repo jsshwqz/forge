@@ -367,3 +367,59 @@ DoD：218 tests 全绿（新增 full_lifecycle 1条：HTTP建任务→状态机�
 
 ---
 
+## [R6-008] ⚖️ 决策 · 2026-08-23 · 授权执行冻结目录树剩余槽位（四任务分解）
+
+- **任务 ID**：SCHED-001
+用户指示"规划中来执行"。规划=施工包§1.5冻结目录结构。
+盘点未落地槽位并立项：
+- SCHED-001 planning/scheduler：波次调度器（ready_steps 目前无消费者，属断链）
+- WKSP-001 execution/workspace：托管工作目录（Verifier.workdir 目前无来源，含防路径逃逸）
+- SDK-001 sdk/：对外门面（builder 一键组装内存或PG栈）
+- OBS-001 二进制安装 tracing-subscriber(env-filter)：COMP-002 只埋点未见日志的收尾；
+  新依赖 tracing-subscriber 0.3 仅进 server/cli 二进制，依据用户此前对依赖方向的持续授权
+PH2-004/005 已完成；本轮后冻结目录树 100% 落地。
+
+---
+
+## [R1-019] ✅ 成功 · 2026-08-23 · SCHED-001 波次调度器 · 成功
+
+- **任务 ID**：SCHED-001
+DoD：4 tests 全绿（线性顺序/菱形波次边界/失败断流下游不执行/空计划零波次）；clippy --all-targets 干净。
+交付：StepExecutor trait + run_plan(dag,plan,exec)->RunSummary{completed,failed,waves}。
+意义：打通 planner→dag→execution 断链——ready_steps 首次有了消费者，
+     编排层(或SDK)可一行调用按依赖波次驱动执行。
+确定性设计：波内按 StepId 字典序（复用 ready_steps 排序保证）。
+
+---
+
+## [R1-020] ✅ 成功 · 2026-08-23 · WKSP-001 托管工作目录 · 成功
+
+- **任务 ID**：WKSP-001
+DoD：5 tests 全绿；clippy --all-targets 干净。
+交付：WorkspaceManager——create_for(任务隔离目录)/cleanup/list；
+安全：构造时缓存规范化根，cleanup 前双重 canonicalize 校验，
+     逃逸路径 PermissionDenied、拒绝删除根本身；task_id 字符白名单过滤。
+价值：VerificationRequest.workdir 首次有受管来源；与 Verifier/Executor 对接即可用。
+
+---
+
+## [R1-021] ✅ 成功 · 2026-08-23 · SDK-001 门面 crate · 成功
+
+- **任务 ID**：SDK-001
+DoD：in_memory 流程测试通过；workspace 229 tests 全绿。
+交付：ForgeSdk 句柄——in_memory()/postgres(url)/postgres_from_env() 三构造；
+     create_task/get_task/list_tasks/create_session 高频入口 + tasks()/sessions() 底层访问器。
+价值：外部使用者一行组装核心栈，无需了解 crate 拼装；PG 切换零改动（backend 字段自述）。
+
+---
+
+## [R1-022] ✅ 成功 · 2026-08-23 · OBS-001 日志订阅器 · 成功
+
+- **任务 ID**：OBS-001
+交付：server/cli 二进制接入 tracing-subscriber(env-filter)；
+run_from_env 启动时 try_init（幂等），RUST_LOG 过滤默认 info。
+真实验证：RUST_LOG=debug 下 forge serve 输出 sqlx DEBUG 查询与迁移 INFO 日志（截图存档于会话记录）。
+意义：COMP-002 埋点自此端到端可见；生产排障就绪。新增依赖 tracing-subscriber 0.3（env-filter）。
+
+---
+

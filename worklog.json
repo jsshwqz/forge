@@ -278,5 +278,21 @@
     "task_id": "WKSP-001",
     "title": "WKSP-001 托管工作目录 · 成功",
     "body": "DoD：5 tests 全绿；clippy --all-targets 干净。\n交付：WorkspaceManager——create_for(任务隔离目录)/cleanup/list；\n安全：构造时缓存规范化根，cleanup 前双重 canonicalize 校验，\n     逃逸路径 PermissionDenied、拒绝删除根本身；task_id 字符白名单过滤。\n价值：VerificationRequest.workdir 首次有受管来源；与 Verifier/Executor 对接即可用。"
+  },
+  {
+    "id": "R1-021",
+    "kind": "R1Completed",
+    "date": "2026-08-23",
+    "task_id": "SDK-001",
+    "title": "SDK-001 门面 crate · 成功",
+    "body": "DoD：in_memory 流程测试通过；workspace 229 tests 全绿。\n交付：ForgeSdk 句柄——in_memory()/postgres(url)/postgres_from_env() 三构造；\n     create_task/get_task/list_tasks/create_session 高频入口 + tasks()/sessions() 底层访问器。\n价值：外部使用者一行组装核心栈，无需了解 crate 拼装；PG 切换零改动（backend 字段自述）。"
+  },
+  {
+    "id": "R1-022",
+    "kind": "R1Completed",
+    "date": "2026-08-23",
+    "task_id": "OBS-001",
+    "title": "OBS-001 日志订阅器 · 成功",
+    "body": "交付：server/cli 二进制接入 tracing-subscriber(env-filter)；\nrun_from_env 启动时 try_init（幂等），RUST_LOG 过滤默认 info。\n真实验证：RUST_LOG=debug 下 forge serve 输出 sqlx DEBUG 查询与迁移 INFO 日志（截图存档于会话记录）。\n意义：COMP-002 埋点自此端到端可见；生产排障就绪。新增依赖 tracing-subscriber 0.3（env-filter）。"
   }
 ]

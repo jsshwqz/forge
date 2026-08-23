@@ -48,3 +48,9 @@
 | DOC-001 | README+架构文档 | ✅ 完成 | - | R1-017 | 9f17d96 |
 | SRV-002 | forge serve + 全链路e2e | ✅ 完成 | - | - | 12259f9 |
 | SRV-002 | forge serve + 全链路e2e | ✅ 完成 | builder-a | R1-018 | 12259f9 |
+| SCHED-001 | 波次调度器 | ✅ 完成 | builder-a | - | 3de8b74 |
+| WKSP-001 | 托管工作目录管理器 | ✅ 完成 | - | - | c7c2924 |
+| SDK-001 | SDK 门面 crate | ✅ 完成 | builder-a | R1-021 | 409636c |
+| OBS-001 | 二进制 tracing-subscriber 安装 | ✅ 完成 | builder-a | R1-022 | 409636c |
+| SCHED-001 | 波次调度器 | ✅ 完成 | builder-a | R1-019 | 3de8b74 |
+| WKSP-001 | 托管工作目录管理器 | ✅ 完成 | builder-a | R1-020 | c7c2924 |
