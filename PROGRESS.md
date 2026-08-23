@@ -54,3 +54,4 @@
 | COMP-003b | forge-worklog 并发加固(原子写/文件锁/读时自愈) | ✅ 完成 | integrator | - | 5b4ddf5 |
 | ORCH-001 | goal注入编排落地(R7-004解决) | ✅ 完成 | builder-a | R1-027 | 70d7737 |
 | ORCH-002 | 端到端编排器(CPEVR闭环) | ✅ 完成 | builder-a | R1-029 | - |
+| SRV-003 | server orchestrate endpoint | ✅ 完成 | builder-a | - | f394fdf |

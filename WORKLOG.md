@@ -583,3 +583,17 @@ c) WorkspaceManager verbatim路径不一致 → normalize统一剥离 \\?\ 前�
 
 ---
 
+## [R1-031] ✅ 成功 · 2026-08-23 · SRV-003 orchestrate endpoint
+
+- **任务 ID**：SRV-003
+POST /orchestrate: goal+acceptance -> full CPEVR pipeline over HTTP
+
+---
+
+## [R7-005] ⚠️ 偏差/风险 · 2026-08-23 · R7-005 SRV-003重构删除5个内联测试致场景失覆盖
+
+- **任务 ID**：SRV-003
+f394fdf 重构 server/src/lib.rs 删除 test_health/test_create_and_get_task/test_get_task_not_found/test_get_session_not_found/test_get_session_found 共5个内联测试且同文件无补回。full_lifecycle e2e 仅覆盖 POST /tasks 与 GET /tasks/{id} 快乐路径；/health、任务404、session GET与404 场景现无任何测试覆盖。属验收弱化风险(P7)，建议 builder-a 在 server 章节内补回等价测试或由人工显式豁免。集成者仅记录不越界修码。
+
+---
+
