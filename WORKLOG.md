@@ -224,3 +224,15 @@ DoD：workspace 185 tests 全绿（新增 MinIO 集成2条+SigV4单测3条）、
 
 ---
 
+## [R1-011] ✅ 成功 · 2026-08-23 · Q-001 测试卫生+兼容验证 · 成功
+
+- **任务 ID**：Q-001
+DoD：196 tests 全绿（新增 pg_replay 兼容测试1条）；clippy --workspace --all-targets 零告警。
+内容：
+1) 清零5处历史测试侧告警（recovery/exec×2/planner 未用导入；storage contains→contains()惯用法）
+2) 新增 storage/tests/pg_replay.rs：证明 PgSessionStore 写入的事件满足
+   replay 确定性重建（库内状态==replay结果；正常/失败恢复双路径；幂等复算）
+意义：M1 的 replay 承诺在第二阶段持久化下依然成立，形成闭环证据链。
+
+---
+

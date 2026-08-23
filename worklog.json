@@ -166,5 +166,13 @@
     "task_id": "PH2-001b",
     "title": "PH2-001b MinIO 对象存储 · 成功",
     "body": "DoD：workspace 185 tests 全绿（新增 MinIO 集成2条+SigV4单测3条）、clippy 零警告。\n交付：storage/src/s3.rs——MinioArtifactStore(S3Config+SigV4 path-style PUT/GET/HEAD/建桶409容错)；\n元数据经 x-amz-meta-*；>1MB 大负载验证通过。\n选型执行：R6-005 决策落地（hmac+sha2 手写签名，reqwest 关默认特性纯HTTP，未引入 aws-sdk）。\n验收环境：forge-minio 容器 @19000（daocloud 镜像），bucket 按测试时间戳隔离。\n诚实记录：曾出现\"跳过即假绿\"（未设env时集成测试早退仍报ok）——已用真实环境变量重跑确认为真绿；\n另发现 --all-targets 下历史测试告警若干（非本次DoD范围，建议后续专项清理）。"
+  },
+  {
+    "id": "R1-011",
+    "kind": "R1Completed",
+    "date": "2026-08-23",
+    "task_id": "Q-001",
+    "title": "Q-001 测试卫生+兼容验证 · 成功",
+    "body": "DoD：196 tests 全绿（新增 pg_replay 兼容测试1条）；clippy --workspace --all-targets 零告警。\n内容：\n1) 清零5处历史测试侧告警（recovery/exec×2/planner 未用导入；storage contains→contains()惯用法）\n2) 新增 storage/tests/pg_replay.rs：证明 PgSessionStore 写入的事件满足\n   replay 确定性重建（库内状态==replay结果；正常/失败恢复双路径；幂等复算）\n意义：M1 的 replay 承诺在第二阶段持久化下依然成立，形成闭环证据链。"
   }
 ]

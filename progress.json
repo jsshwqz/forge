@@ -270,5 +270,13 @@
     "owner": "builder-a",
     "last_record": "R1-010",
     "commit": "b9cf677"
+  },
+  {
+    "task_id": "Q-001",
+    "name": "测试卫生+持久化回放兼容验证",
+    "status": "Completed",
+    "owner": null,
+    "last_record": "R1-011",
+    "commit": "3b8b5c9"
   }
 ]
