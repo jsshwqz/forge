@@ -326,5 +326,13 @@
     "owner": "builder-a",
     "last_record": "R1-016",
     "commit": null
+  },
+  {
+    "task_id": "DOC-001",
+    "name": "README+架构文档",
+    "status": "Completed",
+    "owner": null,
+    "last_record": "R1-017",
+    "commit": "9f17d96"
   }
 ]
