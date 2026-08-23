@@ -396,14 +396,15 @@
     "name": "端到端编排器(CPEVR闭环)",
     "status": "Completed",
     "owner": "builder-a",
-    "last_record": null,
-    "commit": "8c88f98"
+    "last_record": "R1-029",
+    "commit": null
   },
   {
-    "status": "Completed",
+    "task_id": "SRV-003",
+    "name": "server orchestrate endpoint",
+    "status": "Wip",
     "owner": "builder-a",
-    "task_id": "ORCH-002",
-    "name": "端到端编排器(CPEVR闭环)",
-    "last_record": "R1-029"
+    "last_record": null,
+    "commit": null
   }
 ]

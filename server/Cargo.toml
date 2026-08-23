@@ -13,6 +13,11 @@ forge-core = { path = "../core/runtime" }
 forge-task = { path = "../core/task" }
 forge-session = { path = "../core/session" }
 forge-storage = { path = "../storage" }
+forge-sdk = { path = "../sdk" }
+forge-exec = { path = "../execution/runtime" }
+forge-verify = { path = "../verification/verifier" }
+forge-evidence = { path = "../verification/evidence" }
+forge-workspace = { path = "../execution/workspace" }
 axum = "0.7"
 tokio = { version = "1", features = ["macros", "rt-multi-thread", "net", "signal"] }
 serde = { version = "1", features = ["derive"] }
@@ -24,3 +29,4 @@ tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 tower = { version = "0.4", features = ["util"] }
 http-body-util = "0.1"
 mime = "0.3"
+tempfile = "3"

@@ -33,6 +33,10 @@ pub struct ForgeSdk {
 }
 
 impl ForgeSdk {
+    /// 注入自定义存储实现。
+    pub fn from_stores(tasks: Arc<dyn TaskStore>, sessions: Arc<dyn SessionStore>) -> Self {
+        Self { tasks, sessions, backend: "custom" }
+    }
     /// 全内存栈。
     pub fn in_memory() -> Self {
         Self {

@@ -55,13 +55,15 @@ async fn full_lifecycle_over_http_with_pg() {
     // 2) 状态机推进（经同一 State 的 TaskStore trait）
     for next in [TaskStatus::Planned, TaskStatus::Executing, TaskStatus::Verifying] {
         state
-            .tasks
+            .sdk
+            .tasks()
             .update_status(&forge_core::TaskId::from(id.clone()), next)
             .await
             .unwrap();
     }
     state
-        .tasks
+        .sdk
+        .tasks()
         .update_status(&forge_core::TaskId::from(id.clone()), TaskStatus::Completed)
         .await
         .unwrap();
