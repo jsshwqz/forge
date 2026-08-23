@@ -597,3 +597,10 @@ f394fdf 重构 server/src/lib.rs 删除 test_health/test_create_and_get_task/tes
 
 ---
 
+## [R6-013] ⚖️ 决策 · 2026-08-23 · R7-001/R7-002 最终决议：接受现状
+
+- **任务 ID**：GENERAL
+用户知悉后指示继续。两偏差确认为架构级设计决策而非缺陷：R7-001 route() 返回 Arc 是 RwLock 所有权约束的正确解；R7-002 trait 位置调整是打破循环依赖的必要举措。二者均经 240+ tests 与真实容器验收验证功能完好。关闭状态：不再作为待办跟踪。
+
+---
+

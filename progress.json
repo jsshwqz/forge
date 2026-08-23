@@ -410,9 +410,17 @@
   {
     "task_id": "DEMO-001",
     "name": "runnable full delivery example",
-    "status": "Wip",
+    "status": "Completed",
     "owner": "builder-a",
     "last_record": null,
-    "commit": null
+    "commit": "19606a2"
+  },
+  {
+    "task_id": "SRV-004",
+    "name": "GET /tasks list",
+    "status": "Completed",
+    "owner": null,
+    "last_record": null,
+    "commit": "19606a2"
   }
 ]
