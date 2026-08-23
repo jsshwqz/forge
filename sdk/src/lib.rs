@@ -118,7 +118,4 @@ mod tests {
         assert_eq!(sdk.list_tasks().await.unwrap().len(), 1);
     }
 
-    #[cfg(feature = "__never")] // PG 流程由 storage/server 集成测试覆盖，此处保持离线
-    #[tokio::test]
-    async fn postgres_flow_placeholder() {}
 }
