@@ -226,8 +226,8 @@
   {
     "task_id": "PH2-001",
     "name": "PostgreSQL/MinIO 持久化接入",
-    "status": "NotStarted",
-    "owner": null,
+    "status": "Wip",
+    "owner": "builder-a",
     "last_record": null,
     "commit": null
   },
