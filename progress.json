@@ -334,5 +334,21 @@
     "owner": null,
     "last_record": "R1-017",
     "commit": "9f17d96"
+  },
+  {
+    "task_id": "SRV-002",
+    "name": "forge serve + 全链路e2e",
+    "status": "Completed",
+    "owner": null,
+    "last_record": null,
+    "commit": "12259f9"
+  },
+  {
+    "last_record": "R1-018",
+    "name": "forge serve + 全链路e2e",
+    "commit": "12259f9",
+    "task_id": "SRV-002",
+    "status": "Completed",
+    "owner": "builder-a"
   }
 ]

@@ -333,3 +333,37 @@ DoD：workspace 217 tests 全绿（forge-skill 新增6条信任策略测试）�
 
 ---
 
+## [R1-016] ✅ 成功 · 2026-08-23 · PH2-004 验收转正 · 配额恢复后全绿
+
+- **任务 ID**：PH2-004
+复验结果（FORGE_LLM_LIVE=1）：live 测试 2/2 通过。
+- list_models：5模型返回
+- 自动选型 glm-5.2
+- chat 回复 "FORGE-LIVE-OK"（精确匹配指令）——端到端真实推理确认
+PH2-004 随之整体 Completed。此前 429 为临时 workspace 配额限制。
+
+---
+
+## [R1-017] ✅ 成功 · 2026-08-23 · DOC-001 文档 · 成功
+
+- **任务 ID**：DOC-001
+交付：README.md（快速开始/架构总览/环境变量表/协作指针/文档导航）+
+docs/architecture.md（分层依赖图/任务生命周期/存储矩阵/偏差索引）。
+价值：新 AI 或新人打开仓库 5 分钟内可上手；docs/ 冻结槽位正式启用。
+
+---
+
+## [R1-018] ✅ 成功 · 2026-08-23 · SRV-002 serve+全链路e2e · 成功
+
+- **任务 ID**：SRV-002
+DoD：218 tests 全绿（新增 full_lifecycle 1条：HTTP建任务→状态机推进→HTTP验终态，全程PG）；
+     clippy --all-targets 零告警；serve冒烟 /health=200。
+交付：
+- server 暴露 run_from_env()（main与CLI共用组装逻辑）
+- cli 新增 serve 子命令：forge serve 即起 HTTP 服务（FORGE_PORT/FORGE_PG_URL 生效）
+- server/tests/full_lifecycle.rs
+附带修正：live测试双开关验证生效（会话残留LIVE=1时真跑且绿——配额确实恢复）；
+         文档注释列表缩进告警修复。
+
+---
+
