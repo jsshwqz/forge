@@ -1,14 +1,4 @@
 //! forge-server：Aion Forge 2.0 HTTP API 层（V3.0 可信服务化）。
-//!
-//! 端点：
-//! - GET  /health                              免鉴权
-//! - POST /tasks                               创建任务
-//! - GET  /tasks                               列表
-//! - GET  /tasks/{id}                          查询
-//! - GET  /sessions/{id}                       查询
-//! - POST /orchestrate                         端到端编排
-//! - POST /api/evidence                        写入证据
-//! - GET  /api/evidence/{id}                   查询证据
 
 use axum::{
     extract::{Path, State},
@@ -19,7 +9,9 @@ use axum::{
 };
 use forge_core::{ForgeError, ForgeResult, SessionId, TaskId};
 use forge_evidence::{EvidenceStore, InMemoryEvidenceStore};
+use forge_event::InMemoryEventBus;
 use forge_exec::{EchoTool, PermissionPolicy, ToolRouter};
+use forge_session::SessionStore;
 use forge_sdk::{ForgeSdk, Orchestrator};
 use forge_task::{AcceptanceCriterion, Task, TaskStore};
 use forge_verify::{CommandVerifier, FileVerifier};
@@ -28,13 +20,12 @@ use serde::Deserialize;
 use std::sync::Arc;
 use std::time::Duration;
 
-// ---- AppState ----
-
 #[derive(Clone)]
 pub struct AppState {
     pub sdk: ForgeSdk,
     pub evidence: Arc<InMemoryEvidenceStore>,
     pub workspaces: Arc<WorkspaceManager>,
+    pub event_bus: Arc<InMemoryEventBus>,
 }
 
 impl AppState {
@@ -43,18 +34,18 @@ impl AppState {
             sdk: ForgeSdk::in_memory(),
             evidence: Arc::new(InMemoryEvidenceStore::default()),
             workspaces: Arc::new(WorkspaceManager::new(std::env::temp_dir().join("forge-ws")).unwrap()),
+            event_bus: Arc::new(InMemoryEventBus::new()),
         }
     }
-    pub fn new(tasks: Arc<dyn TaskStore>, sessions: Arc<dyn forge_session::SessionStore>) -> Self {
+    pub fn new(tasks: Arc<dyn TaskStore>, sessions: Arc<dyn SessionStore>) -> Self {
         Self {
             sdk: ForgeSdk::from_stores(tasks, sessions),
             evidence: Arc::new(InMemoryEvidenceStore::default()),
             workspaces: Arc::new(WorkspaceManager::new(std::env::temp_dir().join("forge-ws")).unwrap()),
+            event_bus: Arc::new(InMemoryEventBus::new()),
         }
     }
 }
-
-// ---- 错误 ----
 
 pub struct ApiError(StatusCode, String);
 
@@ -71,13 +62,8 @@ impl From<ForgeError> for ApiError {
 }
 
 impl IntoResponse for ApiError {
-    fn into_response(self) -> Response {
-        let body = serde_json::json!({"error":{"code":"request_failed","message":self.1}});
-        (self.0, Json(body)).into_response()
-    }
+    fn into_response(self) -> Response { (self.0, self.1).into_response() }
 }
-
-// ---- 请求体 ----
 
 #[derive(Deserialize)]
 pub struct CreateTaskRequest {
@@ -97,13 +83,10 @@ pub struct OrchestrateRequest {
 }
 fn default_timeout() -> u64 { 30 }
 
-/// AllowAll 策略（demo 用）。
 pub struct DemoAllowAll;
 impl PermissionPolicy for DemoAllowAll {
     fn check(&self, _: forge_exec::PermissionLevel, _: &forge_exec::PolicyContext) -> ForgeResult<()> { Ok(()) }
 }
-
-// ---- Handlers ----
 
 async fn health() -> Json<serde_json::Value> {
     Json(serde_json::json!({"status":"ok","service":"forge-server","version":env!("CARGO_PKG_VERSION")}))
@@ -126,16 +109,13 @@ async fn get_session(State(st): State<AppState>, Path(id): Path<String>) -> Resu
     Ok(Json(st.sdk.sessions().get(&SessionId::from(id)).await?))
 }
 
-/// POST /orchestrate — 一键 CPEVR
 async fn orchestrate(
     State(st): State<AppState>,
     Json(req): Json<OrchestrateRequest>,
 ) -> Result<Json<serde_json::Value>, ApiError> {
     let task = st.sdk.create_task(req.goal.clone(), vec![], req.acceptance.clone()).await?;
-
     let mut router = ToolRouter::new();
     router.register(Box::new(EchoTool::new())).map_err(ApiError::from)?;
-
     let deps = forge_sdk::OrchestratorDeps {
         router: Arc::new(router),
         policy: Arc::new(DemoAllowAll),
@@ -146,22 +126,16 @@ async fn orchestrate(
         timeout: Duration::from_secs(req.timeout_secs),
     };
     let orch = Orchestrator { capability: "echo".into(), timeout: Duration::from_secs(req.timeout_secs) };
-
     let report = st.sdk.run_end_to_end(&task.id, &deps, &orch).await.map_err(ApiError::from)?;
-
     Ok(Json(serde_json::json!({
         "task_id": report.task_id.to_string(),
         "final_status": format!("{:?}", report.final_status),
         "gate_passed": report.gate.passed,
         "steps_completed": report.execution.completed.len(),
-        "verifications": report.verifications.iter().map(|v| {
-            serde_json::json!({"criterion_id": v.criterion_id,"verdict": format!("{:?}", v.verdict)})
-        }).collect::<Vec<_>>(),
         "evidence_count": report.evidence_ids.len(),
     })))
 }
 
-/// POST /api/evidence — 手动写入证据
 async fn put_evidence(
     State(st): State<AppState>,
     Json(body): Json<serde_json::Value>,
@@ -170,7 +144,7 @@ async fn put_evidence(
     let ev = Evidence {
         id: forge_core::new_evidence_id(),
         kind: EvidenceKind::Log,
-        criterion_id: body["criterion_id"].as_str().unwrap_or("unassigned").into(),
+        criterion_id: body["criterion_id"].as_str().unwrap_or("").into(),
         content: body["content"].as_str().unwrap_or("").into(),
         produced_by: body["produced_by"].as_str().unwrap_or("manual").into(),
         at: chrono::Utc::now(),
@@ -179,7 +153,6 @@ async fn put_evidence(
     Ok(Json(serde_json::json!({"evidence_id": id.to_string()})))
 }
 
-/// GET /api/evidence/{id} — 查询证据
 async fn get_evidence(
     State(st): State<AppState>,
     Path(id): Path<String>,
@@ -187,16 +160,11 @@ async fn get_evidence(
     let eid = forge_core::EvidenceId::from(id);
     let ev = st.evidence.get(&eid).await.map_err(ApiError::from)?;
     Ok(Json(serde_json::json!({
-        "id": ev.id.to_string(),
-        "kind": format!("{:?}", ev.kind),
-        "criterion_id": ev.criterion_id,
-        "content": ev.content,
-        "produced_by": ev.produced_by,
-        "at": ev.at.to_rfc3339(),
+        "id": ev.id.to_string(),"kind": format!("{:?}", ev.kind),
+        "criterion_id": ev.criterion_id,"content": ev.content,
+        "produced_by": ev.produced_by,"at": ev.at.to_rfc3339(),
     })))
 }
-
-// ---- 路由 ----
 
 pub fn app() -> Router { app_with_state(AppState::in_memory()) }
 
@@ -225,6 +193,7 @@ pub async fn run_from_env() -> Result<(), Box<dyn std::error::Error>> {
                 sdk: ForgeSdk::postgres(&url).await?,
                 evidence: Arc::new(InMemoryEvidenceStore::default()),
                 workspaces: Arc::new(WorkspaceManager::new(std::env::temp_dir().join("forge-ws")).unwrap()),
+                event_bus: Arc::new(InMemoryEventBus::new()),
             }
         }
         Err(_) => { println!("storage: in-memory"); AppState::in_memory() }
