@@ -9,6 +9,7 @@ forge-core = { path = "../core/runtime" }
 forge-session = { path = "../core/session" }
 forge-artifact = { path = "../core/artifact" }
 forge-evidence = { path = "../verification/evidence" }
+forge-task = { path = "../core/task" }
 sqlx = { version = "0.8", default-features = false, features = ["runtime-tokio", "postgres", "chrono", "json"] }
 async-trait = "0.1"
 serde = { version = "1", features = ["derive"] }

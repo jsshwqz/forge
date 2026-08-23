@@ -17,11 +17,13 @@
 pub mod pg_artifact;
 pub mod pg_evidence;
 pub mod pg_session;
+pub mod pg_task;
 pub mod s3;
 
 pub use pg_artifact::PgArtifactStore;
 pub use pg_evidence::PgEvidenceStore;
 pub use pg_session::PgSessionStore;
+pub use pg_task::PgTaskStore;
 pub use s3::{MinioArtifactStore, S3Config};
 
 use forge_core::{ForgeError, ForgeResult};
@@ -120,6 +122,15 @@ CREATE TABLE IF NOT EXISTS artifacts (
     created_at      TIMESTAMPTZ NOT NULL,
     meta            JSONB NOT NULL DEFAULT '{}'::jsonb,
     content         BYTEA NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS tasks (
+    id          TEXT PRIMARY KEY,
+    goal        TEXT NOT NULL,
+    constraints JSONB NOT NULL DEFAULT '[]'::jsonb,
+    acceptance  JSONB NOT NULL DEFAULT '[]'::jsonb,
+    status      TEXT NOT NULL,
+    created_at  TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
 CREATE TABLE IF NOT EXISTS evidence (

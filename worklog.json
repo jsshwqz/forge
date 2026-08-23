@@ -174,5 +174,13 @@
     "task_id": "Q-001",
     "title": "Q-001 测试卫生+兼容验证 · 成功",
     "body": "DoD：196 tests 全绿（新增 pg_replay 兼容测试1条）；clippy --workspace --all-targets 零告警。\n内容：\n1) 清零5处历史测试侧告警（recovery/exec×2/planner 未用导入；storage contains→contains()惯用法）\n2) 新增 storage/tests/pg_replay.rs：证明 PgSessionStore 写入的事件满足\n   replay 确定性重建（库内状态==replay结果；正常/失败恢复双路径；幂等复算）\n意义：M1 的 replay 承诺在第二阶段持久化下依然成立，形成闭环证据链。"
+  },
+  {
+    "id": "R6-006",
+    "kind": "R6Decision",
+    "date": "2026-08-23",
+    "task_id": "INT-001",
+    "title": "授权确认与执行计划（含备份规则）",
+    "body": "用户授权：\"按你建议的方向来做…直接干就行，删除类的最好留备份\"。\n据此执行两项：\nINT-001 server State 切 PG（env驱动，默认内存不变）；需先补 PgTaskStore（此前三store缺task）。\nCLEAN-001 旧 D:\\test\\aionui\\forge 从 PATH 移除；不删文件只改环境变量，\n且修改前将 User/Machine 两级 PATH 快照备份至 新forge\\backups\\。\nPH2-004/005 仍等规格，不在本轮范围。"
   }
 ]

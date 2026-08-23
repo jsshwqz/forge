@@ -22,18 +22,27 @@ use forge_task::{AcceptanceCriterion, InMemoryTaskStore, Task, TaskStore};
 use std::sync::Arc;
 
 /// 应用共享状态。
+///
+/// 字段为 trait 对象：默认内存实现（第一阶段语义），
+/// 设置 `FORGE_PG_URL` 时由 main 组装为 PostgreSQL 持久化（PH2-001 接入点）。
 #[derive(Clone)]
 pub struct AppState {
-    pub tasks: Arc<InMemoryTaskStore>,
-    pub sessions: Arc<InMemorySessionStore>,
+    pub tasks: Arc<dyn TaskStore>,
+    pub sessions: Arc<dyn SessionStore>,
 }
 
-impl Default for AppState {
-    fn default() -> Self {
+impl AppState {
+    /// 全内存状态（默认/测试用）。
+    pub fn in_memory() -> Self {
         Self {
             tasks: Arc::new(InMemoryTaskStore::default()),
             sessions: Arc::new(InMemorySessionStore::default()),
         }
+    }
+
+    /// 注入自定义存储实现。
+    pub fn new(tasks: Arc<dyn TaskStore>, sessions: Arc<dyn SessionStore>) -> Self {
+        Self { tasks, sessions }
     }
 }
 
@@ -105,7 +114,7 @@ async fn get_session(
 
 /// 组装路由。main 与测试共用。
 pub fn app() -> Router {
-    app_with_state(AppState::default())
+    app_with_state(AppState::in_memory())
 }
 
 /// 用给定状态组装路由（测试可注入预置数据）。
@@ -204,7 +213,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_get_session_found() {
-        let st = AppState::default();
+        let st = AppState::in_memory();
         let session = st.sessions.create(forge_core::TaskId::new_task_id()).await.unwrap();
 
         let (status, got) = send(

@@ -278,5 +278,21 @@
     "owner": null,
     "last_record": "R1-011",
     "commit": "3b8b5c9"
+  },
+  {
+    "task_id": "INT-001",
+    "name": "server 接入 PG 持久化(env 驱动)",
+    "status": "Wip",
+    "owner": "builder-a",
+    "last_record": null,
+    "commit": null
+  },
+  {
+    "task_id": "CLEAN-001",
+    "name": "旧 forge 目录 PATH 清理(留备份)",
+    "status": "NotStarted",
+    "owner": null,
+    "last_record": null,
+    "commit": null
   }
 ]

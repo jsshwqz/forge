@@ -12,6 +12,7 @@ path = "src/main.rs"
 forge-core = { path = "../core/runtime" }
 forge-task = { path = "../core/task" }
 forge-session = { path = "../core/session" }
+forge-storage = { path = "../storage" }
 axum = "0.7"
 tokio = { version = "1", features = ["macros", "rt-multi-thread", "net", "signal"] }
 serde = { version = "1", features = ["derive"] }
