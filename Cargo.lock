@@ -713,8 +713,10 @@ dependencies = [
  "forge-cap",
  "forge-core",
  "forge-exec",
+ "hmac",
  "serde",
  "serde_json",
+ "sha2",
  "tempfile",
  "tokio",
 ]

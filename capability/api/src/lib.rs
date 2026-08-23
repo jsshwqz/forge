@@ -86,17 +86,6 @@ impl LlmClient {
         self.handle(resp).await
     }
 
-    async fn post_json(&self, path: &str, body: &serde_json::Value) -> ForgeResult<serde_json::Value> {
-        let resp = self
-            .http
-            .post(format!("{}/{}", self.base_url, path))
-            .bearer_auth(&self.api_key)
-            .json(body)
-            .send()
-            .await
-            .map_err(|e| ForgeError::InvalidState(format!("llm transport: {e}")))?;
-        self.handle(resp).await
-    }
 
     /// POST + 429 指数退避重试（最多 3 次：1.5s/3s/6s）。
     /// 商汤网关存在短窗口限流（实测同模型偶发 429，稍候即恢复）。

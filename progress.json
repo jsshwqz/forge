@@ -258,8 +258,8 @@
   {
     "task_id": "PH2-005",
     "name": "Skill 签名/完整性校验",
-    "status": "NotStarted",
-    "owner": null,
+    "status": "Wip",
+    "owner": "builder-a",
     "last_record": null,
     "commit": null
   },
@@ -320,11 +320,11 @@
     "commit": null
   },
   {
-    "last_record": null,
-    "name": "SenseNova配额恢复后复验",
-    "commit": null,
     "task_id": "Q-002",
+    "name": "SenseNova配额恢复后复验",
     "status": "Blocked",
-    "owner": null
+    "owner": null,
+    "last_record": null,
+    "commit": null
   }
 ]

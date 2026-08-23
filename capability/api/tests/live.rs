@@ -10,11 +10,17 @@
 use forge_api::{pick_model_with_prefs, LlmBackend, LlmClient};
 
 fn client() -> Option<LlmClient> {
+    // 双重开关：需 KEY 且显式 FORGE_LLM_LIVE=1。
+    // 原因：workspace 默认必须全绿，而供应商配额(429)属外部条件（见 WORKLOG R3-002/Q-002）。
+    if std::env::var("FORGE_LLM_LIVE").as_deref() != Ok("1") {
+        eprintln!("[skip] 未设 FORGE_LLM_LIVE=1——真实调用按需开启");
+        return None;
+    }
     let (Ok(base), Ok(key)) = (
         std::env::var("FORGE_LLM_BASE_URL"),
         std::env::var("FORGE_LLM_API_KEY"),
     ) else {
-        eprintln!("[skip] FORGE_LLM_* 未设置——跳过真实调用");
+        eprintln!("[skip] FORGE_LLM_* 未设置");
         return None;
     };
     Some(LlmClient::new(base, key))

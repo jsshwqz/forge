@@ -11,6 +11,8 @@ forge-cap = { path = "../registry" }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 async-trait = "0.1"
+hmac = "0.12"
+sha2 = "0.10"
 
 [dev-dependencies]
 tokio = { version = "1", features = ["macros", "rt", "time", "rt-multi-thread"] }
