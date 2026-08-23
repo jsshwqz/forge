@@ -11,7 +11,7 @@ use forge_task::TaskStatus;
 
 use forge_exec::{PermissionPolicy, ToolRouter};
 use forge_evidence::{EvidenceStore, InMemoryEvidenceStore};
-use forge_verify::{CommandVerifier, FileVerifier, Verdict};
+use forge_verify::{CommandVerifier, FileVerifier};
 use forge_workspace::WorkspaceManager;
 use std::sync::Arc;
 use std::time::Duration;
