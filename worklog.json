@@ -134,5 +134,13 @@
     "task_id": "PH2-002",
     "title": "PH2-002 axum server · 成功",
     "body": "DoD：build 通过、172 tests 全绿(167+5 API)、clippy 零警告、真实启动冒烟通过(/health=200、未知任务=404)。\n交付：server crate(forge-server) 已入 workspace，端点：\n- GET /health\n- POST /tasks（创建任务，含验收标准）\n- GET /tasks/{id}、GET /sessions/{id}（NotFound→404、InvalidState→409 映射）\n架构：路由层仅依赖 Core 的 trait(InMemory 实现)，PH2-001 换 PostgreSQL 时只替换 State 组装(AP-015)。\n规格来源：技术栈冻结表 axum + B-02；授权依据 R6-004。\n遗留：tracing-subscriber 未接(白名单)；鉴权/TLS/更多端点待后续任务包定义。"
+  },
+  {
+    "id": "R1-008",
+    "kind": "R1Completed",
+    "date": "2026-08-23",
+    "task_id": "PH2-003",
+    "title": "PH2-003 MCP stdio 协议 · 成功",
+    "body": "DoD：172→180 tests 全绿（forge-mcp 新增13单元+3集成）、clippy 零警告。\n交付：\n- jsonrpc.rs：请求/通知构造 + 响应/通知判别（7个单元测试）\n- client.rs：McpClient——spawn子进程、initialize握手、notifications/initialized、tools/list、tools/call、按id匹配响应、10s超时、优雅关闭(关stdin→等3s→kill)\n- mock_mcp_server.rs：离线测试夹具二进制(CARGO_BIN_EXE引用)，支持echo工具与未知工具-32601\n- 集成测试3例：全链路握手/list/call/shutdown；未知方法错误映射；空command快速失败\n协议版本：2024-11-05。规格来源：B-03边界定义。授权依据：R6-004。\n遗留：服务端发起的请求(ping/sampling)当前忽略；资源/提示词能力未涉及(文档未列)。"
   }
 ]

@@ -171,3 +171,17 @@ DoD：build 通过、172 tests 全绿(167+5 API)、clippy 零警告、真实启�
 
 ---
 
+## [R1-008] ✅ 成功 · 2026-08-23 · PH2-003 MCP stdio 协议 · 成功
+
+- **任务 ID**：PH2-003
+DoD：172→180 tests 全绿（forge-mcp 新增13单元+3集成）、clippy 零警告。
+交付：
+- jsonrpc.rs：请求/通知构造 + 响应/通知判别（7个单元测试）
+- client.rs：McpClient——spawn子进程、initialize握手、notifications/initialized、tools/list、tools/call、按id匹配响应、10s超时、优雅关闭(关stdin→等3s→kill)
+- mock_mcp_server.rs：离线测试夹具二进制(CARGO_BIN_EXE引用)，支持echo工具与未知工具-32601
+- 集成测试3例：全链路握手/list/call/shutdown；未知方法错误映射；空command快速失败
+协议版本：2024-11-05。规格来源：B-03边界定义。授权依据：R6-004。
+遗留：服务端发起的请求(ping/sampling)当前忽略；资源/提示词能力未涉及(文档未列)。
+
+---
+

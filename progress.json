@@ -242,10 +242,10 @@
   {
     "task_id": "PH2-003",
     "name": "MCP 完整协议",
-    "status": "NotStarted",
-    "owner": null,
-    "last_record": null,
-    "commit": null
+    "status": "Completed",
+    "owner": "builder-a",
+    "last_record": "R1-008",
+    "commit": "20b8f4d"
   },
   {
     "task_id": "PH2-004",
