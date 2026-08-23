@@ -1,6 +1,6 @@
 {
-  "updated_at": "2026-08-23 20:42",
-  "current_status": "冻结目录树100%落地；ORCH-002编排器+SRV-003 orchestrate端点已交付；243→238 tests(重构删5内联测试,R7-005覆盖回归待补)；clippy零告警；无阻塞",
+  "updated_at": "2026-08-23 21:40",
+  "current_status": "冻结目录树100%落地；DEMO-001可运行交付示例+SRV-003/004端点齐备；238 tests 全绿；clippy零告警；R7-001/002经R6-013终审关闭；无阻塞",
   "blockers": [],
   "next_tasks": [
     {
@@ -12,10 +12,7 @@
       "acceptance": "-"
     }
   ],
-  "risks": [
-    "route()返回Arc<dyn Tool>与规范不符(R7-001)——已经人工确认维持现状(R6-003)",
-    "PermissionPolicy位置与规范不符(R7-002)——已经人工确认维持现状(R6-003)"
-  ],
+  "risks": [],
   "files": {
     "AI_WORKFLOW.md": "多AI协作规范v1.1(必读)",
     "build_a/build_b/build_c.md": "第一阶段施工包",

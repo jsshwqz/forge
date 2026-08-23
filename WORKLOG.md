@@ -604,3 +604,10 @@ f394fdf 重构 server/src/lib.rs 删除 test_health/test_create_and_get_task/tes
 
 ---
 
+## [R1-032] ✅ 成功 · 2026-08-23 · DEMO-001+SRV-004 集成验收 · 通过
+
+- **任务 ID**：DEMO-001
+集成者验收(1228ab3)：cargo test --workspace 238 全绿 0 失败；clippy --all-targets 零告警(代清 full_delivery 示例4处告警，见 f584c81)；progress.json 53 行 0 重复。附带确认：R6-013 已将 R7-001/R7-002 终审关闭(接受为架构级设计决策)，HANDOFF 风险区随之清空。
+
+---
+

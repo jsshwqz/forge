@@ -422,5 +422,13 @@
     "task_id": "GENERAL",
     "title": "R7-001/R7-002 最终决议：接受现状",
     "body": "用户知悉后指示继续。两偏差确认为架构级设计决策而非缺陷：R7-001 route() 返回 Arc 是 RwLock 所有权约束的正确解；R7-002 trait 位置调整是打破循环依赖的必要举措。二者均经 240+ tests 与真实容器验收验证功能完好。关闭状态：不再作为待办跟踪。"
+  },
+  {
+    "id": "R1-032",
+    "kind": "R1Completed",
+    "date": "2026-08-23",
+    "task_id": "DEMO-001",
+    "title": "DEMO-001+SRV-004 集成验收 · 通过",
+    "body": "集成者验收(1228ab3)：cargo test --workspace 238 全绿 0 失败；clippy --all-targets 零告警(代清 full_delivery 示例4处告警，见 f584c81)；progress.json 53 行 0 重复。附带确认：R6-013 已将 R7-001/R7-002 终审关闭(接受为架构级设计决策)，HANDOFF 风险区随之清空。"
   }
 ]
