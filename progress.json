@@ -394,9 +394,16 @@
   {
     "task_id": "ORCH-002",
     "name": "端到端编排器(CPEVR闭环)",
-    "status": "Wip",
+    "status": "Completed",
     "owner": "builder-a",
     "last_record": null,
-    "commit": null
+    "commit": "8c88f98"
+  },
+  {
+    "status": "Completed",
+    "owner": "builder-a",
+    "task_id": "ORCH-002",
+    "name": "端到端编排器(CPEVR闭环)",
+    "last_record": "R1-029"
   }
 ]

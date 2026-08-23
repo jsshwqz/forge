@@ -68,7 +68,7 @@ Product → Factory → Capability Asset → Agent → Runtime → Execution →
 | `products/manifest` | ProductManifest / 模板实例化 / 产品装配 |
 | `storage` | PostgreSQL(sqlx) 四 store + MinIO(S3 SigV4) 对象存储 |
 | `server` | axum HTTP API，env 驱动存储切换 |
-| `sdk` | ForgeSdk 门面（一行组装内存/PG栈）|
+| `sdk` | ForgeSdk 门面 + **端到端编排器**（计划→执行→验证→门禁一键闭环）|
 | `tools/worklog` | 多 AI 协作记录管理 CLI（JSON 事实源） |
 | `cli` | `forge` 命令入口（version / serve）|
 

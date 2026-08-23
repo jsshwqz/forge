@@ -382,5 +382,13 @@
     "task_id": "ORCH-002",
     "title": "立项：端到端编排器（AP-009 产品承诺闭环）",
     "body": "延续授权，执行 ORCH-002 端到端编排器（落点 sdk crate 门面层）：\nrun_end_to_end(tasks, sessions, task_id, router, policy, verifiers, evidence, workspace, timeout)\n→ 计划(SequentialPlanner) → 波次执行(ExecutionEngine桥) → 逐条验收(File/Command Verifier)\n→ 证据固化 → AllPass 门禁 → 状态迁移(Completed/Failed) → Report。\n全部组件已存在且各有测试；本任务纯集成+离线可验收。\n价值：把\"验证即完成条件\"(AP-009)从纪律变成一个可调用函数——AionForge 产品承诺闭环。"
+  },
+  {
+    "id": "R1-029",
+    "kind": "R1Completed",
+    "date": "2026-08-23",
+    "task_id": "ORCH-002",
+    "title": "ORCH-002 端到端编排器 · 成功",
+    "body": "DoD：workspace 243 tests 全绿（新增 orchestrator_e2e 三场景）、clippy --all-targets 零告警。\n交付：sdk/src/orchestrator.rs——ForgeSdk::run_end_to_end(deps,orch)：\n计划(SequentialPlanner)→波次执行(ExecutionEngine桥,步骤失败即短路)→\n逐条验收(Command/File分派)→证据固化→AllPass门禁→Verifying中转→Completed/Failed。\n三场景实测：\n①happy: echo步骤+Command验收(重定向落盘)→Completed+证据可回查+workdir保留\n②gate拒绝: FileExists缺失→Fail→Failed\n③执行短路: 未知工具→execution.failed记录+跳过验证门禁→Failed\n过程修复（真实缺陷）：\na) 编排器漏 Verifying 中转态 → Executing→Completed 被状态机正确拦截，补齐后三场景全绿\nb) EngineStepExecutor 此前忽略非Success状态 → 已改为显式失败传播\nc) WorkspaceManager verbatim路径不一致 → normalize统一剥离 \\\\?\\ 前缀\n意义：AP-009 产品承诺闭环完成——一行调用即得\"带验证的交付\"。"
   }
 ]
