@@ -301,3 +301,35 @@ chat 全链路曾在探针中成功（回复"OK. How can I help you today?"）�
 
 ---
 
+## [R1-014] ✅ 成功 · 2026-08-23 · PH2-005 Skill 信任校验 · 成功
+
+- **任务 ID**：PH2-005
+DoD：workspace 217 tests 全绿（forge-skill 新增6条信任策略测试）、clippy --all-targets 零告警。
+交付：capability/skill/src/trust.rs——SkillTrustPolicy 三模式：
+- Disabled：第一阶段行为兼容
+- ChecksumWhitelist：skill.json SHA-256 白名单
+- HmacKey：分离签名 skill.sig = hex(HMAC-SHA256(key, 原始字节))，篡改1字节即拒
+选型理由（R6）：无PKI/KMS前提下的最小可信方案；ed25519待密钥分发体系引入后升级。
+失败语义：不匹配一律 PermissionDenied，不降级放行。
+密钥纪律：FORGE_SKILL_HMAC_KEY 经 .env(gitignored) 注入，不入库不入日志。
+入口：load_skill_into_verified(dir, registry, policy)；原 load_skill_into 等价 Disabled。
+
+---
+
+## [R1-015] ✅ 成功 · 2026-08-23 · PH2-004 LLM集成 · 代码完成(验收待配额Q-002)
+
+- **任务 ID**：PH2-004
+代码交付完成（提交至 PH2-005 前 HEAD）：
+- capability/api(forge-api)：LlmClient(OpenAI兼容,models发现+chat含429三次指数退避)、
+  pick_model_with_prefs 偏好序选择、LlmAgent(B: LlmBackend 可mock)
+- 单测11 + live双开关测试2（KEY+FORGE_LLM_LIVE=1 才真跑）
+真实验证结果：
+✓ list_models 返回5模型（sensenova-6.7-flash-lite/deepseek-v4-flash/glm-5.2/u1-fast/6.8-flash-lite）
+✓ glm-5.2 推理成功返回"OK. How can I help you today?"（探针实测）
+✗ deepseek-v4-flash 429配额；u1-fast 列表存在但404 → 已在偏好序规避
+阻塞：workspace级配额耗尽致live_chat默认不可跑（Q-002/R3-002）；KEY充值或更换后
+  设 FORGE_LLM_LIVE=1 即可复验。
+状态：PH2-004=Wip(代码完,验收待配额)。
+
+---
+

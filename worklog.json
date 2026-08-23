@@ -214,5 +214,21 @@
     "task_id": "Q-002",
     "title": "阻塞：SenseNova workspace 配额不足",
     "body": "已验证（真绿）：list_models 真实返回5模型；pick_model_with_prefs 选中 glm-5.2；\nchat 全链路曾在探针中成功（回复\"OK. How can I help you today?\"）。\n阻塞：live_chat_roundtrip 三次退避(1.5/3/6s)后仍 429 \"Workspace allocated quota exceeded\"\n     ——workspace级配额耗尽，属供应商侧外部条件。\n解除条件：用户为该KEY充值/提额，或更换可用KEY后运行：\n  $env:FORGE_LLM_BASE_URL/.env 已就绪\n  cargo test -p forge-api --test live\n附带发现：sensenova-u1-fast 在列表中但实际404（供应商目录不一致），已在偏好序中规避。"
+  },
+  {
+    "id": "R1-014",
+    "kind": "R1Completed",
+    "date": "2026-08-23",
+    "task_id": "PH2-005",
+    "title": "PH2-005 Skill 信任校验 · 成功",
+    "body": "DoD：workspace 217 tests 全绿（forge-skill 新增6条信任策略测试）、clippy --all-targets 零告警。\n交付：capability/skill/src/trust.rs——SkillTrustPolicy 三模式：\n- Disabled：第一阶段行为兼容\n- ChecksumWhitelist：skill.json SHA-256 白名单\n- HmacKey：分离签名 skill.sig = hex(HMAC-SHA256(key, 原始字节))，篡改1字节即拒\n选型理由（R6）：无PKI/KMS前提下的最小可信方案；ed25519待密钥分发体系引入后升级。\n失败语义：不匹配一律 PermissionDenied，不降级放行。\n密钥纪律：FORGE_SKILL_HMAC_KEY 经 .env(gitignored) 注入，不入库不入日志。\n入口：load_skill_into_verified(dir, registry, policy)；原 load_skill_into 等价 Disabled。"
+  },
+  {
+    "id": "R1-015",
+    "kind": "R1Completed",
+    "date": "2026-08-23",
+    "task_id": "PH2-004",
+    "title": "PH2-004 LLM集成 · 代码完成(验收待配额Q-002)",
+    "body": "代码交付完成（提交至 PH2-005 前 HEAD）：\n- capability/api(forge-api)：LlmClient(OpenAI兼容,models发现+chat含429三次指数退避)、\n  pick_model_with_prefs 偏好序选择、LlmAgent(B: LlmBackend 可mock)\n- 单测11 + live双开关测试2（KEY+FORGE_LLM_LIVE=1 才真跑）\n真实验证结果：\n✓ list_models 返回5模型（sensenova-6.7-flash-lite/deepseek-v4-flash/glm-5.2/u1-fast/6.8-flash-lite）\n✓ glm-5.2 推理成功返回\"OK. How can I help you today?\"（探针实测）\n✗ deepseek-v4-flash 429配额；u1-fast 列表存在但404 → 已在偏好序规避\n阻塞：workspace级配额耗尽致live_chat默认不可跑（Q-002/R3-002）；KEY充值或更换后\n  设 FORGE_LLM_LIVE=1 即可复验。\n状态：PH2-004=Wip(代码完,验收待配额)。"
   }
 ]

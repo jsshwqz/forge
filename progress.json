@@ -258,10 +258,10 @@
   {
     "task_id": "PH2-005",
     "name": "Skill 签名/完整性校验",
-    "status": "Wip",
+    "status": "Completed",
     "owner": "builder-a",
-    "last_record": null,
-    "commit": null
+    "last_record": "R1-015",
+    "commit": "7253112"
   },
   {
     "task_id": "PH2-001b",
