@@ -11,7 +11,7 @@ use forge_artifact::{ArtifactKind, ArtifactStore};
 use forge_core::TaskId;
 use forge_evidence::EvidenceStore;
 use forge_session::{SessionEventKind, SessionState, SessionStore};
-use chrono::{TimeZone, Utc};
+use chrono::Utc;
 use forge_storage::*;
 
 async fn pool_or_skip() -> Option<sqlx::PgPool> {

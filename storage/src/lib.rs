@@ -17,10 +17,12 @@
 pub mod pg_artifact;
 pub mod pg_evidence;
 pub mod pg_session;
+pub mod s3;
 
 pub use pg_artifact::PgArtifactStore;
 pub use pg_evidence::PgEvidenceStore;
 pub use pg_session::PgSessionStore;
+pub use s3::{MinioArtifactStore, S3Config};
 
 use forge_core::{ForgeError, ForgeResult};
 use serde::de::DeserializeOwned;

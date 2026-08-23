@@ -264,11 +264,11 @@
     "commit": null
   },
   {
-    "last_record": null,
-    "name": "MinIO(S3) 对象存储接入",
-    "commit": null,
     "task_id": "PH2-001b",
-    "status": "NotStarted",
-    "owner": null
+    "name": "MinIO(S3) 对象存储接入",
+    "status": "Wip",
+    "owner": "builder-a",
+    "last_record": null,
+    "commit": null
   }
 ]

@@ -150,5 +150,13 @@
     "task_id": "PH2-001",
     "title": "PH2-001 PostgreSQL 持久化 · 成功",
     "body": "DoD：workspace 183 tests 全绿（含 3 个真实 PostgreSQL 集成测试）、clippy 零警告。\n交付：新 crate storage(forge-storage)——sqlx 运行时 API 实现三 trait：\n- PgSessionStore：事务+FOR UPDATE 行锁保证并发 seq 连续；迁移逻辑复用 Session::transition 校验（target_state_for 镜像并注明同步义务）\n- PgArtifactStore：BYTEA 内容 + SHA-256 checksum\n- PgEvidenceStore：不可变、at零值补齐语义与内存版一致\n基础设施：Podman machine(WSL) 启动 + postgres:16-alpine 容器 forge-pg@15432（镜像经 daocloud 镜像源绕过失效代理拉取）。\n踩坑记录：①WSL端口转发仅绑::1，连接串必须用 localhost；②并发建表 pg_type 竞态→OnceCell改Mutex+pg_advisory_xact_lock 双重串行化；③by_criterion 曾漏读回id列（自测发现即修）。\n拆分说明：MinIO 对象存储拆为独立小任务 PH2-001b（S3 SDK/SigV4 选型需单独评估），本任务聚焦文档冻结的 PostgreSQL+sqlx 主体。\n架构决策：新建 storage crate 承载重依赖，Core 保持零存储依赖。"
+  },
+  {
+    "id": "R6-005",
+    "kind": "R6Decision",
+    "date": "2026-08-23",
+    "task_id": "PH2-001b",
+    "title": "依赖选型决策：手写SigV4+轻量reqwest",
+    "body": "依赖选型（用户授权\"按建议继续不停\"后由 builder-a 定夺）：\n- 拒绝 aws-sdk-s3：+200 依赖树、编译时长不可接受\n- 采用：手写 SigV4(hmac=0.12 + 既有sha2) + reqwest 0.12(default-features=false 纯HTTP，本机容器无TLS需求)\n- 影响面：仅 forge-storage；签名实现配确定性单测 + MinIO 真实容器集成验收双保险\n范围：ArtifactStore 的 Minio 实现（PUT/GET/HEAD + ensure_bucket）；Session/Evidence 维持 PostgreSQL。"
   }
 ]
