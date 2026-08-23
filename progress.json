@@ -344,10 +344,58 @@
     "commit": "12259f9"
   },
   {
-    "last_record": "R1-018",
-    "name": "forge serve + 全链路e2e",
-    "commit": "12259f9",
     "task_id": "SRV-002",
+    "name": "forge serve + 全链路e2e",
+    "status": "Completed",
+    "owner": "builder-a",
+    "last_record": "R1-018",
+    "commit": "12259f9"
+  },
+  {
+    "task_id": "SCHED-001",
+    "name": "波次调度器",
+    "status": "Completed",
+    "owner": "builder-a",
+    "last_record": null,
+    "commit": "3de8b74"
+  },
+  {
+    "task_id": "WKSP-001",
+    "name": "托管工作目录管理器",
+    "status": "Completed",
+    "owner": null,
+    "last_record": null,
+    "commit": "c7c2924"
+  },
+  {
+    "task_id": "SDK-001",
+    "name": "SDK 门面 crate",
+    "status": "NotStarted",
+    "owner": null,
+    "last_record": null,
+    "commit": null
+  },
+  {
+    "task_id": "OBS-001",
+    "name": "二进制 tracing-subscriber 安装",
+    "status": "NotStarted",
+    "owner": null,
+    "last_record": null,
+    "commit": null
+  },
+  {
+    "task_id": "SCHED-001",
+    "name": "波次调度器",
+    "status": "Completed",
+    "owner": "builder-a",
+    "last_record": "R1-019",
+    "commit": "3de8b74"
+  },
+  {
+    "last_record": "R1-020",
+    "name": "托管工作目录管理器",
+    "commit": "c7c2924",
+    "task_id": "WKSP-001",
     "status": "Completed",
     "owner": "builder-a"
   }

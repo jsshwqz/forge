@@ -129,6 +129,14 @@ pub fn app_with_state(st: AppState) -> Router {
 
 /// 从环境变量组装并启动服务（供 forge-server 与 `forge serve` 共用）。
 pub async fn run_from_env() -> Result<(), Box<dyn std::error::Error>> {
+    // OBS-001：安装日志订阅器（RUST_LOG 过滤，默认 info）。幂等：重复调用忽略。
+    tracing_subscriber::fmt()
+        .with_env_filter(
+            tracing_subscriber::EnvFilter::try_from_default_env()
+                .unwrap_or_else(|_| tracing_subscriber::EnvFilter::new("info")),
+        )
+        .try_init()
+        .ok();
     let port: u16 = std::env::var("FORGE_PORT")
         .ok()
         .and_then(|s| s.parse().ok())

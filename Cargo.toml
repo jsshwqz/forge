@@ -23,6 +23,7 @@ members = [
     "tools/worklog",
     "server",
     "storage",
+    "sdk",
     "capability/api",
     "tests",
     "cli",

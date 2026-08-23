@@ -254,5 +254,29 @@
     "task_id": "SRV-002",
     "title": "SRV-002 serve+全链路e2e · 成功",
     "body": "DoD：218 tests 全绿（新增 full_lifecycle 1条：HTTP建任务→状态机推进→HTTP验终态，全程PG）；\n     clippy --all-targets 零告警；serve冒烟 /health=200。\n交付：\n- server 暴露 run_from_env()（main与CLI共用组装逻辑）\n- cli 新增 serve 子命令：forge serve 即起 HTTP 服务（FORGE_PORT/FORGE_PG_URL 生效）\n- server/tests/full_lifecycle.rs\n附带修正：live测试双开关验证生效（会话残留LIVE=1时真跑且绿——配额确实恢复）；\n         文档注释列表缩进告警修复。"
+  },
+  {
+    "id": "R6-008",
+    "kind": "R6Decision",
+    "date": "2026-08-23",
+    "task_id": "SCHED-001",
+    "title": "授权执行冻结目录树剩余槽位（四任务分解）",
+    "body": "用户指示\"规划中来执行\"。规划=施工包§1.5冻结目录结构。\n盘点未落地槽位并立项：\n- SCHED-001 planning/scheduler：波次调度器（ready_steps 目前无消费者，属断链）\n- WKSP-001 execution/workspace：托管工作目录（Verifier.workdir 目前无来源，含防路径逃逸）\n- SDK-001 sdk/：对外门面（builder 一键组装内存或PG栈）\n- OBS-001 二进制安装 tracing-subscriber(env-filter)：COMP-002 只埋点未见日志的收尾；\n  新依赖 tracing-subscriber 0.3 仅进 server/cli 二进制，依据用户此前对依赖方向的持续授权\nPH2-004/005 已完成；本轮后冻结目录树 100% 落地。"
+  },
+  {
+    "id": "R1-019",
+    "kind": "R1Completed",
+    "date": "2026-08-23",
+    "task_id": "SCHED-001",
+    "title": "SCHED-001 波次调度器 · 成功",
+    "body": "DoD：4 tests 全绿（线性顺序/菱形波次边界/失败断流下游不执行/空计划零波次）；clippy --all-targets 干净。\n交付：StepExecutor trait + run_plan(dag,plan,exec)->RunSummary{completed,failed,waves}。\n意义：打通 planner→dag→execution 断链——ready_steps 首次有了消费者，\n     编排层(或SDK)可一行调用按依赖波次驱动执行。\n确定性设计：波内按 StepId 字典序（复用 ready_steps 排序保证）。"
+  },
+  {
+    "id": "R1-020",
+    "kind": "R1Completed",
+    "date": "2026-08-23",
+    "task_id": "WKSP-001",
+    "title": "WKSP-001 托管工作目录 · 成功",
+    "body": "DoD：5 tests 全绿；clippy --all-targets 干净。\n交付：WorkspaceManager——create_for(任务隔离目录)/cleanup/list；\n安全：构造时缓存规范化根，cleanup 前双重 canonicalize 校验，\n     逃逸路径 PermissionDenied、拒绝删除根本身；task_id 字符白名单过滤。\n价值：VerificationRequest.workdir 首次有受管来源；与 Verifier/Executor 对接即可用。"
   }
 ]

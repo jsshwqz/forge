@@ -1,0 +1,16 @@
+[package]
+name = "forge-sdk"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Aion Forge SDK 门面：一键组装核心栈"
+
+[dependencies]
+forge-core = { path = "../core/runtime" }
+forge-task = { path = "../core/task" }
+forge-session = { path = "../core/session" }
+forge-storage = { path = "../storage" }
+tokio = { version = "1", features = ["sync"] }
+
+[dev-dependencies]
+tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
