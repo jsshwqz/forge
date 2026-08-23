@@ -402,9 +402,9 @@
   {
     "task_id": "SRV-003",
     "name": "server orchestrate endpoint",
-    "status": "Wip",
+    "status": "Completed",
     "owner": "builder-a",
     "last_record": null,
-    "commit": null
+    "commit": "f394fdf"
   }
 ]
