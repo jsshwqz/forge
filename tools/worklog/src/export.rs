@@ -71,7 +71,9 @@ pub fn render_handoff(h: &Handoff) -> String {
     if h.next_tasks.is_empty() {
         out.push_str("（无）\n");
     } else {
-        out.push_str("| 优先级 | 任务 ID | 名称 | 前置 | 动作 | 验收 |\n|---|---|---|---|---|---|\n");
+        out.push_str(
+            "| 优先级 | 任务 ID | 名称 | 前置 | 动作 | 验收 |\n|---|---|---|---|---|---|\n",
+        );
         for t in &h.next_tasks {
             out.push_str(&format!(
                 "| {} | {} | {} | {} | {} | {} |\n",

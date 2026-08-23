@@ -58,15 +58,17 @@ Product → Factory → Capability Asset → Agent → Runtime → Execution →
 | `core/artifact` | 产物模型 + SHA-256 |
 | `core/agent` | Agent trait + 回合引擎（循环/上限/中止三护栏）|
 | `core/task` | 任务状态机 + 内建验收标准（空验收禁令）|
-| `planning/*` | Planner trait / 顺序规划器 / DAG(环检测·拓扑·就绪集) |
+| `planning/*` | Planner / 顺序规划器 / DAG / **波次调度器** |
 | `execution/runtime` | 工具路由 + 执行引擎（超时/权限）+ PermissionPolicy |
 | `execution/sandbox` | DenyAll/AllowList/PolicyChain（默认只读）|
+| `execution/workspace` | 托管工作目录（任务隔离 + 逃逸防护）|
 | `verification/*` | Command/File 验证器 · 不可变证据链 · AllPass 门禁 |
 | `recovery` | 失败分类 + 有界重试指数退避引擎 |
-| `capability/*` | 能力注册表 · Skill 加载(+信任校验) · MCP stdio 客户端 · LLM 客户端+LlmAgent |
+| `capability/*` | 能力注册表 · Skill 加载(+信任校验) · MCP stdio · LLM 客户端+LlmAgent(商汤6.8/6.7优先) |
 | `products/manifest` | ProductManifest / 模板实例化 / 产品装配 |
 | `storage` | PostgreSQL(sqlx) 四 store + MinIO(S3 SigV4) 对象存储 |
-| `server` | axum HTTP API（health/tasks/sessions），env 驱动存储切换 |
+| `server` | axum HTTP API，env 驱动存储切换 |
+| `sdk` | ForgeSdk 门面（一行组装内存/PG栈）|
 | `tools/worklog` | 多 AI 协作记录管理 CLI（JSON 事实源） |
 | `cli` | `forge` 命令入口（version / serve）|
 

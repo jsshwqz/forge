@@ -207,6 +207,12 @@ fn run(cli: Cli) -> Result<(), StoreError> {
 }
 
 fn run_task(store: &Store, action: TaskAction) -> Result<(), StoreError> {
+    // 变更命令在"读取→修改→保存"全程持锁（COMP-003b 并发契约）
+    let _guard = if matches!(action, TaskAction::List) {
+        None
+    } else {
+        Some(store.lock()?)
+    };
     let mut entries = store.load_progress()?;
 
     match action {
@@ -284,6 +290,7 @@ fn run_log(store: &Store, action: LogAction) -> Result<(), StoreError> {
             body,
         } => {
             let kind = parse_kind(&kind)?;
+            let _guard = store.lock()?;
             let date = chrono::Local::now().format("%Y-%m-%d").to_string();
             let record = store.append_record(kind, &date, task, &title, &body)?;
             println!("已追加: {}", record.id);
@@ -339,6 +346,7 @@ fn run_handoff(store: &Store, action: HandoffAction) -> Result<(), StoreError> {
             blocker,
             advice,
         } => {
+            let _guard = store.lock()?;
             let mut h = store.load_handoff()?;
             h.updated_at = chrono::Local::now().format("%Y-%m-%d %H:%M").to_string();
             h.current_status = status;

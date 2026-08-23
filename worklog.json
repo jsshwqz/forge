@@ -302,5 +302,21 @@
     "task_id": "PH2-004",
     "title": "PH2-004 选型切换官方6.7/6.8 · 成功",
     "body": "用户指令：选用商汤官方模型 sensenova-6.7/6.8。\n实现：\n- OFFICIAL_MODEL_PREFS 常量 = [sensenova-6.8, sensenova-6.7, glm, chat]（6.8最新优先，glm/chat兜底）\n- LlmAgent::connect 与 live 测试统一改用该偏好；FORGE_LLM_MODEL 仍可覆盖\n- extract_content 增加 trim()——6.7/6.8 为推理模型，content 常带前导换行（思考过程在新增的 reasoning 字段）\n- 新增 chat_raw() 返回完整原始响应（诊断/后续工具调用扩展用）\n实测证据（live 2/2, 4.89s）：自动选中 sensenova-6.8-flash-lite，回复非空且已 trim；\n探针确认 6.7/6.8 双模型均 finish_reason=stop 正常出字。\n单测：+2（官方偏好序断言 / 推理空白trim断言），forge-api 离线13条全绿。"
+  },
+  {
+    "id": "R1-024",
+    "kind": "R1Completed",
+    "date": "2026-08-23",
+    "task_id": "LIVE-E2E",
+    "title": "LIVE-E2E 真实模型×Agent trait · 成功",
+    "body": "DoD：live_agent 测试通过（FORGE_LLM_LIVE=1，7.09s 真实调用）。\n证据：选中 sensenova-6.8-flash-lite；\n首回合 Reply 合理索要任务详情；次回合基于观察正确回应。\n意义：B-05 最终闭环——真模型经 connect(自动发现官方偏好)→AgentConfig→act(TurnInput)\n完整走通生产调用入口（TurnEngine 每回合即调此处）。\n新发现（R7-004）：TurnInput 无 goal 字段致模型不知任务目标——第一阶段冻结面不改动，\n编排层应经 observation/history 携带目标；未来版本可评估接口扩展（需人工批准）。"
+  },
+  {
+    "id": "R7-004",
+    "kind": "R7DeviationRisk",
+    "date": "2026-08-23",
+    "task_id": "LIVE-E2E",
+    "title": "TurnInput 无 goal 字段的编排课题",
+    "body": "现象：live_agent 两回合中模型均表示缺少任务目标描述。\n根因：TurnInput（施工包§4.7冻结）仅含 session/turn/history/observation，无 goal 字段；\n     SequentialPlanner 的 goal 在 StepAction.input 内但未进入模型提示。\n处置建议：编排层组装 TurnInput 时将任务目标作为首条 history/observation 注入（无需改冻结面）；\n         或未来版本经人工批准扩展 TurnInput。"
   }
 ]
