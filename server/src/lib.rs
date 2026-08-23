@@ -101,6 +101,7 @@ async fn get_task(State(st): State<AppState>, Path(id): Path<String>) -> Result<
     Ok(Json(task))
 }
 
+async fn list_tasks(State(st): State<AppState>) -> Json<serde_json::Value> {    let ids = st.sdk.list_tasks().await.unwrap_or_default();    Json(serde_json::json!({ "count": ids.len(), "ids": ids.iter().map(|i| i.to_string()).collect::<Vec<_>>() }))}
 async fn get_session(State(st): State<AppState>, Path(id): Path<String>) -> Result<Json<forge_session::Session>, ApiError> {
     let s = st.sdk.sessions().get(&SessionId::from(id)).await?;
     Ok(Json(s))
@@ -152,7 +153,7 @@ pub fn app_with_state(st: AppState) -> Router {
         .route("/health", get(health))
         .route("/tasks", post(create_task))
         .route("/tasks/:id", get(get_task))
-        .route("/sessions/:id", get(get_session))
+        .route("/tasks", get(list_tasks)).route("/sessions/:id", get(get_session))
         .route("/orchestrate", post(orchestrate))
         .with_state(st)
 }

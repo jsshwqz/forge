@@ -406,5 +406,13 @@
     "owner": "builder-a",
     "last_record": null,
     "commit": "f394fdf"
+  },
+  {
+    "task_id": "DEMO-001",
+    "name": "runnable full delivery example",
+    "status": "Wip",
+    "owner": "builder-a",
+    "last_record": null,
+    "commit": null
   }
 ]
