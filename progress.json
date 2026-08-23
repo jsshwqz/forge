@@ -378,10 +378,10 @@
   {
     "task_id": "ORCH-001",
     "name": "goal注入编排层落地",
-    "status": "Wip",
+    "status": "Completed",
     "owner": "builder-a",
     "last_record": null,
-    "commit": null
+    "commit": "70d7737"
   },
   {
     "task_id": "COMP-003b",
@@ -390,5 +390,13 @@
     "owner": "integrator",
     "last_record": null,
     "commit": "5b4ddf5"
+  },
+  {
+    "commit": "70d7737",
+    "last_record": "R1-027",
+    "owner": "builder-a",
+    "status": "Completed",
+    "task_id": "ORCH-001",
+    "name": "goal注入编排落地(R7-004解决)"
   }
 ]

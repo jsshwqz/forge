@@ -334,5 +334,13 @@
     "task_id": "COMP-003b",
     "title": "COMP-003b 并发加固 · 成功",
     "body": "根因：多会话对状态文件做无互斥的整文件读改写，且闭环流程追加新行导致重复行累积。\n修复(store.rs重写+main.rs加锁)：\n1. 原子写——tmp+rename 替代直接 fs::write；\n2. 跨进程锁 .worklog.lock(含时间戳,陈旧锁120s自动接管)，CLI 变更命令全程持锁；\n3. 读时自愈——load_progress 按保真度合并重复 task_id 行。\n测试：+5 并发专项测试；cargo test --workspace 237 全绿 0 失败；clippy --all-targets 全仓零告警(顺清 live_agent 未用导入)。\n归属说明：代码经并行会话的清扫式提交入库(store.rs/main.rs=5b4ddf5, live_agent=8d04e58)，本记录补立任务档案。教训：并行会话共享仓库时，未提交窗口是最大风险面。"
+  },
+  {
+    "id": "R1-026",
+    "kind": "R1Completed",
+    "date": "2026-08-23",
+    "task_id": "ORCH-001",
+    "title": "ORCH-001 goal注入 · 成功（真实模型给出精确命令）",
+    "body": "DoD：workspace 240 tests 全绿（含3条live真实调用）；clippy --all-targets 零告警。\n交付：LlmAgent::with_task_goal / with_system_prompt 构造器（pub system_prompt 载体）；\n     live_agent 第三场景实测——注入目标后 6.8 模型直接给出精确命令：\n     Run echo \"Hello AionForge\" > hello.txt\nR7-004 状态：已解决（方案=system_prompt 注入；R6-009 决策依据）。\n单测：+2（goal 注入断言/全量覆盖式 prompt 断言），forge-api 离线 15 条全绿。"
   }
 ]

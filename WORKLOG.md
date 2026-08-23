@@ -489,3 +489,15 @@ live_agent 追加第三场景：设 goal 后模型应围绕目标工作（而非
 
 ---
 
+## [R1-026] ✅ 成功 · 2026-08-23 · ORCH-001 goal注入 · 成功（真实模型给出精确命令）
+
+- **任务 ID**：ORCH-001
+DoD：workspace 240 tests 全绿（含3条live真实调用）；clippy --all-targets 零告警。
+交付：LlmAgent::with_task_goal / with_system_prompt 构造器（pub system_prompt 载体）；
+     live_agent 第三场景实测——注入目标后 6.8 模型直接给出精确命令：
+     Run echo "Hello AionForge" > hello.txt
+R7-004 状态：已解决（方案=system_prompt 注入；R6-009 决策依据）。
+单测：+2（goal 注入断言/全量覆盖式 prompt 断言），forge-api 离线 15 条全绿。
+
+---
+
