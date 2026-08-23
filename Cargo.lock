@@ -704,14 +704,22 @@ name = "forge-sdk"
 version = "0.1.0"
 dependencies = [
  "async-trait",
+ "chrono",
  "forge-core",
  "forge-dag",
+ "forge-evidence",
+ "forge-exec",
+ "forge-gates",
  "forge-planner",
  "forge-scheduler",
  "forge-session",
  "forge-storage",
  "forge-task",
+ "forge-verify",
+ "forge-workspace",
+ "serde",
  "serde_json",
+ "tempfile",
  "tokio",
 ]
 

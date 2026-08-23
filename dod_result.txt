@@ -1,0 +1,8 @@
+﻿=== cargo test --workspace ===
+见 dod_test.log（原生重定向）
+TEST_FAILED_COUNT=79
+TOTAL_TESTS=243
+=== clippy --all-targets ===
+clippy warn/error lines: 0
+TOTAL_TESTS=0
+ALL_DONE

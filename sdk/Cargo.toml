@@ -3,19 +3,27 @@ name = "forge-sdk"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
-description = "Aion Forge SDK 门面：一键组装核心栈"
+description = "Aion Forge SDK 门面：一键组装核心栈 + 端到端编排"
 
 [dependencies]
 forge-core = { path = "../core/runtime" }
 forge-task = { path = "../core/task" }
 forge-session = { path = "../core/session" }
-forge-storage = { path = "../storage" }
-tokio = { version = "1", features = ["sync"] }
-
-[dev-dependencies]
+forge-exec = { path = "../execution/runtime" }
+forge-evidence = { path = "../verification/evidence" }
+forge-verify = { path = "../verification/verifier" }
+forge-gates = { path = "../verification/gates" }
 forge-planner = { path = "../planning/planner" }
 forge-dag = { path = "../planning/dag" }
 forge-scheduler = { path = "../planning/scheduler" }
+forge-workspace = { path = "../execution/workspace" }
+forge-storage = { path = "../storage" }
+chrono = { version = "0.4", features = ["serde"] }
+serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 async-trait = "0.1"
+tokio = { version = "1", features = ["sync"] }
+
+[dev-dependencies]
 tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
+tempfile = "3"

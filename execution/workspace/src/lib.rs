@@ -15,6 +15,21 @@ fn io_err(context: &str, e: std::io::Error) -> ForgeError {
     ForgeError::InvalidState(format!("{context}: {e}"))
 }
 
+/// 统一剥离 Windows verbatim 前缀（\\?\），保证比较/返回形式一致。
+fn strip_verbatim(p: PathBuf) -> PathBuf {
+    match p.as_os_str().to_str() {
+        Some(s) if s.starts_with(r"\\?\") => PathBuf::from(&s[4..]),
+        _ => p,
+    }
+}
+
+/// 规范化任意路径（canonicalize + 去 verbatim 前缀）。
+fn normalize(path: &Path) -> ForgeResult<PathBuf> {
+    Ok(strip_verbatim(
+        std::fs::canonicalize(path).map_err(|e| io_err("workspace canonicalize", e))?,
+    ))
+}
+
 /// 托管工作目录管理器。
 pub struct WorkspaceManager {
     /// 规范化后的根目录。
@@ -26,8 +41,7 @@ impl WorkspaceManager {
     pub fn new(root: impl Into<PathBuf>) -> ForgeResult<Self> {
         let root = root.into();
         std::fs::create_dir_all(&root).map_err(|e| io_err("workspace root", e))?;
-        let canon_root = std::fs::canonicalize(&root)
-            .map_err(|e| io_err("workspace canonicalize root", e))?;
+        let canon_root = normalize(&root)?;
         Ok(Self { canon_root })
     }
 
@@ -55,8 +69,7 @@ impl WorkspaceManager {
 
     /// 防逃逸校验：path 规范化后必须位于规范化根目录之内。
     fn ensure_inside_root(&self, path: &Path) -> ForgeResult<PathBuf> {
-        let canon_path =
-            std::fs::canonicalize(path).map_err(|e| io_err("workspace canonicalize path", e))?;
+        let canon_path = normalize(path)?;
         if canon_path.starts_with(&self.canon_root) {
             Ok(canon_path)
         } else {

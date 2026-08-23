@@ -376,14 +376,6 @@
     "commit": "5b4ddf5"
   },
   {
-    "task_id": "ORCH-001",
-    "name": "goal注入编排层落地",
-    "status": "Completed",
-    "owner": "builder-a",
-    "last_record": null,
-    "commit": "70d7737"
-  },
-  {
     "task_id": "COMP-003b",
     "name": "forge-worklog 并发加固(原子写/文件锁/读时自愈)",
     "status": "Completed",
@@ -392,11 +384,19 @@
     "commit": "5b4ddf5"
   },
   {
-    "commit": "70d7737",
-    "last_record": "R1-027",
-    "owner": "builder-a",
-    "status": "Completed",
     "task_id": "ORCH-001",
-    "name": "goal注入编排落地(R7-004解决)"
+    "name": "goal注入编排落地(R7-004解决)",
+    "status": "Completed",
+    "owner": "builder-a",
+    "last_record": "R1-027",
+    "commit": "70d7737"
+  },
+  {
+    "task_id": "ORCH-002",
+    "name": "端到端编排器(CPEVR闭环)",
+    "status": "Wip",
+    "owner": "builder-a",
+    "last_record": null,
+    "commit": null
   }
 ]
