@@ -390,5 +390,13 @@
     "task_id": "ORCH-002",
     "title": "ORCH-002 端到端编排器 · 成功",
     "body": "DoD：workspace 243 tests 全绿（新增 orchestrator_e2e 三场景）、clippy --all-targets 零告警。\n交付：sdk/src/orchestrator.rs——ForgeSdk::run_end_to_end(deps,orch)：\n计划(SequentialPlanner)→波次执行(ExecutionEngine桥,步骤失败即短路)→\n逐条验收(Command/File分派)→证据固化→AllPass门禁→Verifying中转→Completed/Failed。\n三场景实测：\n①happy: echo步骤+Command验收(重定向落盘)→Completed+证据可回查+workdir保留\n②gate拒绝: FileExists缺失→Fail→Failed\n③执行短路: 未知工具→execution.failed记录+跳过验证门禁→Failed\n过程修复（真实缺陷）：\na) 编排器漏 Verifying 中转态 → Executing→Completed 被状态机正确拦截，补齐后三场景全绿\nb) EngineStepExecutor 此前忽略非Success状态 → 已改为显式失败传播\nc) WorkspaceManager verbatim路径不一致 → normalize统一剥离 \\\\?\\ 前缀\n意义：AP-009 产品承诺闭环完成——一行调用即得\"带验证的交付\"。"
+  },
+  {
+    "id": "R1-030",
+    "kind": "R1Completed",
+    "date": "2026-08-23",
+    "task_id": "ORCH-002",
+    "title": "ORCH-002 集成验收 · 通过",
+    "body": "集成者验收(8c88f98)：cargo test --workspace 243 全绿 0 失败(+3 e2e)；clippy --all-targets 全仓零告警(代清 orchestrator_e2e 未用导入 Verdict，见 84cbe86)；progress.json 50 行 0 重复；HANDOFF 与 JSON 一致。状态刷新 240→243。"
   }
 ]
