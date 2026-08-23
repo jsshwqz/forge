@@ -282,10 +282,10 @@
   {
     "task_id": "INT-001",
     "name": "server 接入 PG 持久化(env 驱动)",
-    "status": "Wip",
+    "status": "Completed",
     "owner": "builder-a",
     "last_record": null,
-    "commit": null
+    "commit": "ffd86a8"
   },
   {
     "task_id": "CLEAN-001",
@@ -294,5 +294,13 @@
     "owner": null,
     "last_record": null,
     "commit": null
+  },
+  {
+    "last_record": "R1-012",
+    "name": "server 接入 PG 持久化",
+    "commit": "ffd86a8",
+    "task_id": "INT-001",
+    "status": "Completed",
+    "owner": "builder-a"
   }
 ]
