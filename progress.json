@@ -353,18 +353,26 @@
   },
   {
     "task_id": "LIVE-E2E",
-    "name": "真实模型×Agent trait×回合链路验证",
+    "name": "真实模型×Agent trait 验证",
     "status": "Completed",
     "owner": "builder-a",
-    "last_record": null,
+    "last_record": "R1-024",
     "commit": "c2be261"
   },
   {
-    "last_record": "R1-024",
-    "name": "真实模型×Agent trait 验证",
-    "owner": "builder-a",
+    "task_id": "SDK-002",
+    "name": "SDK 调度链路集成测试(planner→dag→scheduler)",
     "status": "Completed",
-    "task_id": "LIVE-E2E",
-    "commit": "c2be261"
+    "owner": "builder-a",
+    "last_record": "R1-025",
+    "commit": "5b4ddf5"
+  },
+  {
+    "task_id": "DOC-002",
+    "name": "README crate 表补全(4行)",
+    "status": "Completed",
+    "owner": "builder-a",
+    "last_record": "R1-026",
+    "commit": "5b4ddf5"
   }
 ]

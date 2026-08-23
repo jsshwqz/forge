@@ -6,7 +6,7 @@
 //!
 //! 运行：FORGE_LLM_LIVE=1 + FORGE_LLM_* 三件套。
 
-use forge_api::{LlmAgent, LlmBackend, LlmClient, OFFICIAL_MODEL_PREFS};
+use forge_api::{LlmAgent, LlmBackend, LlmClient};
 use forge_agent::{Agent, AgentAction};
 use forge_core::SessionId;
 use std::collections::HashMap;
