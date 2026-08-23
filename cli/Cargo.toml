@@ -9,5 +9,7 @@ name = "forge"
 path = "src/main.rs"
 
 [dependencies]
+forge-server = { path = "../server" }
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "net"] }
 clap = { version = "4", features = ["derive"] }
 

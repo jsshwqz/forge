@@ -2,11 +2,9 @@
 //!
 //! 技术栈冻结决策（施工包 1.1 节）：CLI 使用 clap。
 //!
-//! 行为：
-//! - `forge`            → 输出 `forge <版本号>` 后退出 0（保持第一阶段 DoD 兼容）
-//! - `forge version`    → 同上
-//! - `forge --version`  → clap 自动提供的版本输出
-//! - `forge --help`     → 帮助信息
+//! 子命令：
+//! - `forge serve`  启动 HTTP 服务（等价 forge-server；FORGE_PORT/FORGE_PG_URL 生效）
+//! - `forge version` / 默认  输出版本行
 
 use clap::{Parser, Subcommand};
 
@@ -21,16 +19,23 @@ struct Cli {
 /// 子命令集合。
 #[derive(Subcommand)]
 enum Commands {
+    /// 启动 HTTP 服务。
+    Serve,
     /// 打印版本信息后退出。
     Version,
 }
 
-fn main() {
+#[tokio::main]
+async fn main() {
     let cli = Cli::parse();
 
     match cli.command {
-        // 显式 version 子命令与无参数默认行为一致：
-        // 输出含 "forge" 的版本行后退出 0。
+        Some(Commands::Serve) => {
+            if let Err(e) = forge_server::run_from_env().await {
+                eprintln!("server error: {e}");
+                std::process::exit(1);
+            }
+        }
         Some(Commands::Version) | None => {
             println!("forge {}", env!("CARGO_PKG_VERSION"));
         }
