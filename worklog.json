@@ -206,5 +206,13 @@
     "task_id": "PH2-004",
     "title": "PH2-004 规格确认与实现方案（KEY脱敏入档）",
     "body": "规格来源（用户提供）：\n- 供应商：商汤 SenseNova，OpenAI 兼容协议\n- BaseURL: https://token.sensenova.cn/v1\n- KEY: 已由用户线下提供，存入 aion-forge/.env（已 gitignore，本记录脱敏 sk-c7b3****）\n- 模型：按用户指示\"自动获取\"——GET /models 列举后按启发式选择（含\"chat\"优先），支持 FORGE_LLM_MODEL 覆盖\n实现落点（遵守冻结目录树，不新增顶层目录）：\n- capability/api/（树内既有槽位）新建 forge-api crate：OpenAI兼容客户端 + 模型发现\n- LlmAgent 放同 crate（依赖 forge-agent 实现 Agent trait；core 保持零网络依赖）\n安全纪律：KEY 不入库不入日志不入记忆系统；测试默认跳过、带 env 才真实调用。"
+  },
+  {
+    "id": "R3-002",
+    "kind": "R3Blocked",
+    "date": "2026-08-23",
+    "task_id": "Q-002",
+    "title": "阻塞：SenseNova workspace 配额不足",
+    "body": "已验证（真绿）：list_models 真实返回5模型；pick_model_with_prefs 选中 glm-5.2；\nchat 全链路曾在探针中成功（回复\"OK. How can I help you today?\"）。\n阻塞：live_chat_roundtrip 三次退避(1.5/3/6s)后仍 429 \"Workspace allocated quota exceeded\"\n     ——workspace级配额耗尽，属供应商侧外部条件。\n解除条件：用户为该KEY充值/提额，或更换可用KEY后运行：\n  $env:FORGE_LLM_BASE_URL/.env 已就绪\n  cargo test -p forge-api --test live\n附带发现：sensenova-u1-fast 在列表中但实际404（供应商目录不一致），已在偏好序中规避。"
   }
 ]

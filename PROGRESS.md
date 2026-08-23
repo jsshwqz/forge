@@ -35,7 +35,7 @@
 | PH2-001 | 持久化：PostgreSQL(sqlx) 三store | ✅ 完成 | builder-a | R1-009 | f649fce |
 | PH2-002 | axum HTTP server | ✅ 完成 | - | R1-007 | 42325de |
 | PH2-003 | MCP 完整协议 | ✅ 完成 | builder-a | R1-008 | 20b8f4d |
-| PH2-004 | 真实模型接入 | ⬜ 未开始 | - | - | - |
+| PH2-004 | 真实模型接入 | 📌 WIP | builder-a | - | - |
 | PH2-005 | Skill 签名/完整性校验 | ⬜ 未开始 | - | - | - |
 | PH2-001b | MinIO(S3) 对象存储接入 | ✅ 完成 | builder-a | R1-010 | b9cf677 |
 | Q-001 | 测试卫生+持久化回放兼容验证 | ✅ 完成 | - | R1-011 | 3b8b5c9 |
@@ -43,3 +43,5 @@
 | CLEAN-001 | 旧 forge 目录 PATH 清理(留备份) | ✅ 完成 | - | - | n/a(非代码) |
 | INT-001 | server 接入 PG 持久化 | ✅ 完成 | builder-a | R1-012 | ffd86a8 |
 | CLEAN-001 | 旧 forge 目录 PATH 清理 | ✅ 完成 | builder-a | R1-013 | n/a |
+| Q-002 | SenseNova 配额恢复后复验 live 测试 | ⬜ 未开始 | - | - | - |
+| Q-002 | SenseNova配额恢复后复验 | 🚧 阻塞 | - | - | - |

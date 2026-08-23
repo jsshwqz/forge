@@ -310,5 +310,21 @@
     "owner": "builder-a",
     "last_record": "R1-013",
     "commit": "n/a"
+  },
+  {
+    "task_id": "Q-002",
+    "name": "SenseNova 配额恢复后复验 live 测试",
+    "status": "NotStarted",
+    "owner": null,
+    "last_record": null,
+    "commit": null
+  },
+  {
+    "last_record": null,
+    "name": "SenseNova配额恢复后复验",
+    "commit": null,
+    "task_id": "Q-002",
+    "status": "Blocked",
+    "owner": null
   }
 ]
