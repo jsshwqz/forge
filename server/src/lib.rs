@@ -1,20 +1,15 @@
-//! forge-server：Aion Forge 2.0 HTTP API 层（V3.0 可信服务化完整实现）。
+//! forge-server：Aion Forge 2.0 HTTP API 层（V3.0 完整实现）。
 //!
-//! 端点：
-//! - GET  /health                              免鉴权
-//! - POST /tasks                               创建任务
-//! - GET  /tasks                               列表
-//! - GET  /tasks/{id}                          查询
-//! - GET  /sessions/{id}                       查询
-//! - POST /orchestrate                         端到端编排
-//! - POST /api/evidence                        写入证据
-//! - GET  /api/evidence/{id}                   查询证据
-//! - GET  /events/stream?topic=...             SSE 事件流
+//! 端点：health / tasks CRUD / sessions / orchestrate / evidence / events/stream
+//! 中间件：CORS 白名单（env FORGE_CORS_ORIGINS）
 
 use axum::{
     extract::{Path, Query, State},
     http::StatusCode,
-    response::{sse::{Event as SseEvent, KeepAlive, Sse}, IntoResponse, Response},
+    response::{
+        sse::{Event as SseEvent, KeepAlive, Sse},
+        IntoResponse, Response,
+    },
     routing::{get, post},
     Json, Router,
 };
@@ -22,19 +17,20 @@ use forge_core::{ForgeError, ForgeResult, SessionId, TaskId};
 use forge_evidence::{EvidenceStore, InMemoryEvidenceStore};
 use forge_event::{EventBus, InMemoryEventBus, Topic};
 use forge_exec::{EchoTool, PermissionPolicy, ToolRouter};
-use forge_session::SessionStore;
+use forge_session::{Session, SessionStore};
 use forge_sdk::{ForgeSdk, Orchestrator};
 use forge_task::{AcceptanceCriterion, Task, TaskStore};
 use forge_verify::{CommandVerifier, FileVerifier};
 use forge_workspace::WorkspaceManager;
-use futures::stream::Stream;
+use futures::stream;
+use futures::Stream;
 use serde::Deserialize;
 use std::collections::HashMap;
 use std::convert::Infallible;
 use std::sync::Arc;
 use std::time::Duration;
 
-// ---- AppState ----
+// ==================== AppState ====================
 
 #[derive(Clone)]
 pub struct AppState {
@@ -63,7 +59,7 @@ impl AppState {
     }
 }
 
-// ---- 错误 ----
+// ==================== 错误 ====================
 
 pub struct ApiError(StatusCode, String);
 
@@ -83,7 +79,7 @@ impl IntoResponse for ApiError {
     fn into_response(self) -> Response { (self.0, self.1).into_response() }
 }
 
-// ---- 请求体 ----
+// ==================== 请求体 ====================
 
 #[derive(Deserialize)]
 pub struct CreateTaskRequest {
@@ -108,7 +104,7 @@ impl PermissionPolicy for DemoAllowAll {
     fn check(&self, _: forge_exec::PermissionLevel, _: &forge_exec::PolicyContext) -> ForgeResult<()> { Ok(()) }
 }
 
-// ---- Handlers ----
+// ==================== Handlers ====================
 
 async fn health() -> Json<serde_json::Value> {
     Json(serde_json::json!({"status":"ok","service":"forge-server","version":env!("CARGO_PKG_VERSION")}))
@@ -188,9 +184,38 @@ async fn get_evidence(
     })))
 }
 
-/// GET /events/stream?topic=execution,verification — SSE 实时事件流（API-003）
+/// GET /events/stream — SSE 实时事件流（API-003）
+async fn events_stream(
+    State(st): State<AppState>,
+) -> Sse<impl Stream<Item = Result<SseEvent, Infallible>>> {
+    use futures::stream;
 
-// ---- CORS 层（API-004） ----
+    let mut es = st.event_bus.subscribe(Topic::Session).await.unwrap();
+    let stream = stream::unfold(es, |mut es| async move {
+        loop {
+            match es.recv().await {
+                Ok(event) => {
+                    let data = serde_json::to_string(
+                        &serde_json::json!({"id": event.id, "at": event.at.to_rfc3339()}),
+                    ).unwrap_or_default();
+                    return Some((
+                        Ok(SseEvent::default().event("forge_event").data(data)),
+                        es,
+                    ));
+                }
+                Err(_) => return None,
+            }
+        }
+    });
+
+    Sse::new(stream).keep_alive(
+        axum::response::sse::KeepAlive::new()
+            .interval(Duration::from_secs(15))
+            .text("ping"),
+    )
+}
+
+// ==================== CORS（API-004）====================
 
 fn cors_layer() -> tower_http::cors::CorsLayer {
     let origins = std::env::var("FORGE_CORS_ORIGINS").unwrap_or_default();
@@ -204,12 +229,11 @@ fn cors_layer() -> tower_http::cors::CorsLayer {
     tower_http::cors::CorsLayer::new().allow_origin(allow)
 }
 
-// ---- 路由 ----
+// ==================== 路由 ====================
 
 pub fn app() -> Router { app_with_state(AppState::in_memory()) }
 
 pub fn app_with_state(st: AppState) -> Router {
-    let cors = cors_layer();
     Router::new()
         .route("/health", get(health))
         .route("/tasks", post(create_task).get(list_tasks))
@@ -218,20 +242,25 @@ pub fn app_with_state(st: AppState) -> Router {
         .route("/orchestrate", post(orchestrate))
         .route("/api/evidence", post(put_evidence))
         .route("/api/evidence/:id", get(get_evidence))
-        
-        .layer(cors)
+        .route("/events/stream", get(events_stream))
+        .layer(cors_layer())
         .with_state(st)
 }
 
+// ==================== 启动 ====================
+
 pub async fn run_from_env() -> Result<(), Box<dyn std::error::Error>> {
     tracing_subscriber::fmt()
-        .with_env_filter(tracing_subscriber::EnvFilter::try_from_default_env()
-            .unwrap_or_else(|_| tracing_subscriber::EnvFilter::new("info")))
-        .try_init().ok();
+        .with_env_filter(
+            tracing_subscriber::EnvFilter::try_from_default_env()
+                .unwrap_or_else(|_| tracing_subscriber::EnvFilter::new("info")),
+        )
+        .try_init()
+        .ok();
     let port: u16 = std::env::var("FORGE_PORT").ok().and_then(|s| s.parse().ok()).unwrap_or(8080);
     let state = match std::env::var("FORGE_PG_URL") {
         Ok(url) => {
-            println!("storage: PostgreSQL");
+            println!("storage: PostgreSQL ({url})");
             AppState {
                 sdk: ForgeSdk::postgres(&url).await?,
                 evidence: Arc::new(InMemoryEvidenceStore::default()),
@@ -242,8 +271,10 @@ pub async fn run_from_env() -> Result<(), Box<dyn std::error::Error>> {
         Err(_) => { println!("storage: in-memory"); AppState::in_memory() }
     };
     let app = app_with_state(state);
-    let addr = std::net::SocketAddr::from(([127,0,0,1], port));
-    let listener = tokio::net::TcpListener::bind(addr).await.unwrap_or_else(|e| panic!("bind: {e}"));
+    let addr = std::net::SocketAddr::from(([127, 0, 0, 1], port));
+    let listener = tokio::net::TcpListener::bind(addr)
+        .await
+        .unwrap_or_else(|e| panic!("failed to bind {addr}: {e}"));
     println!("forge-server listening on http://{addr}");
     axum::serve(listener, app).await.unwrap();
     Ok(())

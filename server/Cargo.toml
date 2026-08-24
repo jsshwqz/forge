@@ -20,7 +20,7 @@ forge-verify = { path = "../verification/verifier" }
 forge-event = { path = "../core/event" }
 forge-evidence = { path = "../verification/evidence" }
 forge-workspace = { path = "../execution/workspace" }
-tower-http = { version = "0.4", features = ["cors"] }
+tower-http = { version = "0.5", features = ["cors"] }
 axum = "0.7"
 tokio = { version = "1", features = ["macros", "rt-multi-thread", "net", "signal"] }
 serde = { version = "1", features = ["derive"] }
