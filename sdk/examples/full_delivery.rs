@@ -131,6 +131,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         evidence: evidence.clone(),
         workspace: workspace.clone(),
         timeout: Duration::from_secs(30),
+        // ORCH-003：演示默认配置——有界重试先行，未接 LLM 重规划器
+        recovery: Arc::new(forge_recovery::BoundedRetryStrategy::default()),
+        replanner: None,
+        max_replans: 1,
+        planner: None,
     };
 
     // 编排器 capability = "write_file"，即计划中的步骤会调用此工具

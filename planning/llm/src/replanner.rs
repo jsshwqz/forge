@@ -20,16 +20,38 @@ pub struct LlmReplanner<B: LlmPlanBackend> {
     pub backend: Arc<B>,
     pub model: String,
     pub schema_max_attempts: u32,
+    /// 可用能力白名单：非空时写入提示词强约束（修订计划不得发明工具）。
+    pub tools: Vec<String>,
 }
 
 #[async_trait]
 impl<B: LlmPlanBackend + 'static> Replanner for LlmReplanner<B> {
     async fn replan(&self, plan: &Plan, failures: &[FailureRecord]) -> ForgeResult<Plan> {
-        let system = "You are a plan revision assistant. Given an original plan and failure records, produce a REVISED plan. Respond with ONLY JSON in the same schema as the original plan.".to_string();
+        let tool_rule = if self.tools.is_empty() {
+            "Prefer capability \"echo\" unless the original plan clearly used another available tool.".to_string()
+        } else {
+            format!(
+                "Available capabilities: {:?}. Every call step MUST use exactly one of these; \
+                 do NOT invent capability names.",
+                self.tools
+            )
+        };
+        let system = format!(
+            "You are a plan revision assistant. Given an original plan and failure records, \
+produce a REVISED plan. Respond with ONLY a JSON object (no prose, no code fences) \
+in the same schema as the original plan: \
+{{\"steps\":[{{\"id\":\"s1\",\"title\":\"...\",\"depends_on\":[],\
+\"action\":{{\"type\":\"call\",\"capability\":\"echo\",\"input\":{{}}}}}}]}}. \
+{tool_rule}"
+        );
 
+        // 失败详情（含具体原因文本）比仅类别更能帮模型定位坏步骤
         let failures_text = failures
             .iter()
-            .map(|f| format!("step execution failed: {:?}", f.category))
+            .map(|f| {
+                let category = format!("{:?}", f.category);
+                format!("- [{}] {}: {}", f.execution_id, category, f.message)
+            })
             .collect::<Vec<_>>()
             .join("\n");
 

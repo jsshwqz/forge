@@ -16,6 +16,7 @@ forge-storage = { path = "../storage" }
 forge-artifact = { path = "../core/artifact" }
 forge-sdk = { path = "../sdk" }
 forge-exec = { path = "../execution/runtime" }
+forge-recovery = { path = "../recovery" }
 forge-verify = { path = "../verification/verifier" }
 forge-event = { path = "../core/event" }
 forge-evidence = { path = "../verification/evidence" }

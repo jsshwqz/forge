@@ -140,6 +140,14 @@ async fn orchestrate(
         evidence: st.evidence.clone(),
         workspace: st.workspaces.clone(),
         timeout: Duration::from_secs(req.timeout_secs),
+        // ORCH-003：服务端默认有界重试 + 无 LLM 重规划器（V3.2 流水线再接入真实重规划）
+        recovery: Arc::new(forge_recovery::BoundedRetryStrategy {
+            max_attempts: 1,
+            base_backoff_ms: 200,
+        }),
+        replanner: None,
+        max_replans: 1,
+        planner: None,
     };
     let orch = Orchestrator { capability: "echo".into(), timeout: Duration::from_secs(req.timeout_secs) };
     let report = st.sdk.run_end_to_end(&task.id, &deps, &orch).await.map_err(ApiError::from)?;
@@ -149,6 +157,9 @@ async fn orchestrate(
         "gate_passed": report.gate.passed,
         "steps_completed": report.execution.completed.len(),
         "evidence_count": report.evidence_ids.len(),
+        "replans_used": report.replans_used,
+        "escalated_to_human": report.escalated_to_human,
+        "plan_versions": report.plan_versions.iter().map(|p| p.as_str()).collect::<Vec<_>>(),
     })))
 }
 

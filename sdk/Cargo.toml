@@ -16,14 +16,17 @@ forge-gates = { path = "../verification/gates" }
 forge-planner = { path = "../planning/planner" }
 forge-dag = { path = "../planning/dag" }
 forge-scheduler = { path = "../planning/scheduler" }
+forge-plan-llm = { path = "../planning/llm" }
+forge-recovery = { path = "../recovery" }
 forge-workspace = { path = "../execution/workspace" }
 forge-storage = { path = "../storage" }
 chrono = { version = "0.4", features = ["serde"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 async-trait = "0.1"
-tokio = { version = "1", features = ["sync"] }
+tokio = { version = "1", features = ["sync", "time", "macros"] }
 
 [dev-dependencies]
 tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
 tempfile = "3"
+forge-api = { path = "../capability/api" }

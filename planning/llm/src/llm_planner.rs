@@ -39,20 +39,34 @@ pub struct LlmPlanner<B: LlmPlanBackend> {
     pub backend: Arc<B>,
     pub model: String,
     pub schema_max_attempts: u32,
+    /// 可用能力白名单：非空时写入提示词强约束（防止模型发明不存在的工具）。
+    pub tools: Vec<String>,
 }
 
 impl<B: LlmPlanBackend> LlmPlanner<B> {
     pub fn new(backend: Arc<B>, model: impl Into<String>) -> Self {
-        Self { backend, model: model.into(), schema_max_attempts: 3 }
+        Self { backend, model: model.into(), schema_max_attempts: 3, tools: Vec::new() }
     }
 
-    fn build_messages(task: &Task) -> Vec<ChatMessage> {
-        let system = "You are a planning assistant. Produce an execution plan for the task. \
+    fn build_messages(&self, task: &Task) -> Vec<ChatMessage> {
+        let tool_rule = if self.tools.is_empty() {
+            "If unsure which capability to use, use \"echo\".".to_string()
+        } else {
+            format!(
+                "Available capabilities: {:?}. Every call step MUST use exactly one of these; \
+                 do NOT invent capability names.",
+                self.tools
+            )
+        };
+        let system = format!(
+            "You are a planning assistant. Produce an execution plan for the task. \
 Respond with ONLY a JSON object (no prose, no code fences) matching this schema: \
-{\"steps\":[{\"id\":\"s1\",\"title\":\"...\",\"depends_on\":[],\
-\"action\":{\"type\":\"call\",\"capability\":\"echo\",\"input\":{}}}]}. \
+{{\"steps\":[{{\"id\":\"s1\",\"title\":\"...\",\"depends_on\":[],\
+\"action\":{{\"type\":\"call\",\"capability\":\"echo\",\"input\":{{}}}}}}]}}. \
 Action type must be \"call\" or \"approval\". \
-Step ids must be unique; depends_on must reference existing step ids only.";
+Step ids must be unique; depends_on must reference existing step ids only. \
+{tool_rule}"
+        );
 
         let mut user = format!("Task goal:\n{}\n", task.goal);
         if !task.constraints.is_empty() {
@@ -75,7 +89,7 @@ Step ids must be unique; depends_on must reference existing step ids only.";
 #[async_trait]
 impl<B: LlmPlanBackend + 'static> Planner for LlmPlanner<B> {
     async fn plan(&self, task: &Task) -> ForgeResult<Plan> {
-        let mut messages = Self::build_messages(task);
+        let mut messages = self.build_messages(task);
         let mut last_error = String::new();
 
         for attempt in 0..self.schema_max_attempts {
@@ -188,11 +202,20 @@ mod tests {
                 check: CheckSpec::FileExists("out.txt".into()),
             }],
         );
-        let msgs = LlmPlanner::<MockBackend>::build_messages(&task);
+        let planner: LlmPlanner<MockBackend> =
+            LlmPlanner::new(Arc::new(MockBackend::new(vec![])), "mock-model");
+        let msgs = planner.build_messages(&task);
         let user = &msgs[1].content;
         assert!(user.contains("ship it"));
         assert!(user.contains("no network"));
         assert!(user.contains("AC-1"));
         assert!(msgs[0].content.contains("ONLY a JSON object"));
+
+        // 工具白名单非空时必须出现在系统提示词中
+        let mut constrained: LlmPlanner<MockBackend> =
+            LlmPlanner::new(Arc::new(MockBackend::new(vec![])), "mock-model");
+        constrained.tools = vec!["echo".into()];
+        let sys = constrained.build_messages(&task)[0].content.clone();
+        assert!(sys.contains("\"echo\""));
     }
 }

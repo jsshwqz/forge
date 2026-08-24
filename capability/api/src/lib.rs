@@ -88,8 +88,8 @@ impl LlmClient {
     }
 
 
-    /// POST + 429 指数退避重试（最多 3 次：1.5s/3s/6s）。
-    /// 商汤网关存在短窗口限流（实测同模型偶发 429，稍候即恢复）。
+    /// POST + 瞬态故障指数退避重试（最多 3 次：1.5s/3s/6s）。
+    /// 覆盖 429 限流与 5xx 引擎暂不可用（商汤网关短窗口故障，稍候即恢复）。
     async fn post_json_retry_429(
         &self,
         path: &str,
@@ -106,7 +106,11 @@ impl LlmClient {
                 .await
                 .map_err(|e| ForgeError::InvalidState(format!("llm transport: {e}")))?;
             let status = resp.status();
-            if status.as_u16() == 429 && attempt < 3 {
+            // 瞬态故障退避重试：429 限流 + 5xx 引擎暂不可用
+            // （G-V3.1 live 实测商汤偶发 500 "engine is not available temporarily"，
+            //   与 429 同属稍候即恢复的短窗口故障，见路线图风险 R-06）
+            let transient = status.as_u16() == 429 || status.is_server_error();
+            if transient && attempt < 3 {
                 tracing_stub_wait(backoff_ms).await;
                 backoff_ms *= 2;
                 continue;

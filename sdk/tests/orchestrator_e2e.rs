@@ -51,6 +51,14 @@ fn deps(register_echo: bool) -> (
         evidence: evidence.clone(),
         workspace: ws.clone(),
         timeout: Duration::from_secs(10),
+        // ORCH-003：默认快速升级（max_attempts=0），保持既有场景语义不变
+        recovery: Arc::new(forge_recovery::BoundedRetryStrategy {
+            max_attempts: 0,
+            base_backoff_ms: 1,
+        }),
+        replanner: None,
+        max_replans: 1,
+        planner: None,
     };
     (deps, evidence, ws, tmp)
 }

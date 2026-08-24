@@ -8,6 +8,6 @@ pub mod llm_planner;
 pub mod replanner;
 pub mod validator;
 
-pub use llm_planner::LlmPlanner;
-pub use replanner::LlmReplanner;
+pub use llm_planner::{LlmPlanBackend, LlmPlanner};
+pub use replanner::{LlmReplanner, Replanner};
 pub use validator::validate_plan;
