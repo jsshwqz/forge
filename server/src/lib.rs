@@ -4,10 +4,10 @@
 //! 中间件：CORS 白名单（env FORGE_CORS_ORIGINS）
 
 use axum::{
-    extract::{Path, Query, State},
+    extract::{Path, State},
     http::StatusCode,
     response::{
-        sse::{Event as SseEvent, KeepAlive, Sse},
+        sse::{Event as SseEvent, Sse},
         IntoResponse, Response,
     },
     routing::{get, post},
@@ -17,15 +17,13 @@ use forge_core::{ForgeError, ForgeResult, SessionId, TaskId};
 use forge_evidence::{EvidenceStore, InMemoryEvidenceStore};
 use forge_event::{EventBus, InMemoryEventBus, Topic};
 use forge_exec::{EchoTool, PermissionPolicy, ToolRouter};
-use forge_session::{Session, SessionStore};
+use forge_session::SessionStore;
 use forge_sdk::{ForgeSdk, Orchestrator};
 use forge_task::{AcceptanceCriterion, Task, TaskStore};
 use forge_verify::{CommandVerifier, FileVerifier};
 use forge_workspace::WorkspaceManager;
-use futures::stream;
 use futures::Stream;
 use serde::Deserialize;
-use std::collections::HashMap;
 use std::convert::Infallible;
 use std::sync::Arc;
 use std::time::Duration;
@@ -132,7 +130,7 @@ async fn orchestrate(
     Json(req): Json<OrchestrateRequest>,
 ) -> Result<Json<serde_json::Value>, ApiError> {
     let task = st.sdk.create_task(req.goal.clone(), vec![], req.acceptance.clone()).await?;
-    let mut router = ToolRouter::new();
+    let router = ToolRouter::new();
     router.register(Box::new(EchoTool::new())).map_err(ApiError::from)?;
     let deps = forge_sdk::OrchestratorDeps {
         router: Arc::new(router),
@@ -190,21 +188,20 @@ async fn events_stream(
 ) -> Sse<impl Stream<Item = Result<SseEvent, Infallible>>> {
     use futures::stream;
 
-    let mut es = st.event_bus.subscribe(Topic::Session).await.unwrap();
+    let es = st.event_bus.subscribe(Topic::Session).await.unwrap();
     let stream = stream::unfold(es, |mut es| async move {
-        loop {
-            match es.recv().await {
-                Ok(event) => {
-                    let data = serde_json::to_string(
-                        &serde_json::json!({"id": event.id, "at": event.at.to_rfc3339()}),
-                    ).unwrap_or_default();
-                    return Some((
-                        Ok(SseEvent::default().event("forge_event").data(data)),
-                        es,
-                    ));
-                }
-                Err(_) => return None,
+        // unfold 每次调用产出一个事件；通道关闭(Err)时返回 None 结束流。
+        match es.recv().await {
+            Ok(event) => {
+                let data = serde_json::to_string(
+                    &serde_json::json!({"id": event.id, "at": event.at.to_rfc3339()}),
+                ).unwrap_or_default();
+                Some((
+                    Ok(SseEvent::default().event("forge_event").data(data)),
+                    es,
+                ))
             }
+            Err(_) => None,
         }
     });
 

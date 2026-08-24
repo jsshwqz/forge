@@ -13,7 +13,6 @@
 use axum::body::Body;
 use axum::http::{Request, StatusCode};
 use forge_server::{app_with_state, AppState};
-use forge_task::TaskStatus;
 use http_body_util::BodyExt;
 use tower::ServiceExt;
 

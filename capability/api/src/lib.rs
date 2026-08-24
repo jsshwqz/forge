@@ -135,7 +135,7 @@ impl LlmClient {
         self.post_json_retry_429("chat/completions", &body).await
     }
     /// 从响应 JSON 提取 choices[0].message.content。
-    pub(crate) fn extract_content(v: &serde_json::Value) -> ForgeResult<String> {
+    pub fn extract_content(v: &serde_json::Value) -> ForgeResult<String> {
         v.pointer("/choices/0/message/content")
             .and_then(|c| c.as_str())
             // 推理型模型(6.7/6.8)的 content 常带前后空白/换行，统一 trim

@@ -632,6 +632,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "forge-plan-llm"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "forge-api",
+ "forge-core",
+ "forge-dag",
+ "forge-planner",
+ "forge-recovery",
+ "forge-task",
+ "serde",
+ "serde_json",
+ "tokio",
+]
+
+[[package]]
 name = "forge-planner"
 version = "0.1.0"
 dependencies = [
