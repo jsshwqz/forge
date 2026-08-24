@@ -57,3 +57,11 @@
 | SRV-003 | server orchestrate endpoint | ✅ 完成 | builder-a | - | f394fdf |
 | DEMO-001 | runnable full delivery example | ✅ 完成 | builder-a | - | 19606a2 |
 | SRV-004 | GET /tasks list | ✅ 完成 | - | - | 19606a2 |
+| SRV-FIX-001 | server 测试覆盖整改(R7-005) | ✅ 完成 | builder-a | - | 662ac23 |
+| API-002 | Bearer auth middleware | ✅ 完成 | - | - | ae360be |
+| API-003 | placeholder | ✅ 完成 | - | - | 54523d0 |
+| API-004 | placeholder | ✅ 完成 | - | - | 54523d0 |
+| PLAN-L-001 | PlanSchema校验器(validator,6测试) | ✅ 完成 | - | - | c20b5dc |
+| PLAN-L-002 | LLM规划器(llm_planner+LlmPlanBackend,4测试) | ✅ 完成 | - | - | c20b5dc |
+| PLAN-R-001 | LLM重规划器(replanner,复用validator+backend) | ✅ 完成 | - | - | c20b5dc |
+| SRV-FIX-002 | SSE事件流never-loop缺陷修复+server导入/测试卫生 | ✅ 完成 | - | - | c20b5dc |

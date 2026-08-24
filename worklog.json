@@ -446,5 +446,45 @@
     "task_id": "SRV-FIX-001",
     "title": "SRV-FIX-001+SRV-003 API扩展",
     "body": "build=0 errors, test=0 failed, clippy=0 warnings. SRV-FIX-001 6场景矩阵全绿; server新增 POST /orchestrate + GET /tasks列表 + POST/GET /api/evidence端点"
+  },
+  {
+    "id": "R1-034",
+    "kind": "R1Completed",
+    "date": "2026-08-24",
+    "task_id": "PLAN-L-001",
+    "title": "PlanSchema校验器落地",
+    "body": "DoD: forge-plan-llm 10测试全绿+clippy零告警; 交付 planning/llm/src/validator.rs(LLM原始JSON转合法Plan, 悬空依赖/环/重复ID拒绝, 错误文案可回喂模型); 提交 c20b5dc"
+  },
+  {
+    "id": "R1-035",
+    "kind": "R1Completed",
+    "date": "2026-08-24",
+    "task_id": "PLAN-L-002",
+    "title": "LLM规划器落地",
+    "body": "交付 llm_planner.rs: LlmPlanBackend trait(生产实现复用forge_api chat_raw+extract_content, extract_content改为pub) + LlmPlanner实现Planner trait(prompt构造+schema修复循环, 默认3次); 离线mock测试4个; 提交 c20b5dc"
+  },
+  {
+    "id": "R1-036",
+    "kind": "R1Completed",
+    "date": "2026-08-24",
+    "task_id": "PLAN-R-001",
+    "title": "LLM重规划器落地",
+    "body": "交付 replanner.rs: Replanner trait + LlmReplanner(原计划+FailureRecord转修订计划, 复用validator与LlmPlanBackend); 修复重复导入并收敛extract_json_str到validator共享; 提交 c20b5dc"
+  },
+  {
+    "id": "R1-037",
+    "kind": "R1Completed",
+    "date": "2026-08-24",
+    "task_id": "SRV-FIX-002",
+    "title": "SSE事件流缺陷修复与server卫生整改",
+    "body": "clippy never_loop暴露真实缺陷: events_stream的loop两分支均return导致SSE推首个事件即断流, 已改为unfold单次产出模式(流持续到事件源关闭); 清理5处未使用导入+2处多余mut+endpoints测试未用导入; 提交 c20b5dc"
+  },
+  {
+    "id": "R7-006",
+    "kind": "R7DeviationRisk",
+    "date": "2026-08-24",
+    "task_id": "GENERAL",
+    "title": "R7-006 上会话shell异常遗留损坏与磁盘满风险(已处置)",
+    "body": "1) capability/api/src/lib.rs曾被截断为placeholder占位, 本次经git HEAD恢复(chat_raw本已在库), 仅extract_content改pub; 2) D盘满(0字节)致链接失败LNK1108/no-space, 已清target增量缓存3.5G+陈旧pdb4.3G释放约8G, 建议关注磁盘水位或迁移target目录"
   }
 ]

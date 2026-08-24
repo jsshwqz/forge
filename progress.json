@@ -454,5 +454,37 @@
     "owner": null,
     "last_record": null,
     "commit": "54523d0"
+  },
+  {
+    "task_id": "PLAN-L-001",
+    "name": "PlanSchema校验器(validator,6测试)",
+    "status": "Completed",
+    "owner": null,
+    "last_record": null,
+    "commit": "c20b5dc"
+  },
+  {
+    "task_id": "PLAN-L-002",
+    "name": "LLM规划器(llm_planner+LlmPlanBackend,4测试)",
+    "status": "Completed",
+    "owner": null,
+    "last_record": null,
+    "commit": "c20b5dc"
+  },
+  {
+    "task_id": "PLAN-R-001",
+    "name": "LLM重规划器(replanner,复用validator+backend)",
+    "status": "Completed",
+    "owner": null,
+    "last_record": null,
+    "commit": "c20b5dc"
+  },
+  {
+    "task_id": "SRV-FIX-002",
+    "name": "SSE事件流never-loop缺陷修复+server导入/测试卫生",
+    "status": "Completed",
+    "owner": null,
+    "last_record": null,
+    "commit": "c20b5dc"
   }
 ]

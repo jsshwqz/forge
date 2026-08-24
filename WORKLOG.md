@@ -611,3 +611,52 @@ f394fdf 重构 server/src/lib.rs 删除 test_health/test_create_and_get_task/tes
 
 ---
 
+## [R6-014] ⚖️ 决策 · 2026-08-23 · V3.0 立项批准：AF-ROADMAP-002 五任务包开工
+
+- **任务 ID**：SRV-FIX-001
+用户审阅 AF-ROADMAP-002 后指示继续工作=批准 V3.0 可信服务化立项。执行顺序：SRV-FIX-001(测试覆盖整改)必须最先合入；API-001~004 随后可并行。新增依赖申报表已审阅(tokio-stream/futures/tower-http/tower)。
+
+---
+
+## [R1-033] ✅ 成功 · 2026-08-24 · SRV-FIX-001+SRV-003 API扩展
+
+- **任务 ID**：SRV-FIX-001
+build=0 errors, test=0 failed, clippy=0 warnings. SRV-FIX-001 6场景矩阵全绿; server新增 POST /orchestrate + GET /tasks列表 + POST/GET /api/evidence端点
+
+---
+
+## [R1-034] ✅ 成功 · 2026-08-24 · PlanSchema校验器落地
+
+- **任务 ID**：PLAN-L-001
+DoD: forge-plan-llm 10测试全绿+clippy零告警; 交付 planning/llm/src/validator.rs(LLM原始JSON转合法Plan, 悬空依赖/环/重复ID拒绝, 错误文案可回喂模型); 提交 c20b5dc
+
+---
+
+## [R1-035] ✅ 成功 · 2026-08-24 · LLM规划器落地
+
+- **任务 ID**：PLAN-L-002
+交付 llm_planner.rs: LlmPlanBackend trait(生产实现复用forge_api chat_raw+extract_content, extract_content改为pub) + LlmPlanner实现Planner trait(prompt构造+schema修复循环, 默认3次); 离线mock测试4个; 提交 c20b5dc
+
+---
+
+## [R1-036] ✅ 成功 · 2026-08-24 · LLM重规划器落地
+
+- **任务 ID**：PLAN-R-001
+交付 replanner.rs: Replanner trait + LlmReplanner(原计划+FailureRecord转修订计划, 复用validator与LlmPlanBackend); 修复重复导入并收敛extract_json_str到validator共享; 提交 c20b5dc
+
+---
+
+## [R1-037] ✅ 成功 · 2026-08-24 · SSE事件流缺陷修复与server卫生整改
+
+- **任务 ID**：SRV-FIX-002
+clippy never_loop暴露真实缺陷: events_stream的loop两分支均return导致SSE推首个事件即断流, 已改为unfold单次产出模式(流持续到事件源关闭); 清理5处未使用导入+2处多余mut+endpoints测试未用导入; 提交 c20b5dc
+
+---
+
+## [R7-006] ⚠️ 偏差/风险 · 2026-08-24 · R7-006 上会话shell异常遗留损坏与磁盘满风险(已处置)
+
+- **任务 ID**：GENERAL
+1) capability/api/src/lib.rs曾被截断为placeholder占位, 本次经git HEAD恢复(chat_raw本已在库), 仅extract_content改pub; 2) D盘满(0字节)致链接失败LNK1108/no-space, 已清target增量缓存3.5G+陈旧pdb4.3G释放约8G, 建议关注磁盘水位或迁移target目录
+
+---
+
