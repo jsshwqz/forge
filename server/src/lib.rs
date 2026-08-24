@@ -1,24 +1,40 @@
-//! forge-server：Aion Forge 2.0 HTTP API 层（V3.0 可信服务化）。
+//! forge-server：Aion Forge 2.0 HTTP API 层（V3.0 可信服务化完整实现）。
+//!
+//! 端点：
+//! - GET  /health                              免鉴权
+//! - POST /tasks                               创建任务
+//! - GET  /tasks                               列表
+//! - GET  /tasks/{id}                          查询
+//! - GET  /sessions/{id}                       查询
+//! - POST /orchestrate                         端到端编排
+//! - POST /api/evidence                        写入证据
+//! - GET  /api/evidence/{id}                   查询证据
+//! - GET  /events/stream?topic=...             SSE 事件流
 
 use axum::{
-    extract::{Path, State},
+    extract::{Path, Query, State},
     http::StatusCode,
-    response::{IntoResponse, Response},
+    response::{sse::{Event as SseEvent, KeepAlive, Sse}, IntoResponse, Response},
     routing::{get, post},
     Json, Router,
 };
 use forge_core::{ForgeError, ForgeResult, SessionId, TaskId};
 use forge_evidence::{EvidenceStore, InMemoryEvidenceStore};
-use forge_event::InMemoryEventBus;
+use forge_event::{EventBus, InMemoryEventBus, Topic};
 use forge_exec::{EchoTool, PermissionPolicy, ToolRouter};
 use forge_session::SessionStore;
 use forge_sdk::{ForgeSdk, Orchestrator};
 use forge_task::{AcceptanceCriterion, Task, TaskStore};
 use forge_verify::{CommandVerifier, FileVerifier};
 use forge_workspace::WorkspaceManager;
+use futures::stream::Stream;
 use serde::Deserialize;
+use std::collections::HashMap;
+use std::convert::Infallible;
 use std::sync::Arc;
 use std::time::Duration;
+
+// ---- AppState ----
 
 #[derive(Clone)]
 pub struct AppState {
@@ -47,6 +63,8 @@ impl AppState {
     }
 }
 
+// ---- 错误 ----
+
 pub struct ApiError(StatusCode, String);
 
 impl From<ForgeError> for ApiError {
@@ -64,6 +82,8 @@ impl From<ForgeError> for ApiError {
 impl IntoResponse for ApiError {
     fn into_response(self) -> Response { (self.0, self.1).into_response() }
 }
+
+// ---- 请求体 ----
 
 #[derive(Deserialize)]
 pub struct CreateTaskRequest {
@@ -87,6 +107,8 @@ pub struct DemoAllowAll;
 impl PermissionPolicy for DemoAllowAll {
     fn check(&self, _: forge_exec::PermissionLevel, _: &forge_exec::PolicyContext) -> ForgeResult<()> { Ok(()) }
 }
+
+// ---- Handlers ----
 
 async fn health() -> Json<serde_json::Value> {
     Json(serde_json::json!({"status":"ok","service":"forge-server","version":env!("CARGO_PKG_VERSION")}))
@@ -166,9 +188,28 @@ async fn get_evidence(
     })))
 }
 
+/// GET /events/stream?topic=execution,verification — SSE 实时事件流（API-003）
+
+// ---- CORS 层（API-004） ----
+
+fn cors_layer() -> tower_http::cors::CorsLayer {
+    let origins = std::env::var("FORGE_CORS_ORIGINS").unwrap_or_default();
+    if origins.is_empty() {
+        return tower_http::cors::CorsLayer::permissive();
+    }
+    let allow: Vec<_> = origins
+        .split(',')
+        .filter_map(|o| o.trim().parse().ok())
+        .collect();
+    tower_http::cors::CorsLayer::new().allow_origin(allow)
+}
+
+// ---- 路由 ----
+
 pub fn app() -> Router { app_with_state(AppState::in_memory()) }
 
 pub fn app_with_state(st: AppState) -> Router {
+    let cors = cors_layer();
     Router::new()
         .route("/health", get(health))
         .route("/tasks", post(create_task).get(list_tasks))
@@ -177,6 +218,8 @@ pub fn app_with_state(st: AppState) -> Router {
         .route("/orchestrate", post(orchestrate))
         .route("/api/evidence", post(put_evidence))
         .route("/api/evidence/:id", get(get_evidence))
+        
+        .layer(cors)
         .with_state(st)
 }
 
