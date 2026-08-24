@@ -1,6 +1,6 @@
 {
-  "updated_at": "2026-08-24 22:25",
-  "current_status": "V3.0收尾完成: forge-plan-llm(LLM规划+重规划)落地, 254 tests全绿+clippy零告警; SSE断流缺陷已修(SRV-FIX-002); capability/api截断已恢复; 全部提交于c20b5dc",
+  "updated_at": "2026-08-25 01:17",
+  "current_status": "V3.1智能规划全部完成(PLAN-L-001/002+PLAN-R-001+ORCH-003): G-V3.1门禁双轨通过, 261测试全绿clippy零告警, live真实模型双场景TestReport入库; 提交ad0abd2",
   "blockers": [],
   "next_tasks": [
     {
@@ -20,5 +20,5 @@
     "progress.json": "任务状态事实源",
     "worklog.json": "工作日志事实源"
   },
-  "advice": "等待新指令或V3.1规格(P8人工立项); D盘曾满注意磁盘水位(R7-006); 状态更新继续用forge-worklog+export"
+  "advice": "下一步V3.2多Agent流水线(AGENT-P/T/O系列,P8人工立项); live轨需FORGE_LLM_LIVE=1按需开启"
 }

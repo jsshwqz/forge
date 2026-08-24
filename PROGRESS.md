@@ -65,3 +65,4 @@
 | PLAN-L-002 | LLM规划器(llm_planner+LlmPlanBackend,4测试) | ✅ 完成 | - | - | c20b5dc |
 | PLAN-R-001 | LLM重规划器(replanner,复用validator+backend) | ✅ 完成 | - | - | c20b5dc |
 | SRV-FIX-002 | SSE事件流never-loop缺陷修复+server导入/测试卫生 | ✅ 完成 | - | - | c20b5dc |
+| ORCH-003 | 编排器接入重规划 | ✅ 完成 | - | - | ad0abd2 |

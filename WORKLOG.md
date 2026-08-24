@@ -660,3 +660,17 @@ clippy never_loop暴露真实缺陷: events_stream的loop两分支均return导�
 
 ---
 
+## [R1-038] ✅ 成功 · 2026-08-25 · 编排器接入重规划,G-V3.1门禁双轨通过
+
+- **任务 ID**：ORCH-003
+run_end_to_end恢复链: Recovery重试->预算内replan->耗尽EscalateHuman+Session留痕计划版本; Deps新增recovery/replanner/max_replans/planner, 报告新增3字段; 5离线+2live场景全过(sensenova真实模型TestReport入库); 261测试全绿clippy零告警; 提交ad0abd2
+
+---
+
+## [R6-015] ⚖️ 决策 · 2026-08-25 · 决策: replan尝试即耗预算+planner注入扩展
+
+- **任务 ID**：ORCH-003
+1) replan调用即消耗max_replans预算(LLM拒绝也烧机会), 防对坏计划无限重写; 2) OrchestratorDeps增加planner注入字段, 超出4.6字面契约但为G-V3.1 live门禁(真实计划经run_end_to_end)所必需, 亦为V3.2四角色流水线铺路; 3) forge-api退避扩至5xx, 依据R-06与live实测500engine-unavailable
+
+---
+

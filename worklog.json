@@ -486,5 +486,21 @@
     "task_id": "GENERAL",
     "title": "R7-006 上会话shell异常遗留损坏与磁盘满风险(已处置)",
     "body": "1) capability/api/src/lib.rs曾被截断为placeholder占位, 本次经git HEAD恢复(chat_raw本已在库), 仅extract_content改pub; 2) D盘满(0字节)致链接失败LNK1108/no-space, 已清target增量缓存3.5G+陈旧pdb4.3G释放约8G, 建议关注磁盘水位或迁移target目录"
+  },
+  {
+    "id": "R1-038",
+    "kind": "R1Completed",
+    "date": "2026-08-25",
+    "task_id": "ORCH-003",
+    "title": "编排器接入重规划,G-V3.1门禁双轨通过",
+    "body": "run_end_to_end恢复链: Recovery重试->预算内replan->耗尽EscalateHuman+Session留痕计划版本; Deps新增recovery/replanner/max_replans/planner, 报告新增3字段; 5离线+2live场景全过(sensenova真实模型TestReport入库); 261测试全绿clippy零告警; 提交ad0abd2"
+  },
+  {
+    "id": "R6-015",
+    "kind": "R6Decision",
+    "date": "2026-08-25",
+    "task_id": "ORCH-003",
+    "title": "决策: replan尝试即耗预算+planner注入扩展",
+    "body": "1) replan调用即消耗max_replans预算(LLM拒绝也烧机会), 防对坏计划无限重写; 2) OrchestratorDeps增加planner注入字段, 超出4.6字面契约但为G-V3.1 live门禁(真实计划经run_end_to_end)所必需, 亦为V3.2四角色流水线铺路; 3) forge-api退避扩至5xx, 依据R-06与live实测500engine-unavailable"
   }
 ]

@@ -1,7 +1,7 @@
 # HANDOFF · 交接快照（由 forge-worklog 自动生成）
 
-- **更新时间**：2026-08-24 22:25
-- **当前状态**：V3.0收尾完成: forge-plan-llm(LLM规划+重规划)落地, 254 tests全绿+clippy零告警; SSE断流缺陷已修(SRV-FIX-002); capability/api截断已恢复; 全部提交于c20b5dc
+- **更新时间**：2026-08-25 01:17
+- **当前状态**：V3.1智能规划全部完成(PLAN-L-001/002+PLAN-R-001+ORCH-003): G-V3.1门禁双轨通过, 261测试全绿clippy零告警, live真实模型双场景TestReport入库; 提交ad0abd2
 
 ## 🚧 阻塞项
 
@@ -27,4 +27,4 @@
 
 ## 🚀 建议
 
-等待新指令或V3.1规格(P8人工立项); D盘曾满注意磁盘水位(R7-006); 状态更新继续用forge-worklog+export
+下一步V3.2多Agent流水线(AGENT-P/T/O系列,P8人工立项); live轨需FORGE_LLM_LIVE=1按需开启
