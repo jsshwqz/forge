@@ -128,8 +128,8 @@ fn parse_action(v: &Value) -> ForgeResult<StepAction> {
 
 /// 从 LLM 原始输出中提取 JSON 字符串：裸对象直取；``` 围栏取首对之间内容；否则原样返回。
 ///
-/// 供 [`validate_plan`] 的调用方（LlmPlanner / LlmReplanner）在解析前统一清洗。
-pub(crate) fn extract_json_str(text: &str) -> String {
+/// 供 [`validate_plan`] 的调用方（LlmPlanner / LlmReplanner / Reviewer）解析前统一清洗。
+pub fn extract_json_str(text: &str) -> String {
     let t = text.trim();
     if t.starts_with('{') {
         return t.to_string();

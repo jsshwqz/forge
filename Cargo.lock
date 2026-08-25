@@ -632,6 +632,32 @@ dependencies = [
 ]
 
 [[package]]
+name = "forge-pipeline"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "chrono",
+ "forge-api",
+ "forge-cap",
+ "forge-core",
+ "forge-dag",
+ "forge-evidence",
+ "forge-exec",
+ "forge-gates",
+ "forge-plan-llm",
+ "forge-planner",
+ "forge-scheduler",
+ "forge-session",
+ "forge-task",
+ "forge-verify",
+ "forge-workspace",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "tokio",
+]
+
+[[package]]
 name = "forge-plan-llm"
 version = "0.1.0"
 dependencies = [

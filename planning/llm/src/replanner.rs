@@ -16,16 +16,18 @@ pub trait Replanner: Send + Sync {
 }
 
 /// LLM 驱动的重规划器。
-pub struct LlmReplanner<B: LlmPlanBackend> {
+pub struct LlmReplanner<B: LlmPlanBackend + ?Sized> {
     pub backend: Arc<B>,
     pub model: String,
     pub schema_max_attempts: u32,
     /// 可用能力白名单：非空时写入提示词强约束（修订计划不得发明工具）。
     pub tools: Vec<String>,
+    /// 可选成本账本：每次成功调用后记账（G-V3.2 成本记录）。
+    pub ledger: Option<Arc<crate::usage::UsageLedger>>,
 }
 
 #[async_trait]
-impl<B: LlmPlanBackend + 'static> Replanner for LlmReplanner<B> {
+impl<B: LlmPlanBackend + ?Sized + 'static> Replanner for LlmReplanner<B> {
     async fn replan(&self, plan: &Plan, failures: &[FailureRecord]) -> ForgeResult<Plan> {
         let tool_rule = if self.tools.is_empty() {
             "Prefer capability \"echo\" unless the original plan clearly used another available tool.".to_string()
@@ -71,7 +73,15 @@ in the same schema as the original plan: \
         let mut last_error = String::new();
 
         for attempt in 0..self.schema_max_attempts {
-            let raw = self.backend.complete(&self.model, &messages).await?;
+            let (raw, usage) = self.backend.complete_with_usage(&self.model, &messages).await?;
+            if let (Some(ledger), Some(u)) = (&self.ledger, usage) {
+                ledger.record(crate::usage::CostEntry {
+                    model: self.model.clone(),
+                    purpose: "replan".into(),
+                    prompt_tokens: u.prompt_tokens,
+                    completion_tokens: u.completion_tokens,
+                });
+            }
             let json_str = extract_json_str(&raw);
             let parsed: serde_json::Value = serde_json::from_str(&json_str)
                 .unwrap_or_else(|e| serde_json::json!({"_err": e.to_string()}));

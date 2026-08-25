@@ -126,12 +126,14 @@ async fn live_llm_plan_runs_to_completed() {
         model: model.clone(),
         schema_max_attempts: 3,
         tools: vec!["echo".into()],
+        ledger: None,
     });
     let replanner = Arc::new(LlmReplanner {
         backend: client.clone(),
         model: model.clone(),
         schema_max_attempts: 3,
         tools: vec!["echo".into()],
+        ledger: None,
     });
     let (deps, evidence, _tmp) = make_deps(Some(planner), Some(replanner));
 
@@ -215,6 +217,7 @@ async fn live_forced_failure_replans_or_escalates() {
         model: model.clone(),
         schema_max_attempts: 3,
         tools: vec!["echo".into()],
+        ledger: None,
     });
     let (deps, evidence, _tmp) = make_deps(Some(Arc::new(PoisonFirstPlanner)), Some(replanner));
 

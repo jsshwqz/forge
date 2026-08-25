@@ -502,5 +502,13 @@
     "task_id": "ORCH-003",
     "title": "决策: replan尝试即耗预算+planner注入扩展",
     "body": "1) replan调用即消耗max_replans预算(LLM拒绝也烧机会), 防对坏计划无限重写; 2) OrchestratorDeps增加planner注入字段, 超出4.6字面契约但为G-V3.1 live门禁(真实计划经run_end_to_end)所必需, 亦为V3.2四角色流水线铺路; 3) forge-api退避扩至5xx, 依据R-06与live实测500engine-unavailable"
+  },
+  {
+    "id": "R6-016",
+    "kind": "R6Decision",
+    "date": "2026-08-25",
+    "task_id": "GENERAL",
+    "title": "人工批准V3.2多Agent流水线立项",
+    "body": "用户于2026-08-25明确回复批准; 范围=AGENT-P-001/P-002/T-001/O-001四包, 门禁G-V3.2(Mock全绿+三命令零告警+live冒烟+成本进Session)"
   }
 ]

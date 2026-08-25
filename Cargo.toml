@@ -13,6 +13,7 @@ members = [
     "planning/dag",
     "planning/scheduler",
     "planning/llm",
+    "agents/pipeline",
     "verification/verifier",
     "verification/evidence",
     "verification/gates",

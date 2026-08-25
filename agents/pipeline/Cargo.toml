@@ -1,0 +1,31 @@
+[package]
+name = "forge-pipeline"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "V3.2 four-role agent pipeline: Architect->Builder->Tester->Reviewer + tier routing"
+
+[dependencies]
+forge-core = { path = "../../core/runtime" }
+forge-task = { path = "../../core/task" }
+forge-session = { path = "../../core/session" }
+forge-exec = { path = "../../execution/runtime" }
+forge-planner = { path = "../../planning/planner" }
+forge-dag = { path = "../../planning/dag" }
+forge-scheduler = { path = "../../planning/scheduler" }
+forge-plan-llm = { path = "../../planning/llm" }
+forge-cap = { path = "../../capability/registry" }
+forge-evidence = { path = "../../verification/evidence" }
+forge-verify = { path = "../../verification/verifier" }
+forge-gates = { path = "../../verification/gates" }
+forge-workspace = { path = "../../execution/workspace" }
+chrono = { version = "0.4", features = ["serde"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+async-trait = "0.1"
+tokio = { version = "1", features = ["sync", "time"] }
+
+[dev-dependencies]
+tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
+tempfile = "3"
+forge-api = { path = "../../capability/api" }

@@ -6,8 +6,13 @@
 
 pub mod llm_planner;
 pub mod replanner;
+pub mod usage;
 pub mod validator;
 
 pub use llm_planner::{LlmPlanBackend, LlmPlanner};
 pub use replanner::{LlmReplanner, Replanner};
-pub use validator::validate_plan;
+pub use usage::{CostEntry, TokenUsage, UsageLedger};
+pub use validator::{extract_json_str, validate_plan};
+
+/// 消息类型再导出：调用方构造 messages 时无需直接依赖 forge-api。
+pub use forge_api::ChatMessage;

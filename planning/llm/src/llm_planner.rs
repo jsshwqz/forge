@@ -20,6 +20,17 @@ use std::sync::Arc;
 pub trait LlmPlanBackend: Send + Sync {
     /// 给定模型与消息序列，返回助手原始文本。
     async fn complete(&self, model: &str, messages: &[ChatMessage]) -> ForgeResult<String>;
+
+    /// 同 [`complete`](Self::complete)，并尽力返回 token 用量（供应商未回 usage 时为 None）。
+    /// 默认实现退化为 [`complete`](Self::complete)（无用量）。
+    async fn complete_with_usage(
+        &self,
+        model: &str,
+        messages: &[ChatMessage],
+    ) -> ForgeResult<(String, Option<crate::usage::TokenUsage>)> {
+        let text = self.complete(model, messages).await?;
+        Ok((text, None))
+    }
 }
 
 /// 生产后端：复用 OpenAI 兼容客户端（chat_raw + 内容提取 + 429 退避）。
@@ -29,23 +40,54 @@ impl LlmPlanBackend for forge_api::LlmClient {
         let raw = self.chat_raw(model, messages).await?;
         Self::extract_content(&raw)
     }
+
+    async fn complete_with_usage(
+        &self,
+        model: &str,
+        messages: &[ChatMessage],
+    ) -> ForgeResult<(String, Option<crate::usage::TokenUsage>)> {
+        use crate::usage::TokenUsage;
+        let raw = self.chat_raw(model, messages).await?;
+        let text = Self::extract_content(&raw)?;
+        let usage = TokenUsage {
+            prompt_tokens: raw
+                .pointer("/usage/prompt_tokens")
+                .and_then(|v| v.as_u64())
+                .unwrap_or(0),
+            completion_tokens: raw
+                .pointer("/usage/completion_tokens")
+                .and_then(|v| v.as_u64())
+                .unwrap_or(0),
+        };
+        // 供应商未回 usage 时两值均为 0 —— 视作不可得，交 None
+        let has_usage = raw.pointer("/usage").is_some();
+        Ok((text, if has_usage { Some(usage) } else { None }))
+    }
 }
 
 /// LLM 驱动的规划器：实现 [`Planner`] trait（PLAN-L-002）。
 ///
 /// 循环：`complete → 提取 JSON → validate_plan`；
 /// 校验失败时把错误文案回喂给模型，最多尝试 `schema_max_attempts` 次。
-pub struct LlmPlanner<B: LlmPlanBackend> {
+pub struct LlmPlanner<B: LlmPlanBackend + ?Sized> {
     pub backend: Arc<B>,
     pub model: String,
     pub schema_max_attempts: u32,
     /// 可用能力白名单：非空时写入提示词强约束（防止模型发明不存在的工具）。
     pub tools: Vec<String>,
+    /// 可选成本账本：每次成功调用后记账（G-V3.2 成本记录）。
+    pub ledger: Option<Arc<crate::usage::UsageLedger>>,
 }
 
-impl<B: LlmPlanBackend> LlmPlanner<B> {
+impl<B: LlmPlanBackend + ?Sized> LlmPlanner<B> {
     pub fn new(backend: Arc<B>, model: impl Into<String>) -> Self {
-        Self { backend, model: model.into(), schema_max_attempts: 3, tools: Vec::new() }
+        Self {
+            backend,
+            model: model.into(),
+            schema_max_attempts: 3,
+            tools: Vec::new(),
+            ledger: None,
+        }
     }
 
     fn build_messages(&self, task: &Task) -> Vec<ChatMessage> {
@@ -87,13 +129,21 @@ Step ids must be unique; depends_on must reference existing step ids only. \
 }
 
 #[async_trait]
-impl<B: LlmPlanBackend + 'static> Planner for LlmPlanner<B> {
+impl<B: LlmPlanBackend + ?Sized + 'static> Planner for LlmPlanner<B> {
     async fn plan(&self, task: &Task) -> ForgeResult<Plan> {
         let mut messages = self.build_messages(task);
         let mut last_error = String::new();
 
         for attempt in 0..self.schema_max_attempts {
-            let raw = self.backend.complete(&self.model, &messages).await?;
+            let (raw, usage) = self.backend.complete_with_usage(&self.model, &messages).await?;
+            if let (Some(ledger), Some(u)) = (&self.ledger, usage) {
+                ledger.record(crate::usage::CostEntry {
+                    model: self.model.clone(),
+                    purpose: "plan".into(),
+                    prompt_tokens: u.prompt_tokens,
+                    completion_tokens: u.completion_tokens,
+                });
+            }
             let json_str = extract_json_str(&raw);
             let parsed: serde_json::Value = serde_json::from_str(&json_str)
                 .unwrap_or_else(|e| serde_json::json!({"_parse_error": e.to_string()}));
