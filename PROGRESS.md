@@ -70,3 +70,7 @@
 | AGENT-P-002 | 分层路由TierRouter | ✅ 完成 | builder-a | - | f4b6343 |
 | AGENT-T-001 | Reviewer Agent | ✅ 完成 | builder-a | - | f4b6343 |
 | AGENT-O-001 | 四角色流水线编排 | ✅ 完成 | builder-a | - | f4b6343 |
+| PROD-001 | 产品实例生命周期 | 📌 WIP | builder-a | - | - |
+| PROD-002 | 模板库管理 | 📌 WIP | builder-a | - | - |
+| OBS-002 | Prometheus指标 | 📌 WIP | builder-a | - | - |
+| UI-001 | Web控制台MVP | 📌 WIP | builder-a | - | - |

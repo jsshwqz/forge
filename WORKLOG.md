@@ -716,3 +716,38 @@ run_pipeline: Architect(LlmPlanner)→Builder(ExecutionEngine波次)→Tester(Ve
 
 ---
 
+## [R6-018] ⚖️ 决策 · 2026-08-25 · 人工批准V4.0产品工厂立项
+
+- **任务 ID**：GENERAL
+用户2026-08-25回复批准; 范围=PROD-001/PROD-002/OBS-002/UI-001; 选型拍板: UI纯静态零构建, metrics手写文本(依6.2默认提案); 门禁G-V4.0按6.3
+
+---
+
+## [R1-043] ✅ 成功 · 2026-08-25 · 产品实例生命周期落地
+
+- **任务 ID**：PROD-001
+新crate forge-product-instance: ProductState状态机(Draft→Active⇄Stopped→Deprecated,Draft可弃用,终态禁复活)+ProductInstanceStore trait+内存实现; HTTP端点 instantiate/list/get/start/stop/deprecate; 提交c2d69d4
+
+---
+
+## [R1-044] ✅ 成功 · 2026-08-25 · 模板库管理落地
+
+- **任务 ID**：PROD-002
+TemplateRegistry: publish强制携带Reviewer verdict(仅Pass/Concern入库,Reject拒绝)+同id@version防重+版本列举; 复用forge-product模板实例化; 提交c2d69d4
+
+---
+
+## [R1-045] ✅ 成功 · 2026-08-25 · Prometheus指标落地(零新依赖)
+
+- **任务 ID**：OBS-002
+GET /metrics手写文本格式: tasks_total/executions_total/verifications_pass/fail/replans_total五计数器; orchestrate与create_task真实埋点; 集成测试断言数值与实际执行一致; 提交c2d69d4
+
+---
+
+## [R1-046] ✅ 成功 · 2026-08-25 · Web控制台MVP落地(纯静态零构建)
+
+- **任务 ID**：UI-001
+include_str!托管三页面(/,/ui/sessions,/ui/evidence): 任务列表自动拉取/会话时间线按ID渲染事件流/证据查看按ID渲染详情; 数据源全部走V3.0只读API; 零npm零新依赖; 提交c2d69d4
+
+---
+
