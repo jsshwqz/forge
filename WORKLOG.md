@@ -674,3 +674,45 @@ run_end_to_end恢复链: Recovery重试->预算内replan->耗尽EscalateHuman+Se
 
 ---
 
+## [R6-016] ⚖️ 决策 · 2026-08-25 · 人工批准V3.2多Agent流水线立项
+
+- **任务 ID**：GENERAL
+用户于2026-08-25明确回复批准; 范围=AGENT-P-001/P-002/T-001/O-001四包, 门禁G-V3.2(Mock全绿+三命令零告警+live冒烟+成本进Session)
+
+---
+
+## [R1-039] ✅ 成功 · 2026-08-25 · RoleProfile落地(registry分发闭环)
+
+- **任务 ID**：AGENT-P-001
+Role/ModelTier/RoleProfile可序列化; to_capability打包为Skill条目经forge-cap注册+回读校验; default_profiles四角色(Architect/Reviewer=High, Builder/Tester=Low); 提交f4b6343
+
+---
+
+## [R1-040] ✅ 成功 · 2026-08-25 · TierRouter落地
+
+- **任务 ID**：AGENT-P-002
+FORGE_TIER_HIGH/LOW_MODEL环境变量; Low未配置回落High并每进程告警一次; resolve(from_parts/from_env); 决策R6: 同端点下tier映射收敛为模型名解析; 提交f4b6343
+
+---
+
+## [R1-041] ✅ 成功 · 2026-08-25 · Reviewer Agent落地
+
+- **任务 ID**：AGENT-T-001
+LlmStepReviewer输出Pass/Concern/Reject+理由, schema修复循环; Reject一票否决Gate; verdict以Log证据入库; extract_json_str公开复用; 提交f4b6343
+
+---
+
+## [R1-042] ✅ 成功 · 2026-08-25 · 四角色流水线+G-V3.2门禁通过
+
+- **任务 ID**：AGENT-O-001
+run_pipeline: Architect(LlmPlanner)→Builder(ExecutionEngine波次)→Tester(Verifier)→Reviewer→Gate; 成本token经UsageLedger写Session payload; 离线14场景全绿; live冒烟sensenova真实模型Completed/verdict可查/TestReport入库, Low回落路径验证; workspace 276测试零失败clippy零告警; 提交f4b6343
+
+---
+
+## [R6-017] ⚖️ 决策 · 2026-08-25 · 决策: Builder走ExecutionEngine而非TurnEngine(范围解释)
+
+- **任务 ID**：AGENT-O-001
+契约5.2写builder经TurnEngine; 当前步骤均为CallCapability工具调用无LLM回合需求, v1复用既有波次执行语义(与ORCH-002一致), TurnEngine接入留待agent-loop需求出现时立项; 已获人工批准的V3.2概要级契约内裁量
+
+---
+

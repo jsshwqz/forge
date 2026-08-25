@@ -66,3 +66,7 @@
 | PLAN-R-001 | LLM重规划器(replanner,复用validator+backend) | ✅ 完成 | - | - | c20b5dc |
 | SRV-FIX-002 | SSE事件流never-loop缺陷修复+server导入/测试卫生 | ✅ 完成 | - | - | c20b5dc |
 | ORCH-003 | 编排器接入重规划 | ✅ 完成 | - | - | ad0abd2 |
+| AGENT-P-001 | 角色档案RoleProfile | ✅ 完成 | builder-a | - | f4b6343 |
+| AGENT-P-002 | 分层路由TierRouter | ✅ 完成 | builder-a | - | f4b6343 |
+| AGENT-T-001 | Reviewer Agent | ✅ 完成 | builder-a | - | f4b6343 |
+| AGENT-O-001 | 四角色流水线编排 | ✅ 完成 | builder-a | - | f4b6343 |

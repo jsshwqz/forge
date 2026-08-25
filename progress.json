@@ -498,33 +498,33 @@
   {
     "task_id": "AGENT-P-001",
     "name": "角色档案RoleProfile",
-    "status": "Wip",
+    "status": "Completed",
     "owner": "builder-a",
     "last_record": null,
-    "commit": null
+    "commit": "f4b6343"
   },
   {
     "task_id": "AGENT-P-002",
     "name": "分层路由TierRouter",
-    "status": "NotStarted",
-    "owner": null,
+    "status": "Completed",
+    "owner": "builder-a",
     "last_record": null,
-    "commit": null
+    "commit": "f4b6343"
   },
   {
     "task_id": "AGENT-T-001",
     "name": "Reviewer Agent",
-    "status": "NotStarted",
-    "owner": null,
+    "status": "Completed",
+    "owner": "builder-a",
     "last_record": null,
-    "commit": null
+    "commit": "f4b6343"
   },
   {
     "task_id": "AGENT-O-001",
     "name": "四角色流水线编排",
-    "status": "NotStarted",
-    "owner": null,
+    "status": "Completed",
+    "owner": "builder-a",
     "last_record": null,
-    "commit": null
+    "commit": "f4b6343"
   }
 ]
