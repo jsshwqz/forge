@@ -701,6 +701,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "forge-product-instance"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "chrono",
+ "forge-agent",
+ "forge-core",
+ "forge-product",
+ "serde",
+ "serde_json",
+ "tokio",
+]
+
+[[package]]
 name = "forge-recovery"
 version = "0.1.0"
 dependencies = [
@@ -774,11 +788,14 @@ version = "0.1.0"
 dependencies = [
  "axum",
  "chrono",
+ "forge-agent",
  "forge-artifact",
  "forge-core",
  "forge-event",
  "forge-evidence",
  "forge-exec",
+ "forge-product",
+ "forge-product-instance",
  "forge-recovery",
  "forge-sdk",
  "forge-session",

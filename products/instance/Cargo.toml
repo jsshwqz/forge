@@ -1,0 +1,19 @@
+[package]
+name = "forge-product-instance"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "V4.0 product instance lifecycle (Draft->Active->Stopped->Deprecated) + template registry with review-gated publishing"
+
+[dependencies]
+forge-core = { path = "../../core/runtime" }
+forge-product = { path = "../manifest" }
+chrono = { version = "0.4", features = ["serde"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+async-trait = "0.1"
+tokio = { version = "1", features = ["sync"] }
+
+[dev-dependencies]
+tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
+forge-agent = { path = "../../core/agent" }

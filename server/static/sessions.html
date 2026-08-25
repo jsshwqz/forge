@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="utf-8"><title>Aion Forge · 会话时间线</title>
+<style>body{font-family:system-ui,sans-serif;background:#0f1115;color:#e6e6e6;margin:0}
+nav{background:#161a22;padding:12px 20px;display:flex;gap:18px}nav a{color:#7aa2f7;text-decoration:none}
+main{padding:24px;max-width:900px;margin:0 auto}input{background:#1b2029;color:#eee;border:1px solid #2a2f3a;padding:8px;width:340px}
+button{padding:8px 14px}.ev{border:1px solid #2a2f3a;border-radius:6px;padding:10px;margin:8px 0;background:#161a22}
+.seq{color:#bb9af7;font-weight:bold}</style></head>
+<body>
+<nav><a href="/">任务列表</a><a href="/ui/sessions">会话时间线</a><a href="/ui/evidence">证据查看</a></nav>
+<main>
+<h2>会话时间线</h2>
+<p>输入 Session ID（如来自 orchestrate 响应/日志）：</p>
+<input id="sid" placeholder="sess_..."> <button onclick="load()">加载</button>
+<div id="out"></div>
+</main>
+<script>
+async function load(){
+  const id=document.getElementById('sid').value.trim();
+  const out=document.getElementById('out'); out.textContent='加载中...';
+  const r=await fetch('/sessions/'+encodeURIComponent(id));
+  if(!r.ok){ out.textContent='HTTP '+r.status+'（未找到该会话）'; return; }
+  const s=await r.json();
+  out.innerHTML='<p>状态: '+s.state+'，事件 '+(s.events?s.events.length:0)+' 条</p>';
+  for(const e of (s.events||[])){
+    const d=document.createElement('div'); d.className='ev';
+    d.innerHTML='<span class="seq">#'+e.seq+'</span> <b>'+e.kind+'</b>';
+    const pre=document.createElement('pre'); pre.style.whiteSpace='pre-wrap';
+    pre.textContent=JSON.stringify(e.payload,null,2);
+    d.appendChild(pre); out.appendChild(d);
+  }
+}
+document.getElementById('sid').addEventListener('keydown',e=>{if(e.key==='Enter')load()});
+</script>
+</body></html>

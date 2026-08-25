@@ -526,5 +526,37 @@
     "owner": "builder-a",
     "last_record": null,
     "commit": "f4b6343"
+  },
+  {
+    "task_id": "PROD-001",
+    "name": "产品实例生命周期",
+    "status": "Wip",
+    "owner": "builder-a",
+    "last_record": null,
+    "commit": null
+  },
+  {
+    "task_id": "PROD-002",
+    "name": "模板库管理",
+    "status": "Wip",
+    "owner": "builder-a",
+    "last_record": null,
+    "commit": null
+  },
+  {
+    "task_id": "OBS-002",
+    "name": "Prometheus指标",
+    "status": "Wip",
+    "owner": "builder-a",
+    "last_record": null,
+    "commit": null
+  },
+  {
+    "task_id": "UI-001",
+    "name": "Web控制台MVP",
+    "status": "Wip",
+    "owner": "builder-a",
+    "last_record": null,
+    "commit": null
   }
 ]

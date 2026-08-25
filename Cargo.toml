@@ -22,6 +22,7 @@ members = [
     "capability/skill",
     "capability/mcp",
     "products/manifest",
+    "products/instance",
     "tools/worklog",
     "server",
     "storage",

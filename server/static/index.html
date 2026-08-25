@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<title>Aion Forge · 任务列表</title>
+<style>
+  body{font-family:system-ui,sans-serif;margin:0;background:#0f1115;color:#e6e6e6}
+  nav{background:#161a22;padding:12px 20px;display:flex;gap:18px}
+  nav a{color:#7aa2f7;text-decoration:none}
+  main{padding:24px;max-width:900px;margin:0 auto}
+  table{width:100%;border-collapse:collapse;margin-top:12px}
+  td,th{border:1px solid #2a2f3a;padding:8px;text-align:left}
+  th{background:#1b2029}
+</style>
+</head>
+<body>
+<nav>
+  <a href="/">任务列表</a><a href="/ui/sessions">会话时间线</a><a href="/ui/evidence">证据查看</a>
+  <span style="margin-left:auto;color:#565f73">Aion Forge 控制台 (只读)</span>
+</nav>
+<main>
+  <h2>任务列表 <button onclick="load()">刷新</button></h2>
+  <table id="tbl"><thead><tr><th>ID</th></tr></thead><tbody></tbody></table>
+  <p id="count"></p>
+</main>
+<script>
+async function load(){
+  const r = await fetch('/tasks');
+  const j = await r.json();
+  document.getElementById('count').textContent = '共 ' + j.count + ' 个任务';
+  const tb = document.querySelector('#tbl tbody');
+  tb.innerHTML = '';
+  for(const id of j.ids){
+    const tr = document.createElement('tr');
+    const td = document.createElement('td');
+    td.textContent = id;
+    tr.appendChild(td); tb.appendChild(tr);
+  }
+}
+load();
+</script>
+</body>
+</html>

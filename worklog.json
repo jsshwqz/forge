@@ -550,5 +550,13 @@
     "task_id": "AGENT-O-001",
     "title": "决策: Builder走ExecutionEngine而非TurnEngine(范围解释)",
     "body": "契约5.2写builder经TurnEngine; 当前步骤均为CallCapability工具调用无LLM回合需求, v1复用既有波次执行语义(与ORCH-002一致), TurnEngine接入留待agent-loop需求出现时立项; 已获人工批准的V3.2概要级契约内裁量"
+  },
+  {
+    "id": "R6-018",
+    "kind": "R6Decision",
+    "date": "2026-08-25",
+    "task_id": "GENERAL",
+    "title": "人工批准V4.0产品工厂立项",
+    "body": "用户2026-08-25回复批准; 范围=PROD-001/PROD-002/OBS-002/UI-001; 选型拍板: UI纯静态零构建, metrics手写文本(依6.2默认提案); 门禁G-V4.0按6.3"
   }
 ]

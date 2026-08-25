@@ -17,6 +17,8 @@ forge-artifact = { path = "../core/artifact" }
 forge-sdk = { path = "../sdk" }
 forge-exec = { path = "../execution/runtime" }
 forge-recovery = { path = "../recovery" }
+forge-product = { path = "../products/manifest" }
+forge-product-instance = { path = "../products/instance" }
 forge-verify = { path = "../verification/verifier" }
 forge-event = { path = "../core/event" }
 forge-evidence = { path = "../verification/evidence" }
@@ -37,3 +39,4 @@ tower = { version = "0.4", features = ["util"] }
 http-body-util = "0.1"
 mime = "0.3"
 tempfile = "3"
+forge-agent = { path = "../core/agent" }
