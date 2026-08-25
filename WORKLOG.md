@@ -751,3 +751,59 @@ include_str!托管三页面(/,/ui/sessions,/ui/evidence): 任务列表自动拉�
 
 ---
 
+## [R6-019] ⚖️ 决策 · 2026-08-25 · 人工批准GA交付期立项(五包)
+
+- **任务 ID**：GENERAL
+用户2026-08-25回复继续即视为GA五包开工批准(PKG-001/SEC-001/DOC-001/KNW-001/E2E-GA); 门禁G-GA按10.3: 五包DoD+全量回归+15分钟快速上手试锁
+
+---
+
+## [R1-047] ✅ 成功 · 2026-08-25 · Knowledge层MVP落地
+
+- **任务 ID**：KNW-001
+新crate forge-knowledge: 失败知识库(FailureRecord+证据聚合, 按category/工具名/关键词三维检索)+Session回放JSON归档导出; 复用既有store trait零新存储; 提交effe996
+
+---
+
+## [R1-048] ✅ 成功 · 2026-08-25 · 生产安全基线落地
+
+- **任务 ID**：SEC-001
+发现并修复: AuthConfig从未接线到路由(真实缺口); 现Bearer鉴权全路由生效(/health豁免); CORS默认关闭白名单空; security_gate非loopback无FORGE_API_KEY拒绝启动; 401统一文案不回显密钥; 测试矩阵单测通过; 提交effe996
+
+---
+
+## [R1-049] ✅ 成功 · 2026-08-25 · 部署打包落地
+
+- **任务 ID**：PKG-001
+deploy/: 多阶段Dockerfile(非root)+docker-compose三件套(server+PG16+MinIO含healthcheck)+.env.example+README(全env清单/数据卷备份/升级路径=启动幂等sqlx迁移); 零新cargo依赖; 提交effe996
+
+---
+
+## [R1-050] ✅ 成功 · 2026-08-25 · 文档套件四件套落地
+
+- **任务 ID**：DOC-001
+docs/: QUICKSTART(15分钟上手)/USER_GUIDE操作手册/API_REFERENCE全端点含V4.0/OPERATIONS运维手册(备份恢复升级+故障速查); 提交effe996
+
+---
+
+## [R1-051] ✅ 成功 · 2026-08-25 · 终验剧本11步全PASS(真实PG持久化)
+
+- **任务 ID**：E2E-GA
+scripts/ga_acceptance.ps1实测: build→PG部署health→注册能力→装配实例→start→orchestrate真实任务(gate通过)→SSE观测可读→metrics核数一致→stop→重启后任务仍在(PG)→证据JSON落盘artifacts/; 本机Podman PG15432实跑; 提交effe996
+
+---
+
+## [R7-007] ⚠️ 偏差/风险 · 2026-08-25 · R7-008 实例/模板存储为内存MVP
+
+- **任务 ID**：GENERAL
+ProductInstanceStore与TemplateRegistry当前仅内存实现, 重启后实例/模板需重建; PG中的tasks/sessions/evidence不受影响; trait已冻结, 后续按forge-storage模式补PG实现即可
+
+---
+
+## [R7-008] ⚠️ 偏差/风险 · 2026-08-25 · R7-009 Docker镜像构建未本机实测(仅Podman)
+
+- **任务 ID**：GENERAL
+deploy/Dockerfile+compose按官方语法编写并人工审阅, 本机无docker daemon未实际build/run; PG持久化验证改用本机Podman容器15432直连等效完成; 标记为待客户环境首验
+
+---
+

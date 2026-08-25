@@ -1,6 +1,6 @@
 {
-  "updated_at": "2026-08-25 09:24",
-  "current_status": "V4.0产品工厂四包全部完成(PROD-001/002+OBS-002+UI-001): G-V4.0门禁通过, 284测试全绿clippy零告警, e2e生命周期+metrics一致性+控制台三页验证; 提交c2d69d4",
+  "updated_at": "2026-08-25 10:14",
+  "current_status": "GA交付期五包全部完成(PKG-001/SEC-001/DOC-001/KNW-001/E2E-GA): 终验剧本11步全PASS含真实PG重启持久化, 284+测试clippy零告警; 交钥匙达成",
   "blockers": [],
   "next_tasks": [
     {
@@ -20,5 +20,5 @@
     "progress.json": "任务状态事实源",
     "worklog.json": "工作日志事实源"
   },
-  "advice": "下一步GA交付期五包(PKG-001部署打包/SEC-001生产安全基线/DOC-001文档套件/KNW-001知识层/E2E-GA终验,P8人工立项); live轨需FORGE_LLM_LIVE=1"
+  "advice": "项目到达GA里程碑; 遗留: Docker镜像待客户环境首验(R7-008), 实例存储PG实现可选增强(R7-007); 运行终验 pwsh scripts/ga_acceptance.ps1"
 }
