@@ -1,0 +1,20 @@
+[package]
+name = "forge-knowledge"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "GA KNW-001 knowledge layer MVP: failure knowledge base (searchable) + session replay export"
+
+[dependencies]
+forge-core = { path = "../core/runtime" }
+forge-recovery = { path = "../recovery" }
+forge-session = { path = "../core/session" }
+forge-exec = { path = "../execution/runtime" }
+chrono = { version = "0.4", features = ["serde"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+async-trait = "0.1"
+tokio = { version = "1", features = ["sync"] }
+
+[dev-dependencies]
+tokio = { version = "1", features = ["macros", "rt-multi-thread"] }

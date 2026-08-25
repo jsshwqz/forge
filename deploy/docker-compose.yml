@@ -1,0 +1,62 @@
+# Aion Forge 三件套一键起: forge-server + PostgreSQL + MinIO
+# 用法:
+#   cp deploy/.env.example deploy/.env  (填写 FORGE_API_KEY 等)
+#   docker/podman compose -f deploy/docker-compose.yml up -d
+#
+# 数据持久化(卷):
+#   pgdata   -> PostgreSQL 全部任务/会话/证据数据
+#   miniodata-> 对象存储(工件)
+# 升级路径: sqlx 迁移在 server 启动时幂等执行(connect_and_migrate) => 换新镜像重启即完成升级
+
+services:
+  pg:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: forge
+      POSTGRES_DB: forge
+    ports:
+      - "15432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  minio:
+    image: minio/minio:latest
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: forgeminio
+      MINIO_ROOT_PASSWORD: forgeminio123
+    ports:
+      - "19000:9000"
+      - "19001:9001"
+    volumes:
+      - miniodata:/data
+
+  server:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+    depends_on:
+      pg:
+        condition: service_healthy
+    environment:
+      FORGE_HOST: 0.0.0.0            # SEC-001: 非 loopback 监听, 必须配 key
+      FORGE_PORT: 8080
+      FORGE_API_KEY: ${FORGE_API_KEY:?must set in .env}
+      FORGE_PG_URL: postgres://postgres:forge@pg:5432/forge
+      FORGE_CORS_ORIGINS: ${FORGE_CORS_ORIGINS:-}   # 默认空=关闭; 需要浏览器跨域时填白名单
+      FORGE_S3_ENDPOINT: http://minio:9000
+      FORGE_S3_ACCESS_KEY: forgeminio
+      FORGE_S3_SECRET_KEY: forgeminio123
+      FORGE_S3_BUCKET: forge-artifacts
+    ports:
+      - "8080:8080"
+
+volumes:
+  pgdata:
+  miniodata:

@@ -590,5 +590,13 @@
     "task_id": "UI-001",
     "title": "Web控制台MVP落地(纯静态零构建)",
     "body": "include_str!托管三页面(/,/ui/sessions,/ui/evidence): 任务列表自动拉取/会话时间线按ID渲染事件流/证据查看按ID渲染详情; 数据源全部走V3.0只读API; 零npm零新依赖; 提交c2d69d4"
+  },
+  {
+    "id": "R6-019",
+    "kind": "R6Decision",
+    "date": "2026-08-25",
+    "task_id": "GENERAL",
+    "title": "人工批准GA交付期立项(五包)",
+    "body": "用户2026-08-25回复继续即视为GA五包开工批准(PKG-001/SEC-001/DOC-001/KNW-001/E2E-GA); 门禁G-GA按10.3: 五包DoD+全量回归+15分钟快速上手试锁"
   }
 ]

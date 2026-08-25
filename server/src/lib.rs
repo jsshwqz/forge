@@ -1,7 +1,11 @@
-//! forge-server：Aion Forge 2.0 HTTP API 层（V3.0 完整实现）。
+//! forge-server：Aion Forge 2.0 HTTP API 层（V3.0 完整实现 + V4.0 产品工厂）。
 //!
 //! 端点：health / tasks CRUD / sessions / orchestrate / evidence / events/stream
-//! 中间件：CORS 白名单（env FORGE_CORS_ORIGINS）
+//!       /templates /products（生命周期）/ metrics / 控制台三页
+//! 安全基线（SEC-001）：Bearer 鉴权（FORGE_API_KEY）、CORS 默认关闭、
+//!       非 loopback 监听未配 key 拒绝启动。
+
+pub mod auth;
 
 use axum::{
     extract::{Path, State},
@@ -13,6 +17,7 @@ use axum::{
     routing::{get, post},
     Json, Router,
 };
+use auth::AuthConfig;
 use forge_core::{ForgeError, ForgeResult, SessionId, TaskId};
 use forge_evidence::{EvidenceStore, InMemoryEvidenceStore};
 use forge_event::{EventBus, InMemoryEventBus, Topic};
@@ -440,18 +445,20 @@ async fn events_stream(
     )
 }
 
-// ==================== CORS（API-004）====================
+// ==================== CORS（API-004 + SEC-001 默认关闭） ====================
 
-fn cors_layer() -> tower_http::cors::CorsLayer {
+/// CORS 层：默认（FORGE_CORS_ORIGINS 未设置/为空）**关闭**——不带任何 CORS 头；
+/// 配置白名单后才允许对应来源。生产基线：不暴露即最安全。
+fn maybe_cors() -> Option<tower_http::cors::CorsLayer> {
     let origins = std::env::var("FORGE_CORS_ORIGINS").unwrap_or_default();
-    if origins.is_empty() {
-        return tower_http::cors::CorsLayer::permissive();
+    if origins.trim().is_empty() {
+        return None;
     }
     let allow: Vec<_> = origins
         .split(',')
         .filter_map(|o| o.trim().parse().ok())
         .collect();
-    tower_http::cors::CorsLayer::new().allow_origin(allow)
+    Some(tower_http::cors::CorsLayer::new().allow_origin(allow))
 }
 
 // ==================== 路由 ====================
@@ -459,7 +466,7 @@ fn cors_layer() -> tower_http::cors::CorsLayer {
 pub fn app() -> Router { app_with_state(AppState::in_memory()) }
 
 pub fn app_with_state(st: AppState) -> Router {
-    Router::new()
+    let router = Router::new()
         .route("/health", get(health))
         .route("/tasks", post(create_task).get(list_tasks))
         .route("/tasks/:id", get(get_task))
@@ -480,9 +487,22 @@ pub fn app_with_state(st: AppState) -> Router {
         .route("/metrics", get(metrics_handler))
         .route("/", get(ui_index))
         .route("/ui/sessions", get(ui_sessions))
-        .route("/ui/evidence", get(ui_evidence))
-        .layer(cors_layer())
-        .with_state(st)
+        .route("/ui/evidence", get(ui_evidence));
+
+    // SEC-001：鉴权中间件接线（AuthConfig 经 Extension 注入；
+    // /health 永远放行，其余路由在启用 FORGE_API_KEY 时要求 Bearer）
+    let router = router
+        .layer(axum::middleware::from_fn(auth::auth_middleware))
+        .layer(axum::Extension(AuthConfig::from_env()));
+
+    // SEC-001：CORS 默认关闭，白名单显式配置后才挂层
+    let router = if let Some(cors) = maybe_cors() {
+        router.layer(cors)
+    } else {
+        router
+    };
+
+    router.with_state(st)
 }
 
 // ==================== 启动 ====================
@@ -496,6 +516,12 @@ pub async fn run_from_env() -> Result<(), Box<dyn std::error::Error>> {
         .try_init()
         .ok();
     let port: u16 = std::env::var("FORGE_PORT").ok().and_then(|s| s.parse().ok()).unwrap_or(8080);
+    let host = std::env::var("FORGE_HOST").unwrap_or_else(|_| "127.0.0.1".into());
+
+    // SEC-001：非 loopback 监听必须配置 FORGE_API_KEY，否则拒绝启动（而非告警）
+    security_gate(&host, std::env::var("FORGE_API_KEY").ok().as_deref())
+        .map_err(std::convert::Into::<Box<dyn std::error::Error>>::into)?;
+
     let state = match std::env::var("FORGE_PG_URL") {
         Ok(url) => {
             println!("storage: PostgreSQL ({url})");
@@ -512,11 +538,36 @@ pub async fn run_from_env() -> Result<(), Box<dyn std::error::Error>> {
         Err(_) => { println!("storage: in-memory"); AppState::in_memory() }
     };
     let app = app_with_state(state);
-    let addr = std::net::SocketAddr::from(([127, 0, 0, 1], port));
+    let addr = format!("{host}:{port}")
+        .parse::<std::net::SocketAddr>()
+        .map_err(|e| format!("invalid FORGE_HOST '{host}': {e}"))?;
     let listener = tokio::net::TcpListener::bind(addr)
         .await
         .unwrap_or_else(|e| panic!("failed to bind {addr}: {e}"));
     println!("forge-server listening on http://{addr}");
     axum::serve(listener, app).await.unwrap();
+    Ok(())
+}
+
+/// SEC-001 启动门禁：非 loopback 监听时必须配置非空 `FORGE_API_KEY`。
+///
+/// 返回 Err(原因) 表示拒绝启动。loopback（127.x/::1/localhost）不受限，
+/// 保持"本地模式零配置可跑"的开发体验（R-03 缓解与 R-03 的生产面收紧并存）。
+pub fn security_gate(host: &str, api_key: Option<&str>) -> Result<(), String> {
+    let loopback = host == "localhost"
+        || host
+            .parse::<std::net::IpAddr>()
+            .map(|ip| ip.is_loopback())
+            .unwrap_or(false);
+    if loopback {
+        return Ok(());
+    }
+    let has_key = api_key.map(|k| !k.trim().is_empty()).unwrap_or(false);
+    if !has_key {
+        return Err(format!(
+            "SEC-001: refusing to listen on non-loopback '{host}' without FORGE_API_KEY. \
+Set FORGE_API_KEY or bind 127.0.0.1/localhost."
+        ));
+    }
     Ok(())
 }

@@ -306,8 +306,8 @@
   {
     "task_id": "DOC-001",
     "name": "README+架构文档",
-    "status": "Completed",
-    "owner": null,
+    "status": "Wip",
+    "owner": "builder-a",
     "last_record": "R1-017",
     "commit": "9f17d96"
   },
@@ -554,6 +554,38 @@
   {
     "task_id": "UI-001",
     "name": "Web控制台MVP",
+    "status": "Wip",
+    "owner": "builder-a",
+    "last_record": null,
+    "commit": null
+  },
+  {
+    "task_id": "PKG-001",
+    "name": "部署打包Dockerfile+compose",
+    "status": "Wip",
+    "owner": "builder-a",
+    "last_record": null,
+    "commit": null
+  },
+  {
+    "task_id": "SEC-001",
+    "name": "生产安全基线",
+    "status": "Wip",
+    "owner": "builder-a",
+    "last_record": null,
+    "commit": null
+  },
+  {
+    "task_id": "KNW-001",
+    "name": "Knowledge层MVP",
+    "status": "Wip",
+    "owner": "builder-a",
+    "last_record": null,
+    "commit": null
+  },
+  {
+    "task_id": "E2E-GA",
+    "name": "终验剧本",
     "status": "Wip",
     "owner": "builder-a",
     "last_record": null,
