@@ -8,7 +8,7 @@
 pub mod auth;
 
 use axum::{
-    extract::{Path, State},
+    extract::{Path, Query, State},
     http::StatusCode,
     response::{
         sse::{Event as SseEvent, Sse},
@@ -24,10 +24,14 @@ use forge_event::{EventBus, InMemoryEventBus, Topic};
 use forge_exec::{EchoTool, PermissionPolicy, ToolRouter};
 use forge_session::SessionStore;
 use forge_sdk::{ForgeSdk, Orchestrator};
-use forge_task::{AcceptanceCriterion, Task, TaskStore};
+use forge_task::{AcceptanceCriterion, Task, TaskStatus, TaskStore};
 use forge_verify::{CommandVerifier, FileVerifier};
 use forge_workspace::WorkspaceManager;
-use forge_product_instance::{ProductInstanceStore as _, TemplateRegistry as _};
+use forge_product_instance::{
+    ProductInstanceStore as _, TemplateRegistry as _,
+};
+use forge_knowledge::{FailureKnowledgeBase as _, InMemoryKnowledgeBase, KnowledgeEntry, ReplayArchive};
+use forge_recovery::classify::FailureCategory;
 use futures::Stream;
 use serde::Deserialize;
 use std::convert::Infallible;
@@ -85,6 +89,8 @@ pub struct AppState {
     pub instances: Arc<forge_product_instance::InMemoryProductInstanceStore>,
     pub templates: Arc<forge_product_instance::InMemoryTemplateRegistry>,
     pub metrics: Arc<Metrics>,
+    /// KNW-001：失败知识库（服务面 GA-FIX-2）。
+    pub knowledge: Arc<InMemoryKnowledgeBase>,
 }
 
 impl AppState {
@@ -97,6 +103,7 @@ impl AppState {
             instances: Arc::new(Default::default()),
             templates: Arc::new(Default::default()),
             metrics: Arc::new(Metrics::default()),
+            knowledge: Arc::new(Default::default()),
         }
     }
     pub fn new(tasks: Arc<dyn TaskStore>, sessions: Arc<dyn SessionStore>) -> Self {
@@ -108,6 +115,7 @@ impl AppState {
             instances: Arc::new(Default::default()),
             templates: Arc::new(Default::default()),
             metrics: Arc::new(Metrics::default()),
+            knowledge: Arc::new(Default::default()),
         }
     }
 }
@@ -259,6 +267,30 @@ async fn orchestrate(
     st.metrics
         .replans_total
         .fetch_add(u64::from(report.replans_used), Ordering::Relaxed);
+
+    // GA-FIX-2：失败自动入知识库（KNW-001 服务面闭环）
+    if report.final_status == TaskStatus::Failed {
+        let summary = report
+            .execution
+            .failed
+            .as_ref()
+            .map(|(s, r)| format!("step {s}: {r}"))
+            .unwrap_or_else(|| format!("gate_failed={}", !report.gate.passed));
+        let summary: String = summary.chars().take(200).collect();
+        if let Ok(record) = forge_recovery::classify(
+            &forge_core::new_execution_id(),
+            forge_exec::ExecutionStatus::Failed,
+            &summary,
+        ) {
+            st.knowledge
+                .ingest(KnowledgeEntry {
+                    record,
+                    related_evidence: report.evidence_ids.clone(),
+                    tool: Some("orchestrate".into()),
+                })
+                .await;
+        }
+    }
 
     Ok(Json(serde_json::json!({
         "task_id": report.task_id.to_string(),
@@ -440,6 +472,46 @@ async fn metrics_handler(State(st): State<AppState>) -> impl IntoResponse {
     )
 }
 
+
+// ==================== KNW-001 服务面（GA-FIX-2） ====================
+
+#[derive(Deserialize)]
+pub struct KnowledgeFailuresQuery {
+    #[serde(default)]
+    pub category: Option<String>,
+    #[serde(default)]
+    pub tool_like: Option<String>,
+    #[serde(default)]
+    pub limit: Option<u32>,
+}
+
+async fn knowledge_failures_handler(
+    State(st): State<AppState>,
+    Query(q): Query<KnowledgeFailuresQuery>,
+) -> Result<Json<Vec<KnowledgeEntry>>, ApiError> {
+    let limit = q.limit.unwrap_or(50).clamp(1, 500) as usize;
+    let category = match q.category.as_deref() {
+        Some("ToolError") => Some(FailureCategory::ToolError),
+        Some("Timeout") => Some(FailureCategory::Timeout),
+        Some("PermissionDenied") => Some(FailureCategory::PermissionDenied),
+        Some(_) | None => None,
+    };
+    let tool = q.tool_like.as_deref();
+    let entries = st.knowledge.search(category, tool, None).await;
+    Ok(Json(entries.into_iter().take(limit).collect()))
+}
+
+async fn knowledge_export_handler(
+    State(st): State<AppState>,
+    Path(id): Path<String>,
+) -> Result<Json<ReplayArchive>, ApiError> {
+    let sid = forge_core::SessionId::from(id);
+    let archive = forge_knowledge::export_replay(st.sdk.sessions(), &sid)
+        .await
+        .map_err(|e| ApiError(StatusCode::NOT_FOUND, e.to_string()))?;
+    Ok(Json(archive))
+}
+
 // ==================== UI-001 Web 控制台（纯静态零构建） ====================
 
 async fn ui_index() -> Html<&'static str> {
@@ -618,6 +690,9 @@ pub fn app_with_state(st: AppState) -> Router {
         .route("/products/:id/deprecate", post(product_deprecate))
         // V4.0 观测 + 控制台
         .route("/metrics", get(metrics_handler))
+        // KNW-001 服务面
+        .route("/knowledge/failures", get(knowledge_failures_handler))
+        .route("/knowledge/sessions/:id/export", get(knowledge_export_handler))
         .route("/", get(ui_index))
         .route("/ui/sessions", get(ui_sessions))
         .route("/ui/evidence", get(ui_evidence));
@@ -666,6 +741,7 @@ pub async fn run_from_env() -> Result<(), Box<dyn std::error::Error>> {
                 instances: Arc::new(Default::default()),
                 templates: Arc::new(Default::default()),
                 metrics: Arc::new(Metrics::default()),
+                knowledge: Arc::new(Default::default()),
             }
         }
         Err(_) => { println!("storage: in-memory"); AppState::in_memory() }
@@ -687,6 +763,11 @@ pub async fn run_from_env() -> Result<(), Box<dyn std::error::Error>> {
 /// 返回 Err(原因) 表示拒绝启动。loopback（127.x/::1/localhost）不受限，
 /// 保持"本地模式零配置可跑"的开发体验（R-03 缓解与 R-03 的生产面收紧并存）。
 pub fn security_gate(host: &str, api_key: Option<&str>) -> Result<(), String> {
+    // SEC-001 配置性逃生门：仅限本机调试，生产严禁设置
+    if std::env::var("FORGE_INSECURE_LOCAL").ok().as_deref() == Some("1") {
+        eprintln!("[WARN] FORGE_INSECURE_LOCAL=1 — SEC-001 检查已跳过，仅限本机调试");
+        return Ok(());
+    }
     let loopback = host == "localhost"
         || host
             .parse::<std::net::IpAddr>()
@@ -703,4 +784,13 @@ Set FORGE_API_KEY or bind 127.0.0.1/localhost."
         ));
     }
     Ok(())
+}
+
+/// SEC-001 配置性拒绝判定：供 main 选择退出码（78 = EX_CONFIG 惯例）。
+///
+/// 机械适配说明：规格模板用 `anyhow::Error`，本项目无 anyhow 依赖，
+/// 等价改为 `&dyn std::fmt::Display`（run_from_env 的错误链为
+/// `Box<dyn Error>`，其 Display 保留 "SEC-001:" 前缀，判定语义一致）。
+pub fn is_config_rejection(err: &dyn std::fmt::Display) -> bool {
+    err.to_string().starts_with("SEC-001:")
 }

@@ -195,7 +195,9 @@ impl Planner for PoisonFirstPlanner {
 /// 场景 2：必失败步骤触发一次 replan —— 成功或规范升级 EscalateHuman 均算过门禁。
 #[tokio::test]
 async fn live_forced_failure_replans_or_escalates() {
-    let Some((client, model)) = live_stack().await else { return };
+    let Some((client, model)) = live_stack().await else { return ,
+        brief_mode: false
+    };
     let sdk = ForgeSdk::in_memory();
 
     // 验收标准与执行解耦（Command 恒过），专注观察 replan/升级链路

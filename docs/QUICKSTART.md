@@ -1,4 +1,7 @@
 # 快速上手（15 分钟从零到第一个交付任务）
+> **实测演练记录**：2026-08-27 · Windows + PostgreSQL@15432 · scripts/ga_acceptance.ps1 十三步全 PASS
+> （证据：artifacts/ga_evidence_*.json）。清洁机口径：全新 clone + 空数据库卷。
+
 
 > 交钥匙试锁标准：一台从未接触过本项目的干净机器，按本文一次跑通。
 

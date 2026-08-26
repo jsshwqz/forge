@@ -441,7 +441,7 @@
   },
   {
     "task_id": "API-003",
-    "name": "placeholder",
+    "name": "SSE事件流",
     "status": "Completed",
     "owner": null,
     "last_record": null,
@@ -449,7 +449,7 @@
   },
   {
     "task_id": "API-004",
-    "name": "placeholder",
+    "name": "CORS层",
     "status": "Completed",
     "owner": null,
     "last_record": null,
@@ -530,34 +530,34 @@
   {
     "task_id": "PROD-001",
     "name": "产品实例生命周期",
-    "status": "Wip",
+    "status": "Completed",
     "owner": "builder-a",
     "last_record": null,
-    "commit": null
+    "commit": "effe996"
   },
   {
     "task_id": "PROD-002",
     "name": "模板库管理",
-    "status": "Wip",
+    "status": "Completed",
     "owner": "builder-a",
     "last_record": null,
-    "commit": null
+    "commit": "effe996"
   },
   {
     "task_id": "OBS-002",
     "name": "Prometheus指标",
-    "status": "Wip",
+    "status": "Completed",
     "owner": "builder-a",
     "last_record": null,
-    "commit": null
+    "commit": "effe996"
   },
   {
     "task_id": "UI-001",
     "name": "Web控制台MVP",
-    "status": "Wip",
+    "status": "Completed",
     "owner": "builder-a",
     "last_record": null,
-    "commit": null
+    "commit": "effe996"
   },
   {
     "task_id": "PKG-001",
@@ -588,6 +588,14 @@
     "name": "终验剧本",
     "status": "Completed",
     "owner": "builder-a",
+    "last_record": null,
+    "commit": "effe996"
+  },
+  {
+    "task_id": "API-001",
+    "name": "资源只读端点/evidence API",
+    "status": "Completed",
+    "owner": null,
     "last_record": null,
     "commit": "effe996"
   }

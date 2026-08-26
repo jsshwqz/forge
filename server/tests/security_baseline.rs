@@ -107,3 +107,53 @@ async fn sec001_baseline_matrix() {
     assert!(security_gate("192.168.1.10", Some("  ")).is_err(), "空白 key 视同未配置");
     assert!(security_gate("0.0.0.0", Some("real-key")).is_ok(), "有 key 放行对外监听");
 }
+
+// ===== GA-FIX-1：spawn 级验证（退出码 78 + 逃生门）=====
+
+use std::process::{Command, Stdio};
+
+/// 构造一个干净环境的服务器子进程命令（隔离父进程的 FORGE_* 变量）。
+fn server_cmd(port: &str) -> Command {
+    let mut c = Command::new(env!("CARGO_BIN_EXE_forge-server"));
+    c.env("FORGE_HOST", "0.0.0.0")
+        .env("FORGE_PORT", port)
+        .env_remove("FORGE_API_KEY")
+        .env_remove("FORGE_INSECURE_LOCAL")
+        .env_remove("FORGE_PG_URL")
+        .env_remove("FORGE_CORS_ORIGINS");
+    c
+}
+
+#[test]
+fn refusal_exit_code_is_78() {
+    let out = server_cmd("18098")
+        .stderr(Stdio::piped())
+        .stdout(Stdio::null())
+        .output()
+        .expect("spawn forge-server");
+    assert_eq!(out.status.code(), Some(78), "SEC-001 拒绝必须退出码 78");
+    let err = String::from_utf8_lossy(&out.stderr);
+    assert!(err.contains("SEC-001"), "stderr 应含 SEC-001 前缀，实际: {err}");
+}
+
+#[test]
+fn escape_hatch_allows_startup() {
+    let mut child = server_cmd("18099")
+        .env("FORGE_INSECURE_LOCAL", "1")
+        .stdout(Stdio::null())
+        .stderr(Stdio::null())
+        .spawn()
+        .expect("spawn forge-server with escape hatch");
+    std::thread::sleep(std::time::Duration::from_millis(1500));
+    let still_running = match child.try_wait() {
+        Ok(None) => true,
+        Ok(Some(st)) => {
+            eprintln!("early exit: {st}");
+            false
+        }
+        Err(_) => false,
+    };
+    let _ = child.kill();
+    let _ = child.wait();
+    assert!(still_running, "逃生门应允许进程持续运行（未被 78 拒绝）");
+}

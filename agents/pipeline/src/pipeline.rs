@@ -158,6 +158,7 @@ pub async fn run_pipeline(
         schema_max_attempts: deps.max_schema_attempts,
         tools: vec![deps.capability.clone()],
         ledger: Some(deps.ledger.clone()),
+        brief_mode: false
     };
     let plan: Plan = architect.plan(&task).await?;
     let _ = deps
