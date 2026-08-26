@@ -19,6 +19,9 @@ forge-exec = { path = "../execution/runtime" }
 forge-recovery = { path = "../recovery" }
 forge-product = { path = "../products/manifest" }
 forge-product-instance = { path = "../products/instance" }
+forge-plan-llm = { path = "../planning/llm" }
+forge-planner = { path = "../planning/planner" }
+forge-api = { path = "../capability/api" }
 forge-verify = { path = "../verification/verifier" }
 forge-event = { path = "../core/event" }
 forge-evidence = { path = "../verification/evidence" }
@@ -28,6 +31,7 @@ axum = "0.7"
 tokio = { version = "1", features = ["macros", "rt-multi-thread", "net", "signal"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
+async-trait = "0.1"
 chrono = { version = "0.4", features = ["serde"] }
 tokio-stream = { version = "0.1", features = ["sync"] }
 futures = "0.3"

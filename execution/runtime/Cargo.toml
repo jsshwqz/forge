@@ -9,7 +9,7 @@ forge-core = { path = "../../core/runtime" }
 forge-session = { path = "../../core/session" }
 forge-artifact = { path = "../../core/artifact" }
 forge-agent = { path = "../../core/agent" }
-tokio = { version = "1", features = ["sync", "time"] }
+tokio = { version = "1", features = ["sync", "time", "fs"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 async-trait = "0.1"
@@ -18,3 +18,4 @@ tracing = "0.1"
 
 [dev-dependencies]
 tokio = { version = "1", features = ["macros", "rt", "time", "rt-multi-thread"] }
+tempfile = "3"

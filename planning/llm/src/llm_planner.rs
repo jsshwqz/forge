@@ -77,6 +77,10 @@ pub struct LlmPlanner<B: LlmPlanBackend + ?Sized> {
     pub tools: Vec<String>,
     /// 可选成本账本：每次成功调用后记账（G-V3.2 成本记录）。
     pub ledger: Option<Arc<crate::usage::UsageLedger>>,
+    /// 简述模式（服务端"写软件"路径）：write_file 步骤只要求 `brief`
+    /// （文件意图），不内嵌完整 content——由调用方二次代码生成填充，
+    /// 规避小上限模型在长 JSON 转义上的截断问题。
+    pub brief_mode: bool,
 }
 
 impl<B: LlmPlanBackend + ?Sized> LlmPlanner<B> {
@@ -87,6 +91,7 @@ impl<B: LlmPlanBackend + ?Sized> LlmPlanner<B> {
             schema_max_attempts: 3,
             tools: Vec::new(),
             ledger: None,
+            brief_mode: false,
         }
     }
 
@@ -100,6 +105,14 @@ impl<B: LlmPlanBackend + ?Sized> LlmPlanner<B> {
                 self.tools
             )
         };
+        let write_rule = if self.brief_mode && self.tools.iter().any(|t| t == "write_file") {
+            "\nFor write_file steps use input {\"path\":\"<relative path>\",\
+             \"brief\":\"<one-sentence description of what the file must contain>\"}. \
+             Do NOT include the file content itself."
+                .to_string()
+        } else {
+            String::new()
+        };
         let system = format!(
             "You are a planning assistant. Produce an execution plan for the task. \
 Respond with ONLY a JSON object (no prose, no code fences) matching this schema: \
@@ -107,7 +120,7 @@ Respond with ONLY a JSON object (no prose, no code fences) matching this schema:
 \"action\":{{\"type\":\"call\",\"capability\":\"echo\",\"input\":{{}}}}}}]}}. \
 Action type must be \"call\" or \"approval\". \
 Step ids must be unique; depends_on must reference existing step ids only. \
-{tool_rule}"
+{tool_rule}{write_rule}"
         );
 
         let mut user = format!("Task goal:\n{}\n", task.goal);
@@ -144,13 +157,33 @@ impl<B: LlmPlanBackend + ?Sized + 'static> Planner for LlmPlanner<B> {
                     completion_tokens: u.completion_tokens,
                 });
             }
-            let json_str = extract_json_str(&raw);
-            let parsed: serde_json::Value = serde_json::from_str(&json_str)
-                .unwrap_or_else(|e| serde_json::json!({"_parse_error": e.to_string()}));
+            // 观测：模型原始输出截断打印（排障用）
+            eprintln!(
+                "llm_planner[{}] raw_len={} head={:?}",
+                attempt + 1,
+                raw.len(),
+                raw.chars().take(120).collect::<String>()
+            );
+            let mut parsed: serde_json::Value = {
+                let s = extract_json_str(&raw);
+                serde_json::from_str(&s).unwrap_or_else(|e| {
+                    serde_json::json!({"_parse_error": format!("{e}: {}", s.chars().take(120).collect::<String>())})
+                })
+            };
+            // 容错：部分模型直接返回步骤数组而非对象
+            if parsed.is_array() {
+                parsed = serde_json::json!({ "steps": parsed });
+            }
 
             match validate_plan(&parsed, &task.id) {
                 Ok(plan) => return Ok(plan),
                 Err(e) => {
+                    eprintln!(
+                        "llm_planner[{}] FAILED: {e} | parsed_keys={:?} | tail={:?}",
+                        attempt + 1,
+                        parsed.as_object().map(|o| o.keys().cloned().collect::<Vec<_>>()),
+                        raw.chars().rev().take(150).collect::<String>()
+                    );
                     last_error = e.to_string();
                     if attempt + 1 < self.schema_max_attempts {
                         messages.push(ChatMessage::assistant(raw.clone()));

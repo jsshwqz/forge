@@ -605,6 +605,7 @@ dependencies = [
  "forge-session",
  "serde",
  "serde_json",
+ "tempfile",
  "tokio",
  "tracing",
 ]
@@ -801,14 +802,18 @@ dependencies = [
 name = "forge-server"
 version = "0.1.0"
 dependencies = [
+ "async-trait",
  "axum",
  "chrono",
  "forge-agent",
+ "forge-api",
  "forge-artifact",
  "forge-core",
  "forge-event",
  "forge-evidence",
  "forge-exec",
+ "forge-plan-llm",
+ "forge-planner",
  "forge-product",
  "forge-product-instance",
  "forge-recovery",

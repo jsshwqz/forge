@@ -130,12 +130,20 @@ impl LlmClient {
     }
 
     /// 调用 chat 并返回完整原始响应（供诊断/高级用途；常规取文本用 [`LlmBackend::chat`]）。
+    ///
+    /// 显式携带 max_tokens=4096：规划类输出（含完整代码内容）常超过供应商
+    /// 默认补全上限，导致 JSON 被截断而校验失败（实测 sensenova-6.8）。
     pub async fn chat_raw(
         &self,
         model: &str,
         messages: &[ChatMessage],
     ) -> ForgeResult<serde_json::Value> {
-        let body = serde_json::json!({ "model": model, "messages": messages });
+        let body = serde_json::json!({
+            "model": model,
+            "messages": messages,
+            "max_tokens": 4096,
+            "temperature": 0.2,
+        });
         self.post_json_retry_429("chat/completions", &body).await
     }
     /// 从响应 JSON 提取 choices[0].message.content。

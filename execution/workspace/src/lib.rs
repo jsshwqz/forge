@@ -61,8 +61,8 @@ impl WorkspaceManager {
                 "workspace: task_id has no usable characters".into(),
             ));
         }
-        let short = &uuid::Uuid::new_v4().simple().to_string()[..8];
-        let dir = self.canon_root.join(format!("ws-{safe}-{short}"));
+        // 确定性目录：同任务幂等，前置注册与执行阶段目录一致。
+        let dir = self.canon_root.join(format!("ws-{safe}"));
         std::fs::create_dir_all(&dir).map_err(|e| io_err("workspace create", e))?;
         Ok(dir)
     }

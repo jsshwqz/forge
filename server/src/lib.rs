@@ -120,6 +120,14 @@ impl From<ForgeError> for ApiError {
     fn from(e: ForgeError) -> Self {
         let status = match &e {
             ForgeError::NotFound(_) => StatusCode::NOT_FOUND,
+            ForgeError::InvalidState(msg)
+                if msg.contains("llm http 429")
+                    || msg.contains("insufficient_quota")
+                    || msg.contains("quota") =>
+            {
+                // 上游供应商配额/限流：语义上是服务暂不可用，而非请求冲突
+                StatusCode::SERVICE_UNAVAILABLE
+            }
             ForgeError::InvalidState(_) => StatusCode::CONFLICT,
             ForgeError::PermissionDenied(_) => StatusCode::FORBIDDEN,
             _ => StatusCode::INTERNAL_SERVER_ERROR,
@@ -187,8 +195,37 @@ async fn orchestrate(
     Json(req): Json<OrchestrateRequest>,
 ) -> Result<Json<serde_json::Value>, ApiError> {
     let task = st.sdk.create_task(req.goal.clone(), vec![], req.acceptance.clone()).await?;
+
+    // 工具集：echo(基线) + write_file("写软件"落盘能力，根=任务工作目录)
     let router = ToolRouter::new();
     router.register(Box::new(EchoTool::new())).map_err(ApiError::from)?;
+    let workdir = st.workspaces.create_for(task.id.as_ref()).map_err(ApiError::from)?;
+    router
+        .register(Box::new(forge_exec::WriteFileTool::new(workdir)))
+        .map_err(ApiError::from)?;
+
+    // 规划器：配置了 FORGE_LLM_* 时用真实模型做 Architect（工具白名单=write_file）；
+    // 未配置则回退确定性 SequentialPlanner（离线全绿的基线语义）。
+    let llm_ready = !std::env::var("FORGE_LLM_BASE_URL")
+        .unwrap_or_default()
+        .trim()
+        .is_empty()
+        && !std::env::var("FORGE_LLM_API_KEY")
+            .unwrap_or_default()
+            .trim()
+            .is_empty();
+    let planner: Option<Arc<dyn forge_planner::Planner>> = if llm_ready {
+        match build_llm_planner().await {
+            Ok(p) => Some(p),
+            Err(e) => {
+                eprintln!("orchestrate: LLM planner unavailable ({e}), falling back to sequential");
+                None
+            }
+        }
+    } else {
+        None
+    };
+
     let deps = forge_sdk::OrchestratorDeps {
         router: Arc::new(router),
         policy: Arc::new(DemoAllowAll),
@@ -204,7 +241,7 @@ async fn orchestrate(
         }),
         replanner: None,
         max_replans: 1,
-        planner: None,
+        planner,
     };
     let orch = Orchestrator { capability: "echo".into(), timeout: Duration::from_secs(req.timeout_secs) };
     let report = st.sdk.run_end_to_end(&task.id, &deps, &orch).await.map_err(ApiError::from)?;
@@ -415,6 +452,102 @@ async fn ui_evidence() -> Html<&'static str> {
     Html(include_str!("../static/evidence.html"))
 }
 
+/// 单文件代码生成规划器（"写软件"路径核心，对小上限模型鲁棒）。
+///
+/// 两次**纯文本**调用，全程无 JSON：
+/// 1. 问文件名（短输出）；
+/// 2. 要完整文件内容（原始代码，strip 围栏后落盘）。
+///
+/// 执行写入与运行验收由确定性引擎/Verifier 完成，LLM 只负责产出代码。
+struct SingleFileCodegenPlanner {
+    backend: Arc<forge_api::LlmClient>,
+    model: String,
+}
+
+fn strip_code_fence(s: &str) -> String {
+    let t = s.trim();
+    if !t.starts_with("```") {
+        return t.to_string();
+    }
+    let mut lines: Vec<&str> = t.lines().collect();
+    if lines.len() >= 2 {
+        lines.remove(0); // ```lang
+        if lines.last().map(|l| l.trim() == "```").unwrap_or(false) {
+            lines.pop();
+        }
+        lines.join("\n")
+    } else {
+        t.to_string()
+    }
+}
+
+fn first_line(s: &str) -> String {
+    s.lines()
+        .map(str::trim)
+        .find(|l| !l.is_empty())
+        .unwrap_or("output.txt")
+        .to_string()
+}
+
+#[async_trait::async_trait]
+impl forge_planner::Planner for SingleFileCodegenPlanner {
+    async fn plan(&self, task: &forge_task::Task) -> ForgeResult<forge_planner::Plan> {
+        use forge_api::{ChatMessage, LlmBackend as _};
+
+        // ① 文件名（短输出，天然不受长补全截断影响）
+        let name_sys = "Answer with a single output filename including extension (like hello.py or app.js). No explanation.";
+        let name_user = format!("Task: {}\nPick the best output filename.", task.goal);
+        let name_raw = self
+            .backend
+            .chat(&self.model, &[ChatMessage::system(name_sys), ChatMessage::user(name_user)])
+            .await?;
+        let filename = first_line(&strip_code_fence(&name_raw));
+
+        // ② 完整文件内容（纯文本，无 JSON 转义/截断问题）
+        let mut ac_text = String::new();
+        for a in &task.acceptance {
+            ac_text.push_str(&format!("- {}: {}\n", a.id, a.description));
+        }
+        let code_sys = "You are a senior engineer. Output ONLY the complete final content of the requested file. No markdown fences, no explanations.";
+        let code_user = format!(
+            "Filename: {filename}\nIt will be verified by:\n{ac_text}\nGoal: {goal_text}\nWrite the complete file now.",
+            goal_text = task.goal,
+        );
+        let raw = self
+            .backend
+            .chat(&self.model, &[ChatMessage::system(code_sys), ChatMessage::user(code_user)])
+            .await?;
+        let content = strip_code_fence(&raw);
+        eprintln!("codegen[{filename}] bytes={}", content.len());
+
+        Ok(forge_planner::Plan {
+            id: forge_core::new_plan_id(),
+            task_id: task.id.clone(),
+            steps: vec![forge_planner::PlanStep {
+                id: "codegen".into(),
+                title: format!("生成 {filename}"),
+                depends_on: vec![],
+                action: forge_planner::StepAction::CallCapability {
+                    capability: "write_file".into(),
+                    input: serde_json::json!({ "path": filename, "content": content }),
+                },
+            }],
+            status: forge_planner::PlanStatus::Ready,
+        })
+    }
+}
+/// 构建服务端 LLM 规划器（单文件代码生成，纯文本双调用，对小上限模型鲁棒）。
+async fn build_llm_planner() -> Result<Arc<dyn forge_planner::Planner>, String> {
+    let base = std::env::var("FORGE_LLM_BASE_URL").unwrap_or_default();
+    let key = std::env::var("FORGE_LLM_API_KEY").unwrap_or_default();
+    Ok(Arc::new(SingleFileCodegenPlanner {
+        backend: Arc::new(forge_api::LlmClient::new(base, key)),
+        model: std::env::var("FORGE_TIER_HIGH_MODEL")
+            .ok()
+            .filter(|m| !m.trim().is_empty())
+            .unwrap_or_else(|| "glm-5.2".into()),
+    }))
+}
 /// GET /events/stream — SSE 实时事件流（API-003）
 async fn events_stream(
     State(st): State<AppState>,

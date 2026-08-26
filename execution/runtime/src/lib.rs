@@ -8,9 +8,11 @@ pub mod engine;
 pub mod permission_level;
 pub mod policy;
 pub mod router;
+pub mod tools_file;
 
 pub use dispatcher::EngineDispatcher;
 pub use engine::{ExecutionEngine, ExecutionRequest, ExecutionResult, ExecutionStatus};
 pub use permission_level::PermissionLevel;
 pub use policy::{PermissionPolicy, PolicyContext};
 pub use router::{EchoTool, Tool, ToolDescriptor, ToolRouter};
+pub use tools_file::WriteFileTool;
