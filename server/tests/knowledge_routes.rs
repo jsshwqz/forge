@@ -41,7 +41,7 @@ fn get(uri: &str) -> Request<Body> {
 #[tokio::test]
 async fn failures_endpoint_returns_ingested() {
     let state = AppState::in_memory();
-    let mut entry = KnowledgeEntry {
+    let entry = KnowledgeEntry {
         record: FailureRecord {
             id: "rec-test-001".into(),
             execution_id: forge_core::ExecutionId::new_execution_id(),
@@ -61,7 +61,7 @@ async fn failures_endpoint_returns_ingested() {
     assert_eq!(status, StatusCode::OK, "failures endpoint should return 200");
     assert!(body.is_array(), "response should be a JSON array");
     let arr = body.as_array().unwrap();
-    assert!(arr.len() >= 1, "should contain at least the ingested entry, got {}", arr.len());
+    assert!(!arr.is_empty(), "should contain at least the ingested entry, got {}", arr.len());
 }
 
 #[tokio::test]

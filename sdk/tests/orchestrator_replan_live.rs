@@ -127,7 +127,7 @@ async fn live_llm_plan_runs_to_completed() {
         schema_max_attempts: 3,
         tools: vec!["echo".into()],
         ledger: None,
-    ,
+    
         brief_mode: false
     });
     let replanner = Arc::new(LlmReplanner {
