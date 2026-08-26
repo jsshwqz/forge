@@ -7,7 +7,7 @@
 //! - tool_like 过滤正常工作
 
 use axum::body::Body;
-use axum::http:: Request, StatusCode};
+use axum::http::{Request, StatusCode};
 use forge_server::{app_with_state, AppState};
 use forge_knowledge::KnowledgeEntry, FailureKnowledgeBase as _};
 use forge_recovery::classify::{FailureCategory, FailureRecord};
