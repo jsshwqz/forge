@@ -654,5 +654,21 @@
     "task_id": "GENERAL",
     "title": "R7-009 Docker镜像构建未本机实测(仅Podman)",
     "body": "deploy/Dockerfile+compose按官方语法编写并人工审阅, 本机无docker daemon未实际build/run; PG持久化验证改用本机Podman容器15432直连等效完成; 标记为待客户环境首验"
+  },
+  {
+    "id": "R1-052",
+    "kind": "R1Completed",
+    "date": "2026-08-26",
+    "task_id": "GENERAL",
+    "title": "写软件能力打通(WriteFileTool+LLM代码生成规划器)",
+    "body": "forge-exec新增WriteFileTool(相对路径防逃逸,2测试); orchestrate注册write_file并按FORGE_LLM_*自动启用SingleFileCodegenPlanner: 两次纯文本调用(问文件名→要完整代码), 规避小上限模型JSON嵌套截断; 工作目录create_for改为确定性幂等; chat显式max_tokens=4096; 实测代码已成功落盘工作目录(290B fizzbuzz.py), 验收执行通路验证; 上游429/quota映射HTTP503; 提交21de489"
+  },
+  {
+    "id": "R7-009",
+    "kind": "R7DeviationRisk",
+    "date": "2026-08-26",
+    "task_id": "GENERAL",
+    "title": "R7-010 商汤工作区配额耗尽(429 insufficient_quota)",
+    "body": "今日密集实测消耗殆尽Workspace配额; flash-lite模型输出硬上限约380字符且max_tokens不生效(已用纯文本双调用架构规避); 配额恢复后orchestrate写软件任务即可全绿, 代码链路已验证至落盘+验收执行"
   }
 ]
