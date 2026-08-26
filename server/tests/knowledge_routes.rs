@@ -7,9 +7,10 @@
 //! - tool_like 过滤正常工作
 
 use axum::body::Body;
-use axum::http::{Request, StatusCode};
+use axum::http::Request;
+use axum::http::StatusCode;
 use forge_server::{app_with_state, AppState};
-use forge_knowledge::KnowledgeEntry, FailureKnowledgeBase as _};
+use forge_knowledge::{KnowledgeEntry, FailureKnowledgeBase as _};
 use forge_recovery::classify::{FailureCategory, FailureRecord};
 use http_body_util::BodyExt;
 use tower::ServiceExt;
@@ -39,9 +40,8 @@ fn get(uri: &str) -> Request<Body> {
 
 #[tokio::test]
 async fn failures_endpoint_returns_ingested() {
-    // 创建带预 ingest 知识的 app
     let state = AppState::in_memory();
-    let entry = KnowledgeEntry {
+    let mut entry = KnowledgeEntry {
         record: FailureRecord {
             id: "rec-test-001".into(),
             execution_id: forge_core::ExecutionId::new_execution_id(),
@@ -53,7 +53,7 @@ async fn failures_endpoint_returns_ingested() {
         related_evidence: vec![],
         tool: Some("write_file".into()),
     };
-    state.knowledge.ingest(entry).await;
+    state.knowledge.ingest(entry.clone()).await;
 
     let app = app_with_state(state);
 
@@ -65,13 +65,11 @@ async fn failures_endpoint_returns_ingested() {
 }
 
 #[tokio::test]
-async fn export_endpoint_returns_format_version() {
+async fn export_endpoint_returns_not_found_for_invalid_session() {
     let app = app();
     
-    // 测试 export 端点 - 对于不存在 session 应返回 404
     let (status, _body) = send_json(app, get("/knowledge/sessions/nonexistent-session-id/export")).await;
     
-    // 端点存在，返回 404 对于无效 session ID 是预期行为
     assert_eq!(status, StatusCode::NOT_FOUND, "export should return 404 for invalid session");
 }
 
@@ -79,7 +77,6 @@ async fn export_endpoint_returns_format_version() {
 async fn limit_clamped_to_500() {
     let app = app();
     
-    // limit=9999 应该被 clamp 到 500
     let (status, body) = send_json(
         app,
         Request::get("/knowledge/failures?limit=9999").body(Body::empty()).unwrap(),
@@ -95,7 +92,6 @@ async fn limit_clamped_to_500() {
 async fn knowledge_failures_filter_by_tool() {
     let state = AppState::in_memory();
     
-    // ingest 两条不同工具的条目
     state.knowledge.ingest(KnowledgeEntry {
         record: FailureRecord {
             id: "rec-tool-a".into(),
@@ -124,7 +120,6 @@ async fn knowledge_failures_filter_by_tool() {
     
     let app = app_with_state(state);
     
-    // 过滤 tool_like=tool_a
     let (status, body) = send_json(
         app,
         Request::get("/knowledge/failures?tool_like=tool_a").body(Body::empty()).unwrap(),
@@ -167,7 +162,6 @@ async fn knowledge_failures_filter_by_category() {
     
     let app = app_with_state(state);
     
-    // 过滤 category=Timeout
     let (status, body) = send_json(
         app,
         Request::get("/knowledge/failures?category=Timeout").body(Body::empty()).unwrap(),

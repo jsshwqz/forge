@@ -127,6 +127,8 @@ async fn live_llm_plan_runs_to_completed() {
         schema_max_attempts: 3,
         tools: vec!["echo".into()],
         ledger: None,
+    ,
+        brief_mode: false
     });
     let replanner = Arc::new(LlmReplanner {
         backend: client.clone(),
@@ -195,8 +197,7 @@ impl Planner for PoisonFirstPlanner {
 /// 场景 2：必失败步骤触发一次 replan —— 成功或规范升级 EscalateHuman 均算过门禁。
 #[tokio::test]
 async fn live_forced_failure_replans_or_escalates() {
-    let Some((client, model)) = live_stack().await else { return;
-        brief_mode: false
+    let Some((client, model)) = live_stack().await else { return; false
     };
     let sdk = ForgeSdk::in_memory();
 
