@@ -7,6 +7,7 @@
 //! 密钥比较使用常量时间逐字节异或累积，防时序侧信道。
 //! 401 统一文案，不泄露失败原因。
 
+use forge_core::ForgeResult;
 use axum::{
     body::Body,
     http::{Request, StatusCode},
@@ -90,7 +91,6 @@ pub async fn auth_middleware(
     }
 }
 
-#[cfg(test)]
 
 /// 租户密钥存储 trait
 #[async_trait::async_trait]
@@ -102,9 +102,10 @@ pub trait TenantKeyStore: Send + Sync {
 /// 鉴权结果
 pub enum AuthOutcome { Tenant(String), Local }
 
+#[cfg(test)]
 mod tests {
-
-    #[test]
+    use super::*;
+        #[test]
     fn constant_time_eq_same() {
         assert!(constant_time_eq(b"hello", b"hello"));
     }
