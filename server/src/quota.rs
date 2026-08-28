@@ -26,7 +26,7 @@ pub trait QuotaStore: Send + Sync {
 /// 超日量 → 429 quota_daily
 pub async fn check_quota(q: &QuotaView, running: i64, today_count: i64) -> ForgeResult<()> {
     if running >= q.max_concurrent as i64 {
-        return Err(ForgeError::QuotaExceeded(format!(
+        return Err(ForgeError::InvalidState(format!(
             "quota_concurrency: tenant has {} running, limit {}",
             running, q.max_concurrent
         )));
