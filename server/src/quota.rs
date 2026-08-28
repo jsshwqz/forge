@@ -32,7 +32,7 @@ pub async fn check_quota(q: &QuotaView, running: i64, today_count: i64) -> Forge
         )));
     }
     if today_count >= q.daily_tasks as i64 {
-        return Err(ForgeError::QuotaExceeded(format!(
+        return Err(ForgeError::InvalidState(format!(
             "quota_daily: tenant has {} tasks today, limit {}",
             today_count, q.daily_tasks
         )));

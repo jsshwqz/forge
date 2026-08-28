@@ -122,6 +122,7 @@ impl AppState {
             templates: Arc::new(Default::default()),
             metrics: Arc::new(Metrics::default()),
             knowledge: Arc::new(Default::default()),
+            capabilities: Arc::new(Default::default()),
         }
     }
 }
@@ -700,11 +701,9 @@ pub fn app_with_state(st: AppState) -> Router {
         .route("/knowledge/failures", get(knowledge_failures_handler))
         .route("/knowledge/sessions/:id/export", get(knowledge_export_handler))
         // V5.0 MKT-001/002 市场目录
-        .nest("/market", Router::new()
-            .route("/capabilities", get(routes::market::list_capabilities))
-            .route("/templates", get(routes::market::list_market_templates))
-            .route("/install", post(routes::market::install_capability))
-        )
+        .route("/market/capabilities", get(routes::market::list_capabilities))
+            .route("/market/templates", get(routes::market::list_market_templates))
+            .route("/market/install", post(routes::market::install_capability))
         .route("/", get(ui_index))
         .route("/ui/sessions", get(ui_sessions))
         .route("/ui/evidence", get(ui_evidence));

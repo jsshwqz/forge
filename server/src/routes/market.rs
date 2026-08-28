@@ -10,11 +10,8 @@ use axum::response::Json;
 use serde::Deserialize;
 use std::sync::Arc;
 
-use forge_cap::CapabilityRegistry;
-use forge_product_instance::{TemplateRegistry, TemplateRecord};
-
 use forge_cap::{Capability, CapabilityKind, CapabilityRegistry as _};
-use forge_product_instance::{TemplateRegistry as _, TemplateRecord};
+use forge_product_instance::TemplateRegistry as _;
 
 /// 市场目录查询参数
 #[derive(Deserialize)]
@@ -59,8 +56,8 @@ pub struct MarketItem {
 impl From<Capability> for MarketItem {
     fn from(cap: Capability) -> Self {
         Self {
-            name: cap.name.clone(),
-            version: cap.version.clone(),
+            name: cap.name,
+            version: cap.version,
             kind: format!("{:?}", cap.kind),
             description: format!("{} v{}", cap.name, cap.version),
             permission: format!("{:?}", cap.permission),
@@ -77,7 +74,7 @@ pub async fn list_capabilities(
     let page = q.page.max(1);
     let offset = (page - 1) * per_page;
 
-    let all = match q.kind.as_deref() {
+    let all: Vec<Capability> = match q.kind.as_deref() {
         Some("Skill") => registry.list_by_kind(CapabilityKind::Skill).await.unwrap_or_default(),
         Some("Tool") => registry.list_by_kind(CapabilityKind::Tool).await.unwrap_or_default(),
         Some("McpServer") => registry.list_by_kind(CapabilityKind::McpServer).await.unwrap_or_default(),
@@ -107,12 +104,12 @@ pub async fn list_market_templates(
     let offset = (page - 1) * per_page;
 
     let all = registry.list().await.unwrap_or_default();
-    let published: Vec<&TemplateRecord> = all.iter().filter(|t| t.review_verdict == "Pass").collect();
+    let published: Vec<_> = all.iter().filter(|t| t.review_verdict == "Pass").collect();
     let total = published.len();
-    let paginated: Vec<&TemplateRecord> = published.into_iter().skip(offset as usize).take(per_page as usize).collect();
+    let paginated = published.into_iter().skip(offset as usize).take(per_page as usize);
 
     Json(serde_json::json!({
-        "items": paginated.iter().map(|t| serde_json::json!({
+        "items": paginated.map(|t| serde_json::json!({
             "id": t.template.id,
             "name": t.template.name,
             "version": &t.version,
@@ -128,18 +125,15 @@ pub async fn install_capability(
     State(existing): State<Arc<dyn CapabilityRegistry>>,
     Json(req): Json<InstallRequest>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
-    // 查找源能力
     let source = existing.find_by_name(&req.name).await.map_err(|_| (StatusCode::NOT_FOUND, "capability not found".into()))?;
-    let cap = source.iter().find(|c| c.version == req.version).ok_or((StatusCode::NOT_FOUND, "version not found".into()))?;
+    let cap = source.into_iter().find(|c| c.version == req.version).ok_or((StatusCode::NOT_FOUND, "version not found".into()))?;
 
-    // 检查是否已安装（幂等）
     let existing_caps = registry.find_by_name(&req.name).await.map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    if let Some(already) = existing_caps.iter().find(|c| c.version == req.version) {
+    if let Some(already) = existing_caps.into_iter().find(|c| c.version == req.version) {
         return Ok(Json(serde_json::json!({ "id": already.id, "installed": true })));
     }
 
-    // 复制并激活
-    let mut new_cap = cap.clone();
+    let mut new_cap = cap;
     new_cap.status = forge_cap::CapabilityStatus::Active;
     let id = registry.register(new_cap).await.map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
