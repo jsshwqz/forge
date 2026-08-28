@@ -46,7 +46,7 @@ pub async fn suggest(kb: &dyn KnowledgeBase, top_n: u32) -> ForgeResult<Vec<Regr
             pattern,
             count: records.len() as u64,
             suggested_case: serde_json::json!({
-                "tool": records.first().map(|r| &r.tool).unwrap_or(&String::new()).to_string(),
+                "tool": records.first().map(|r| r.tool.clone()).unwrap_or_default(),
                 "input": "sample_input",
                 "expect": "error",
                 "from_evidence": vec![]
