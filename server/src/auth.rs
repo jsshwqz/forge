@@ -1,5 +1,3 @@
-use forge_core::ForgeResult;
-
 //! Bearer Token 鉴权中间件（API-002）。
 //!
 //! 环境变量 `FORGE_API_KEY`：
@@ -9,6 +7,7 @@ use forge_core::ForgeResult;
 //! 密钥比较使用常量时间逐字节异或累积，防时序侧信道。
 //! 401 统一文案，不泄露失败原因。
 
+use forge_core::ForgeResult;
 use axum::{
     body::Body,
     http::{Request, StatusCode},
