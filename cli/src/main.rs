@@ -23,6 +23,16 @@ enum Commands {
     Serve,
     /// 打印版本信息后退出。
     Version,
+    /// 从失败知识库生成回归建议。
+    #[command(name = "knowledge-suggest")]
+    KnowledgeSuggest {
+        /// 输出文件路径
+        #[arg(short, long, default_value = "suggestions.json")]
+        out: String,
+        /// 建议数量
+        #[arg(short, long, default_value_t = 5)]
+        top_n: u32,
+    },
 }
 
 #[tokio::main]
@@ -35,6 +45,17 @@ async fn main() {
                 eprintln!("server error: {e}");
                 std::process::exit(1);
             }
+        }
+        Some(Commands::KnowledgeSuggest { out, top_n }) => {
+            use forge_knowledge::{InMemoryKnowledgeBase, suggest as gen_suggest, write_suggestions};
+            let kb = InMemoryKnowledgeBase::default();
+            let suggestions = gen_suggest(&kb, top_n).await.unwrap_or_default();
+            let path = std::path::Path::new(&out);
+            if let Err(e) = write_suggestions(&suggestions, path).await {
+                eprintln!("failed to write suggestions: {e}");
+                std::process::exit(1);
+            }
+            println!("wrote {} suggestions to {}", suggestions.len(), out);
         }
         Some(Commands::Version) | None => {
             println!("forge {}", env!("CARGO_PKG_VERSION"));

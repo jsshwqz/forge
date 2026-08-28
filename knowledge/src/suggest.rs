@@ -5,6 +5,7 @@
 
 use crate::failures::{FailureKnowledgeBase, KnowledgeEntry};
 use forge_core::{ForgeError, ForgeResult};
+use crate::failures::KnowledgeEntry;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::Path;
@@ -39,7 +40,7 @@ pub async fn suggest(
     
     // 取 top-N 组
     let mut sorted: Vec<_> = groups.into_values().collect();
-    sorted.sort_by_key(|v| std::cmp::Reverse(v.len()));
+    sorted.sort_by_key(|v: &Vec<_>| std::cmp::Reverse(v.len()));
     sorted.truncate(top_n as usize);
     
     let mut suggestions = Vec::new();
