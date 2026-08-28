@@ -56,8 +56,8 @@ pub struct MarketItem {
     pub permission: String,
 }
 
-impl From<&Capability> for MarketItem {
-    fn from(cap: &Capability) -> Self {
+impl From<Capability> for MarketItem {
+    fn from(cap: Capability) -> Self {
         Self {
             name: cap.name.clone(),
             version: cap.version.clone(),

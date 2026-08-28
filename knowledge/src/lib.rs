@@ -9,6 +9,7 @@ pub mod failures;
 pub mod suggest;
 pub mod replay;
 
+pub use suggest::{RegressionSuggestion, suggest, write_suggestions};
 pub use failures::{
     FailureKnowledgeBase, InMemoryKnowledgeBase, KnowledgeEntry,
 };

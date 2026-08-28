@@ -123,3 +123,14 @@ mod tests {
         assert!(cfg.is_enabled());
     }
 }
+
+
+/// 租户密钥存储 trait
+#[async_trait::async_trait]
+pub trait TenantKeyStore: Send + Sync {
+    async fn tenant_of(&self, key_hash: &str) -> ForgeResult<Option<String>>;
+    async fn issue(&self, tenant_id: &str) -> ForgeResult<String>;
+}
+
+/// 鉴权结果
+pub enum AuthOutcome { Tenant(String), Local }

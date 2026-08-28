@@ -31,12 +31,13 @@ impl TaskStore for PgTaskStore {
     ) -> ForgeResult<Task> {
         let id = TaskId::new_task_id();
         let created_at = Utc::now();
-        sqlx::query("INSERT INTO tasks (id, goal, constraints, acceptance, status, created_at) VALUES ($1,$2,$3,$4,$5,$6)")
+        sqlx::query("INSERT INTO tasks (id, goal, constraints, acceptance, status, tenant_id, created_at) VALUES ($1,$2,$3,$4,$5,$6,$7)")
             .bind(id.as_ref())
             .bind(&goal)
             .bind(Json(constraints.clone()))
             .bind(Json(acceptance.clone()))
             .bind(crate::enc(&TaskStatus::Pending))
+            .bind("default")
             .bind(created_at)
             .execute(&self.pool)
             .await
@@ -46,13 +47,13 @@ impl TaskStore for PgTaskStore {
     }
 
     async fn get(&self, id: &TaskId) -> ForgeResult<Task> {
-        let row: Option<(String, Json<Vec<String>>, Json<Vec<AcceptanceCriterion>>, String, DateTime<Utc>)> =
-            sqlx::query_as("SELECT goal, constraints, acceptance, status, created_at FROM tasks WHERE id = $1")
+        let row: Option<(String, Json<Vec<String>>, Json<Vec<AcceptanceCriterion>>, String, String, DateTime<Utc>)> =
+            sqlx::query_as("SELECT goal, constraints, acceptance, status, tenant_id, created_at FROM tasks WHERE id = $1")
                 .bind(id.as_ref())
                 .fetch_optional(&self.pool)
                 .await
                 .map_err(crate::db_err)?;
-        let Some((goal, Json(constraints), Json(acceptance), status_s, created_at)) = row else {
+        let Some((goal, Json(constraints), Json(acceptance), status_s, _tenant_id, created_at)) = row else {
             return Err(ForgeError::NotFound(format!("task: {id}")));
         };
         Ok(Task {
@@ -68,7 +69,7 @@ impl TaskStore for PgTaskStore {
     async fn update_status(&self, id: &TaskId, to: TaskStatus) -> ForgeResult<Task> {
         let mut tx = self.pool.begin().await.map_err(crate::db_err)?;
         let row: Option<(String, Json<Vec<String>>, Json<Vec<AcceptanceCriterion>>, String, DateTime<Utc>)> =
-            sqlx::query_as("SELECT goal, constraints, acceptance, status, created_at FROM tasks WHERE id = $1 FOR UPDATE")
+            sqlx::query_as("SELECT goal, constraints, acceptance, status, tenant_id, created_at FROM tasks WHERE tenant_id = $1 WHERE id = $1 FOR UPDATE")
                 .bind(id.as_ref())
                 .fetch_optional(&mut *tx)
                 .await
