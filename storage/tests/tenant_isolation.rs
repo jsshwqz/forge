@@ -1,6 +1,6 @@
 //! V5.0 TEN-001: 租户隔离测试
 
-use forge_core::{TenantId, DEFAULT_TENANT_ID};
+use forge_core::id::{TenantId, DEFAULT_TENANT_ID};
 
 #[test]
 fn tenant_id_has_ten_prefix() {
