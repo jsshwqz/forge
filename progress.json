@@ -606,5 +606,53 @@
     "owner": null,
     "last_record": "R1-053",
     "commit": null
+  },
+  {
+    "id": "MKT-001",
+    "name": "能力市场目录",
+    "status": "done",
+    "notes": "GET /market/capabilities + /market/templates"
+  },
+  {
+    "id": "MKT-002",
+    "name": "安装即注册",
+    "status": "done",
+    "notes": "POST /market/install 幂等安装"
+  },
+  {
+    "id": "PERF-001",
+    "name": "微基准测试",
+    "status": "done",
+    "notes": "crates/bench/ + docs/BASELINE.md"
+  },
+  {
+    "id": "TEN-001",
+    "name": "租户模型",
+    "status": "done",
+    "notes": "TenantId + 迁移0009 + 存储过滤"
+  },
+  {
+    "id": "TEN-002",
+    "name": "多租户鉴权",
+    "status": "done",
+    "notes": "TenantKeyStore trait + 迁移0010"
+  },
+  {
+    "id": "TEN-003",
+    "name": "租户配额",
+    "status": "done",
+    "notes": "Quota模块 + 迁移0011"
+  },
+  {
+    "id": "KNW-002",
+    "name": "知识建议",
+    "status": "done",
+    "notes": "suggest() + CLI knowledge-suggest"
+  },
+  {
+    "id": "DEP-001",
+    "name": "扩展评估",
+    "status": "done",
+    "notes": "docs/SCALING.md 三限制文档"
   }
 ]

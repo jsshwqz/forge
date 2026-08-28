@@ -11,7 +11,7 @@ use axum::body::Body;
 use axum::http::Request;
 use axum::http::StatusCode;
 use forge_server::{app_with_state, AppState};
-use forge_cap::{Capability, CapabilityKind, CapabilityStatus};
+use forge_cap::{Capability, CapabilityKind, CapabilityRegistry, CapabilityStatus};
 use http_body_util::BodyExt;
 use tower::ServiceExt;
 
@@ -72,11 +72,11 @@ async fn pagination_clamped() {
 
 #[tokio::test]
 async fn no_entry_leak() {
-    let mut state = AppState::in_memory();
+    let state = AppState::in_memory();
     
     // 插入一个测试能力
     state.capabilities.register(Capability {
-        id: "cap-test-001".into(),
+        id: forge_core::new_capability_id(),
         name: "echo".into(),
         kind: CapabilityKind::Tool,
         version: "0.1.0".into(),
@@ -102,11 +102,11 @@ async fn no_entry_leak() {
 
 #[tokio::test]
 async fn install_registers_active() {
-    let mut state = AppState::in_memory();
+    let state = AppState::in_memory();
     
     // 插入源能力
     state.capabilities.register(Capability {
-        id: "cap-source-001".into(),
+        id: forge_core::new_capability_id(),
         name: "echo".into(),
         kind: CapabilityKind::Tool,
         version: "0.1.0".into(),
@@ -133,11 +133,11 @@ async fn install_registers_active() {
 
 #[tokio::test]
 async fn idempotent_reinstall() {
-    let mut state = AppState::in_memory();
+    let state = AppState::in_memory();
     
     // 插入源能力
     state.capabilities.register(Capability {
-        id: "cap-idem-001".into(),
+        id: forge_core::new_capability_id(),
         name: "echo".into(),
         kind: CapabilityKind::Tool,
         version: "0.1.0".into(),
