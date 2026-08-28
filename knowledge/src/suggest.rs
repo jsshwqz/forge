@@ -33,24 +33,27 @@ pub struct FailureRecord {
 pub async fn suggest(kb: &dyn KnowledgeBase, top_n: u32) -> ForgeResult<Vec<RegressionSuggestion>> {
     let failures = kb.list_failures().await?;
     
-    // 按 pattern 分组
-    let mut groups: std::collections::HashMap<String, Vec<&FailureRecord>> = std::collections::HashMap::new();
+    // 按 pattern 分组 (使用 owned values)
+    let mut groups: std::collections::HashMap<String, Vec<FailureRecord>> = std::collections::HashMap::new();
     for f in failures {
         let pattern = format!("{}:{}", f.category, f.tool);
-        groups.entry(pattern).or_default().push(f.clone());
+        groups.entry(pattern).or_default().push(f);
     }
     
     // 取 top-N
     let mut suggestions: Vec<RegressionSuggestion> = groups.into_iter()
-        .map(|(pattern, records)| RegressionSuggestion {
-            pattern,
-            count: records.len() as u64,
-            suggested_case: serde_json::json!({
-                "tool": records.first().map(|r| r.tool.clone()).unwrap_or_default(),
-                "input": serde_json::Value::String("sample_input".to_string()),
-                "expect": serde_json::Value::String("error".to_string()),
-                "from_evidence": serde_json::Value::Array(vec![])
-            }),
+        .map(|(pattern, records)| {
+            let first_tool = records.first().map(|r| r.tool.clone()).unwrap_or_default();
+            RegressionSuggestion {
+                pattern,
+                count: records.len() as u64,
+                suggested_case: serde_json::json!({
+                    "tool": first_tool,
+                    "input": "sample_input",
+                    "expect": "error",
+                    "from_evidence": []
+                }),
+            }
         })
         .collect();
     
