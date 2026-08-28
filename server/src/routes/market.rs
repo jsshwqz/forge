@@ -10,8 +10,8 @@ use axum::response::Json;
 use serde::Deserialize;
 use std::sync::Arc;
 
-use forge_cap::{Capability, CapabilityKind, CapabilityRegistry as _};
-use forge_product_instance::TemplateRegistry as _;
+use forge_cap::{Capability, CapabilityKind, CapabilityRegistry};
+use forge_product_instance::TemplateRegistry;
 
 /// 市场目录查询参数
 #[derive(Deserialize)]
