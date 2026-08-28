@@ -527,6 +527,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "forge-bench"
+version = "0.1.0"
+dependencies = [
+ "forge-core",
+ "forge-gates",
+ "forge-knowledge",
+ "forge-planner",
+ "forge-recovery",
+ "serde_json",
+]
+
+[[package]]
 name = "forge-cap"
 version = "0.1.0"
 dependencies = [

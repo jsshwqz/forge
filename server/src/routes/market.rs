@@ -10,6 +10,9 @@ use axum::response::Json;
 use serde::Deserialize;
 use std::sync::Arc;
 
+use forge_cap::{CapabilityRegistry, CapabilityStatus};
+use forge_product_instance::{TemplateRegistry, TemplateRecord};
+
 use forge_cap::{Capability, CapabilityKind, CapabilityRegistry as _};
 use forge_product_instance::{TemplateRegistry as _, TemplateRecord};
 

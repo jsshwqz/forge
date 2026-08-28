@@ -1,5 +1,7 @@
 [workspace]
 members = [
+    "crates/bench",
+    
     "core/runtime",
     "core/session",
     "core/event",

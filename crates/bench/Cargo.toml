@@ -1,0 +1,15 @@
+[package]
+name = "forge-bench"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish = false
+
+
+[dependencies]
+forge-core = { path = "../../core/runtime" }
+forge-recovery = { path = "../../recovery" }
+forge-planner = { path = "../../planning/planner" }
+forge-knowledge = { path = "../../knowledge" }
+forge-gates = { path = "../../verification/gates" }
+serde_json = "1"
