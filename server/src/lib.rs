@@ -6,6 +6,7 @@
 //!       非 loopback 监听未配 key 拒绝启动。
 
 pub mod auth;
+pub mod quota;
 pub mod routes;
 
 use axum::{
@@ -32,6 +33,7 @@ use forge_product_instance::{
     ProductInstanceStore as _, TemplateRegistry as _,
 };
 use forge_cap::{CapabilityRegistry as _, InMemoryCapabilityRegistry};
+use crate::quota::InMemoryQuotaStore;
 use forge_knowledge::{FailureKnowledgeBase as _, InMemoryKnowledgeBase, KnowledgeEntry, ReplayArchive};
 use forge_recovery::classify::FailureCategory;
 use futures::Stream;

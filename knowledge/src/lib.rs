@@ -6,6 +6,7 @@
 //! 复用既有 store trait（forge-recovery / forge-session），零新存储。
 
 pub mod failures;
+pub mod suggest;
 pub mod replay;
 
 pub use failures::{
