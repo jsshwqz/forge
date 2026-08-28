@@ -22,7 +22,7 @@ pub struct RegressionSuggestion {
 /// 从 KnowledgeBase 取 top-N 组，每组生成一条回归建议
 /// N 默认 5
 pub async fn suggest(
-    kb: &dyn forge_knowledge::FailureKnowledgeBase,
+    kb: &dyn crate::FailureKnowledgeBase,
     top_n: u32,
 ) -> ForgeResult<Vec<RegressionSuggestion>> {
     let entries = kb.aggregate().await?;
@@ -90,7 +90,7 @@ mod tests {
     
     #[tokio::test]
     async fn top_n_suggestions_generated() {
-        let kb = forge_knowledge::InMemoryKnowledgeBase::default();
+        let kb = crate::InMemoryKnowledgeBase::default();
         let result = suggest(&kb, 5).await.unwrap();
         assert!(result.len() <= 5);
     }
