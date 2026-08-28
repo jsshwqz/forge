@@ -29,10 +29,11 @@ pub async fn suggest(
     // 使用 all() 方法获取所有条目
     let entries = kb.all().await;
     
-    // 按 category:tool 分组统计
-    let mut groups: HashMap<(String, String), Vec<&KnowledgeEntry>> = HashMap::new();
+    // 按 category:tool 分组统计（使用 Debug 格式化 category）
+    let mut groups: HashMap<String, Vec<&KnowledgeEntry>> = HashMap::new();
     for entry in &entries {
-        let key = (entry.record.category.clone(), entry.tool.clone());
+        let tool_str = entry.tool.as_deref().unwrap_or("unknown");
+        let key = format!("{:?}:{}", entry.record.category, tool_str);
         groups.entry(key).or_default().push(entry);
     }
     
@@ -46,17 +47,18 @@ pub async fn suggest(
         if group.is_empty() { continue; }
         
         let first = group[0];
-        let pattern = format!("{}:{}", first.record.category, first.tool);
+        let tool_str = first.tool.as_deref().unwrap_or("unknown");
+        let pattern = format!("{:?}:{}", first.record.category, tool_str);
         
         // 生成建议用例
         let suggested_case = serde_json::json!({
-            "tool": first.tool,
-            "category": first.record.category,
+            "tool": tool_str,
+            "category": format!("{:?}", first.record.category),
             "input": "sample_input",
             "expect": if first.record.retriable { "timeout" } else { "error" },
             "count": group.len(),
             "from_evidence": first.related_evidence.iter()
-                .map(|e| e.id.to_string())
+                .map(|e| e.0.to_string())
                 .collect::<Vec<_>>()
         });
         
@@ -105,12 +107,12 @@ mod tests {
     #[test]
     fn roundtrip_parses() {
         let s = RegressionSuggestion {
-            pattern: "test:echo".into(),
+            pattern: "Test:echo".into(),
             count: 3,
             suggested_case: serde_json::json!({"tool": "echo"}),
         };
         let json = serde_json::to_string(&s).unwrap();
         let decoded: RegressionSuggestion = serde_json::from_str(&json).unwrap();
-        assert_eq!(decoded.pattern, "test:echo");
+        assert_eq!(decoded.pattern, "Test:echo");
     }
 }
