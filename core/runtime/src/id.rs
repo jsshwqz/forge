@@ -209,3 +209,31 @@ mod tests {
         assert_eq!(id.as_ref(), "session_xyz");
     }
 }
+
+
+/// 租户 ID（前缀 ten_）
+#[derive(Clone, Debug, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
+pub struct TenantId(String);
+
+impl TenantId {
+    pub fn new() -> Self {
+        Self(format!("ten_{}", uuid::Uuid::new_v4()))
+    }
+}
+
+impl std::fmt::Display for TenantId {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+
+impl From<String> for TenantId {
+    fn from(s: String) -> Self { Self(s) }
+}
+
+impl From<&str> for TenantId {
+    fn from(s: &str) -> Self { Self(s.into()) }
+}
+
+/// 默认租户 ID
+pub const DEFAULT_TENANT_ID: &str = "default";
