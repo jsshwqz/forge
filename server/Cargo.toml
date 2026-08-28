@@ -23,6 +23,7 @@ forge-plan-llm = { path = "../planning/llm" }
 forge-planner = { path = "../planning/planner" }
 forge-api = { path = "../capability/api" }
 forge-knowledge = { path = "../knowledge" }
+forge-cap = { path = "../capability/registry" }
 forge-verify = { path = "../verification/verifier" }
 forge-event = { path = "../core/event" }
 forge-evidence = { path = "../verification/evidence" }

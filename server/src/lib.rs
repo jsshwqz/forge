@@ -6,6 +6,7 @@
 //!       非 loopback 监听未配 key 拒绝启动。
 
 pub mod auth;
+pub mod routes;
 
 use axum::{
     extract::{Path, Query, State},
@@ -30,6 +31,7 @@ use forge_workspace::WorkspaceManager;
 use forge_product_instance::{
     ProductInstanceStore as _, TemplateRegistry as _,
 };
+use forge_cap::CapabilityRegistry as _;
 use forge_knowledge::{FailureKnowledgeBase as _, InMemoryKnowledgeBase, KnowledgeEntry, ReplayArchive};
 use forge_recovery::classify::FailureCategory;
 use futures::Stream;
@@ -91,6 +93,8 @@ pub struct AppState {
     pub metrics: Arc<Metrics>,
     /// KNW-001：失败知识库（服务面 GA-FIX-2）。
     pub knowledge: Arc<InMemoryKnowledgeBase>,
+    /// V5.0 MKT：能力注册表（市场源）。
+    pub capabilities: Arc<InMemoryCapabilityRegistry>,
 }
 
 impl AppState {
@@ -104,6 +108,7 @@ impl AppState {
             templates: Arc::new(Default::default()),
             metrics: Arc::new(Metrics::default()),
             knowledge: Arc::new(Default::default()),
+            capabilities: Arc::new(Default::default()),
         }
     }
     pub fn new(tasks: Arc<dyn TaskStore>, sessions: Arc<dyn SessionStore>) -> Self {
@@ -693,6 +698,12 @@ pub fn app_with_state(st: AppState) -> Router {
         // KNW-001 服务面
         .route("/knowledge/failures", get(knowledge_failures_handler))
         .route("/knowledge/sessions/:id/export", get(knowledge_export_handler))
+        // V5.0 MKT-001/002 市场目录
+        .nest("/market", Router::new()
+            .route("/capabilities", get(routes::market::list_capabilities))
+            .route("/templates", get(routes::market::list_market_templates))
+            .route("/install", post(routes::market::install_capability))
+        )
         .route("/", get(ui_index))
         .route("/ui/sessions", get(ui_sessions))
         .route("/ui/evidence", get(ui_evidence));

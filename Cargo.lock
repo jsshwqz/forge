@@ -808,6 +808,7 @@ dependencies = [
  "forge-agent",
  "forge-api",
  "forge-artifact",
+ "forge-cap",
  "forge-core",
  "forge-event",
  "forge-evidence",
