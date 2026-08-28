@@ -753,6 +753,7 @@ pub async fn run_from_env() -> Result<(), Box<dyn std::error::Error>> {
                 templates: Arc::new(Default::default()),
                 metrics: Arc::new(Metrics::default()),
                 knowledge: Arc::new(Default::default()),
+            capabilities: Arc::new(Default::default()),
             }
         }
         Err(_) => { println!("storage: in-memory"); AppState::in_memory() }
