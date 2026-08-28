@@ -5,7 +5,6 @@
 
 use crate::failures::{FailureKnowledgeBase, KnowledgeEntry};
 use forge_core::{ForgeError, ForgeResult};
-use crate::failures::KnowledgeEntry;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::Path;
