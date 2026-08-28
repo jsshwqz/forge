@@ -8,10 +8,10 @@ use axum::extract::{Query, State};
 use axum::http::StatusCode;
 use axum::response::Json;
 use serde::Deserialize;
-use std::sync::Arc;
 
-use forge_cap::{Capability, CapabilityKind, CapabilityRegistry};
-use forge_product_instance::TemplateRegistry;
+use forge_cap::{Capability, CapabilityKind, CapabilityRegistry as _};
+use forge_product_instance::TemplateRegistry as _;
+use crate::AppState;
 
 /// 市场目录查询参数
 #[derive(Deserialize)]
@@ -53,11 +53,11 @@ pub struct MarketItem {
     pub permission: String,
 }
 
-impl From<Capability> for MarketItem {
-    fn from(cap: Capability) -> Self {
+impl From<&Capability> for MarketItem {
+    fn from(cap: &Capability) -> Self {
         Self {
-            name: cap.name,
-            version: cap.version,
+            name: cap.name.clone(),
+            version: cap.version.clone(),
             kind: format!("{:?}", cap.kind),
             description: format!("{} v{}", cap.name, cap.version),
             permission: format!("{:?}", cap.permission),
@@ -67,7 +67,7 @@ impl From<Capability> for MarketItem {
 
 /// GET /market/capabilities
 pub async fn list_capabilities(
-    State(registry): State<Arc<dyn CapabilityRegistry>>,
+    State(state): State<AppState>,
     Query(q): Query<CapabilitiesQuery>,
 ) -> Json<serde_json::Value> {
     let per_page = q.per_page.min(100);
@@ -75,35 +75,35 @@ pub async fn list_capabilities(
     let offset = (page - 1) * per_page;
 
     let all: Vec<Capability> = match q.kind.as_deref() {
-        Some("Skill") => registry.list_by_kind(CapabilityKind::Skill).await.unwrap_or_default(),
-        Some("Tool") => registry.list_by_kind(CapabilityKind::Tool).await.unwrap_or_default(),
-        Some("McpServer") => registry.list_by_kind(CapabilityKind::McpServer).await.unwrap_or_default(),
-        Some("Api") => registry.list_by_kind(CapabilityKind::Api).await.unwrap_or_default(),
+        Some("Skill") => state.capabilities.list_by_kind(CapabilityKind::Skill).await.unwrap_or_default(),
+        Some("Tool") => state.capabilities.list_by_kind(CapabilityKind::Tool).await.unwrap_or_default(),
+        Some("McpServer") => state.capabilities.list_by_kind(CapabilityKind::McpServer).await.unwrap_or_default(),
+        Some("Api") => state.capabilities.list_by_kind(CapabilityKind::Api).await.unwrap_or_default(),
         _ => {
             let mut caps = vec![];
             for kind in [CapabilityKind::Skill, CapabilityKind::Tool, CapabilityKind::McpServer, CapabilityKind::Api] {
-                caps.extend(registry.list_by_kind(kind).await.unwrap_or_default());
+                caps.extend(state.capabilities.list_by_kind(kind).await.unwrap_or_default());
             }
             caps
         }
     };
 
     let total = all.len();
-    let paginated: Vec<MarketItem> = all.into_iter().skip(offset as usize).take(per_page as usize).map(MarketItem::from).collect();
+    let paginated: Vec<MarketItem> = all.into_iter().map(|c| (&c).into()).skip(offset as usize).take(per_page as usize).collect();
 
     Json(serde_json::json!({ "items": paginated, "total": total }))
 }
 
 /// GET /market/templates
 pub async fn list_market_templates(
-    State(registry): State<Arc<dyn TemplateRegistry>>,
+    State(state): State<AppState>,
     Query(q): Query<TemplatesQuery>,
 ) -> Json<serde_json::Value> {
     let per_page = q.per_page.min(100);
     let page = q.page.max(1);
     let offset = (page - 1) * per_page;
 
-    let all = registry.list().await.unwrap_or_default();
+    let all = state.templates.list().await.unwrap_or_default();
     let published: Vec<_> = all.iter().filter(|t| t.review_verdict == "Pass").collect();
     let total = published.len();
     let paginated = published.into_iter().skip(offset as usize).take(per_page as usize);
@@ -121,21 +121,20 @@ pub async fn list_market_templates(
 
 /// POST /market/install
 pub async fn install_capability(
-    State(registry): State<Arc<dyn CapabilityRegistry>>,
-    State(existing): State<Arc<dyn CapabilityRegistry>>,
+    State(state): State<AppState>,
     Json(req): Json<InstallRequest>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
-    let source = existing.find_by_name(&req.name).await.map_err(|_| (StatusCode::NOT_FOUND, "capability not found".into()))?;
+    let source = state.capabilities.find_by_name(&req.name).await.map_err(|_| (StatusCode::NOT_FOUND, "capability not found".into()))?;
     let cap = source.into_iter().find(|c| c.version == req.version).ok_or((StatusCode::NOT_FOUND, "version not found".into()))?;
 
-    let existing_caps = registry.find_by_name(&req.name).await.map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let existing_caps = state.capabilities.find_by_name(&req.name).await.map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     if let Some(already) = existing_caps.into_iter().find(|c| c.version == req.version) {
         return Ok(Json(serde_json::json!({ "id": already.id, "installed": true })));
     }
 
     let mut new_cap = cap;
     new_cap.status = forge_cap::CapabilityStatus::Active;
-    let id = registry.register(new_cap).await.map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let id = state.capabilities.register(new_cap).await.map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
     Ok(Json(serde_json::json!({ "id": id, "installed": true })))
 }
