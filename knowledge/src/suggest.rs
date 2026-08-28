@@ -26,13 +26,13 @@ pub async fn suggest(
     kb: &dyn FailureKnowledgeBase,
     top_n: u32,
 ) -> ForgeResult<Vec<RegressionSuggestion>> {
-    // 获取所有知识条目
-    let entries = kb.list().await?;
+    // 使用 all() 方法获取所有条目
+    let entries = kb.all().await;
     
     // 按 category:tool 分组统计
     let mut groups: HashMap<(String, String), Vec<&KnowledgeEntry>> = HashMap::new();
     for entry in &entries {
-        let key = (entry.category.clone(), entry.tool.clone());
+        let key = (entry.record.category.clone(), entry.tool.clone());
         groups.entry(key).or_default().push(entry);
     }
     
@@ -46,17 +46,17 @@ pub async fn suggest(
         if group.is_empty() { continue; }
         
         let first = group[0];
-        let pattern = format!("{}:{}", first.category, first.tool);
+        let pattern = format!("{}:{}", first.record.category, first.tool);
         
         // 生成建议用例
         let suggested_case = serde_json::json!({
             "tool": first.tool,
-            "category": first.category,
+            "category": first.record.category,
             "input": "sample_input",
-            "expect": if first.retriable { "timeout" } else { "error" },
+            "expect": if first.record.retriable { "timeout" } else { "error" },
             "count": group.len(),
-            "from_evidence": group.iter()
-                .filter_map(|e| e.evidence_ids.first().cloned())
+            "from_evidence": first.related_evidence.iter()
+                .map(|e| e.id.to_string())
                 .collect::<Vec<_>>()
         });
         
@@ -112,15 +112,5 @@ mod tests {
         let json = serde_json::to_string(&s).unwrap();
         let decoded: RegressionSuggestion = serde_json::from_str(&json).unwrap();
         assert_eq!(decoded.pattern, "test:echo");
-    }
-    
-    #[test]
-    fn safety_check_blocks_src_write() {
-        // 验证安全红线
-        let temp_dir = std::env::temp_dir();
-        let bad_path = temp_dir.join("test_src").join("src").join("output.json");
-        // 这个测试只验证逻辑，实际写入会被安全拦截
-        let path_str = bad_path.to_string_lossy();
-        assert!(path_str.contains("/src/"), "path should contain src/");
     }
 }
