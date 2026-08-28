@@ -98,7 +98,7 @@ mod tests {
     #[test]
     fn roundtrip_parses() {
         let s = RegressionSuggestion {
-            pattern: 'test:echo'.into(),
+            pattern: "test:echo".into(),
             count: 3,
             suggested_case: serde_json::json!({"tool": "echo"}),
         };
