@@ -37,7 +37,7 @@ pub async fn suggest(kb: &dyn KnowledgeBase, top_n: u32) -> ForgeResult<Vec<Regr
     let mut groups: std::collections::HashMap<String, Vec<&FailureRecord>> = std::collections::HashMap::new();
     for f in failures {
         let pattern = format!("{}:{}", f.category, f.tool);
-        groups.entry(pattern).or_default().push(&f);
+        groups.entry(pattern).or_default().push(f.clone());
     }
     
     // 取 top-N
