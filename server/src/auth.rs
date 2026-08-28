@@ -1,3 +1,5 @@
+use forge_core::ForgeResult;
+
 //! Bearer Token 鉴权中间件（API-002）。
 //!
 //! 环境变量 `FORGE_API_KEY`：
