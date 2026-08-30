@@ -61,8 +61,11 @@ impl WorkspaceManager {
                 "workspace: task_id has no usable characters".into(),
             ));
         }
-        // 确定性目录：同任务幂等，前置注册与执行阶段目录一致。
-        let dir = self.canon_root.join(format!("ws-{safe}"));
+        // 每次调用唯一：uuid 后缀防撞名（模块契约 ws-{task}-{短uuid}）。
+        // 修复前用纯任务 id 命名，同任务连续调用会复用同一目录，
+        // 后写的工件静默覆盖先写的——见 create_is_unique_per_call 回归。
+        let suffix = uuid::Uuid::new_v4().simple();
+        let dir = self.canon_root.join(format!("ws-{}-{}", safe, suffix));
         std::fs::create_dir_all(&dir).map_err(|e| io_err("workspace create", e))?;
         Ok(dir)
     }
@@ -137,6 +140,35 @@ mod tests {
         let b = mgr.create_for("T").unwrap();
         assert_ne!(a, b);
         assert_eq!(mgr.list().unwrap().len(), 2);
+    }
+
+    /// 高频回归：连续创建同任务目录，必须全部互不相同且都在根下。
+    #[test]
+    fn create_same_task_many_times_all_unique() {
+        let root = tempfile::tempdir().unwrap();
+        let mgr = WorkspaceManager::new(root.path()).unwrap();
+        let mut dirs: Vec<PathBuf> = (0..50)
+            .map(|_| mgr.create_for("SAME-TASK").unwrap())
+            .collect();
+        let n = dirs.len();
+        dirs.sort();
+        dirs.dedup();
+        assert_eq!(dirs.len(), n, "50 次创建应得 50 个不同目录");
+        assert_eq!(mgr.list().unwrap().len(), n);
+        assert!(dirs.iter().all(|d| d.starts_with(mgr.root())));
+        assert!(dirs.iter().all(|d| d.file_name().unwrap().to_str().unwrap().starts_with("ws-SAME-TASK-")));
+    }
+
+    /// 清理后新建的目录不复用被删路径。
+    #[test]
+    fn create_after_cleanup_does_not_reuse_path() {
+        let root = tempfile::tempdir().unwrap();
+        let mgr = WorkspaceManager::new(root.path()).unwrap();
+        let a = mgr.create_for("T").unwrap();
+        mgr.cleanup(&a).unwrap();
+        let b = mgr.create_for("T").unwrap();
+        assert_ne!(a, b);
+        assert!(b.exists());
     }
 
     #[test]

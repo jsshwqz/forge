@@ -19,6 +19,15 @@ impl PgTaskStore {
     pub fn new(pool: PgPool) -> Self {
         Self { pool }
     }
+
+    /// update_status 的加锁查询。
+    ///
+    /// 契约（见本文件末尾回归测试）：
+    /// - `SELECT` 列表列数必须等于 `update_status` 行元组的字段数（5）；
+    /// - `WHERE` 只允许出现一次；
+    /// - 只绑 `$1`（任务 id）。
+    const UPDATE_STATUS_SELECT: &str =
+        "SELECT goal, constraints, acceptance, status, created_at FROM tasks WHERE id = $1 FOR UPDATE";
 }
 
 #[async_trait]
@@ -69,7 +78,7 @@ impl TaskStore for PgTaskStore {
     async fn update_status(&self, id: &TaskId, to: TaskStatus) -> ForgeResult<Task> {
         let mut tx = self.pool.begin().await.map_err(crate::db_err)?;
         let row: Option<(String, Json<Vec<String>>, Json<Vec<AcceptanceCriterion>>, String, DateTime<Utc>)> =
-            sqlx::query_as("SELECT goal, constraints, acceptance, status, tenant_id, created_at FROM tasks WHERE tenant_id = $1 WHERE id = $1 FOR UPDATE")
+            sqlx::query_as(Self::UPDATE_STATUS_SELECT)
                 .bind(id.as_ref())
                 .fetch_optional(&mut *tx)
                 .await
