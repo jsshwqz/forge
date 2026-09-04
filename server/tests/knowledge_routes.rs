@@ -78,7 +78,6 @@ async fn export_endpoint_returns_not_found_for_invalid_session() {
 #[tokio::test]
 async fn export_endpoint_roundtrips_format_version() {
     use forge_session::model::SessionEventKind;
-    use forge_session::SessionStore as _;
 
     let state = AppState::in_memory();
     let task = state
