@@ -821,3 +821,59 @@ forge-exec新增WriteFileTool(相对路径防逃逸,2测试); orchestrate注册w
 
 ---
 
+## [R1-053] ✅ 成功 · 2026-09-05 · 整改执行批落地: GA-FIX-4+V5-FIX-1/2/3+V5.1(审计AF-AUDIT-001全项)
+
+- **任务 ID**：GENERAL
+审计报告(audit_report.md)整改单五包串行执行完毕: GA-FIX-4(pg_session绑定修复+内嵌迁移补齐0009~0011+三点核对清单+签核表重置, b5c8a31); V5-FIX-1(progress.json双schema去重84→83+PROGRESS.md重导出, 707fbf6); V5-FIX-2(authenticate接线+配额挂编排入口429冻结错误体+market死代码修复+PG租户过滤, c753f8a); V5-FIX-3(BASELINE百分位+export roundtrip测试+台账精度, 1bb447a); V5.1(WRT-001尺寸上限+CGN-001契约冻结). workspace 328+ tests全绿, clippy零告警. 遗留: 真实PG十三步重跑受阻(R7-010)
+
+---
+
+## [R6-020] ⚖️ 决策 · 2026-09-05 · 追认'写软件能力'(WriteFileTool+SingleFileCodegenPlanner, 提交21de489)入V5.1范围
+
+- **任务 ID**：V51-001
+依据build_v51.md(AF-BP-V51-001)与audit C-3; 范围冻结: 单文件写盘/WorkspaceWrite/不执行生成代码; 防逃逸三规则为最低集; 后续加固按V5.1施工(WRT-001尺寸上限+CGN-001契约冻结)
+
+---
+
+## [R6-021] ⚖️ 决策 · 2026-09-05 · CGN-001落位裁决: SingleFileCodegenPlanner迁入planning/llm crate冻结契约
+
+- **任务 ID**：V51-001
+build_v51.md前提'planner位于planning/llm crate'与实际不符(实际在server/src/lib.rs:541); 规格DoD为cargo test -p forge-plan-llm codegen, 按规格'以现有实现为准'精神将planner迁入forge-plan-llm(codegen.rs)冻结契约, server侧改为引用并新增codegen_flag显式分支(默认true保持既有行为); 三条冻结测试以MockBackend注入
+
+---
+
+## [R6-022] ⚖️ 决策 · 2026-09-05 · 租户过滤与配额计数用增量默认方法扩展trait(不改既有签名)
+
+- **任务 ID**：V5-FIX-2
+V5-FIX-2d要求pg_task get/list加租户过滤但TaskStore既有签名无租户参数; 停止条件禁止改公开契约形状; 裁决: TaskStore增get_in_tenant/list_in_tenant/count_running/count_today四个带默认实现的增量方法(内存栈默认无租户维度), PgTaskStore覆盖; CapabilityRegistry同理增set_status默认实现; 既有调用点零破坏
+
+---
+
+## [R6-023] ⚖️ 决策 · 2026-09-05 · WRT-001规格Validation错误适配为InvalidState
+
+- **任务 ID**：WRT-001
+build_v51.md写Err(Validation(...))但ForgeError无Validation变体; 按SEC-001规格模板机械适配先例(is_config_rejection的anyhow→Box<dyn Error>), 适配为InvalidState('write exceeds FORGE_WRITE_MAX_BYTES'), 语义等价
+
+---
+
+## [R7-010] ⚠️ 偏差/风险 · 2026-09-05 · 真实PG十三步剧本重跑受阻: 执行环境无docker且15432端口不可达
+
+- **任务 ID**：GA-FIX-4
+GA-FIX-4步骤3(ga_acceptance.ps1真实PG重跑产出证据JSON)无法执行: 本机无docker命令, localhost:15432不可达; 步骤1/2/4已完成(修复+三点核对+签核表重置); G-GA二次签核保持阻塞, 不得以内存测试冒充证据; 待PG环境(Podman/docker或本地PG)后重跑
+
+---
+
+## [R7-011] ⚠️ 偏差/风险 · 2026-09-05 · 新发现: 0009~0011迁移文件从未被任何路径应用
+
+- **任务 ID**：GA-FIX-4
+connect_and_migrate仅跑内嵌MIGRATIONS常量, 其中无tenant_id列与tenants/tenant_keys/quotas表; 即便修好pg_session绑定, 真实PG路径仍因缺列必败; 且0009对仅存内存实现的product_instances/templates表做ALTER原样应用会失败(R7-008内存MVP); 修复: 内嵌MIGRATIONS补齐tasks/sessions的tenant_id列+三表(跳过内存表ALTER), 已在GA-FIX-4提交中
+
+---
+
+## [R7-012] ⚠️ 偏差/风险 · 2026-09-05 · 新发现: market死代码即使可达也会失败(register撞同名校验)
+
+- **任务 ID**：V5-FIX-2
+install原死代码路径new_cap.status=Active后register, 但registry.register拒绝同name+version重复注册→500; 修复改用set_status增量方法置Active(不新增重复记录); 死代码双缺陷一并消除
+
+---
+
