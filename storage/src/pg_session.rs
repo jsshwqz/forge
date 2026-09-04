@@ -55,7 +55,7 @@ impl SessionStore for PgSessionStore {
     async fn create(&self, task_id: TaskId) -> ForgeResult<Session> {
         let id = SessionId::new_session_id();
         let mut tx = self.pool.begin().await.map_err(crate::db_err)?;
-        sqlx::query("INSERT INTO sessions (id, task_id, state, tenant_id) VALUES ($1, $2, $3)")
+        sqlx::query("INSERT INTO sessions (id, task_id, state, tenant_id) VALUES ($1, $2, $3, $4)")
             .bind(id.as_ref())
             .bind(task_id.as_ref())
             .bind(crate::enc(&SessionState::Active))
@@ -79,7 +79,6 @@ impl SessionStore for PgSessionStore {
         let row: Option<(String,)> =
             sqlx::query_as("SELECT state FROM sessions WHERE id = $1 FOR UPDATE")
                 .bind(id.as_ref())
-                .bind("default")
                 .fetch_optional(&mut *tx)
                 .await
                 .map_err(crate::db_err)?;

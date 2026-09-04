@@ -103,7 +103,6 @@ CREATE TABLE IF NOT EXISTS sessions (
     state      TEXT NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
-
 CREATE TABLE IF NOT EXISTS session_events (
     session_id TEXT NOT NULL REFERENCES sessions(id),
     seq        BIGINT NOT NULL,
@@ -143,4 +142,35 @@ CREATE TABLE IF NOT EXISTS evidence (
 );
 
 CREATE INDEX IF NOT EXISTS idx_evidence_criterion ON evidence(criterion_id);
+
+-- V5.0 TEN-001/002/003（storage/migrations/0009~0011 的内嵌化，R7-010）：
+-- 0009 仅对 PG 实存的 tasks/sessions 加列；product_instances/templates 为内存
+-- MVP（WORKLOG R7-008），其 PG ALTER 留待对应存储实现立项时随迁移文件执行。
+CREATE TABLE IF NOT EXISTS tenants (
+    id TEXT PRIMARY KEY DEFAULT 'default',
+    name TEXT NOT NULL DEFAULT 'Default Tenant',
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+ALTER TABLE tasks ADD COLUMN IF NOT EXISTS tenant_id TEXT NOT NULL DEFAULT 'default';
+ALTER TABLE sessions ADD COLUMN IF NOT EXISTS tenant_id TEXT NOT NULL DEFAULT 'default';
+CREATE INDEX IF NOT EXISTS idx_tasks_tenant_id ON tasks(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_sessions_tenant_id ON sessions(tenant_id);
+INSERT INTO tenants (id, name) VALUES ('default', 'Default Tenant')
+ON CONFLICT (id) DO NOTHING;
+
+CREATE TABLE IF NOT EXISTS tenant_keys (
+    tenant_id TEXT NOT NULL REFERENCES tenants(id),
+    key_hash TEXT NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    PRIMARY KEY (tenant_id, key_hash)
+);
+
+CREATE TABLE IF NOT EXISTS quotas (
+    tenant_id TEXT PRIMARY KEY REFERENCES tenants(id),
+    max_concurrent INT NOT NULL DEFAULT 4,
+    daily_tasks INT NOT NULL DEFAULT 100
+);
+INSERT INTO quotas (tenant_id, max_concurrent, daily_tasks)
+VALUES ('default', 4, 100)
+ON CONFLICT (tenant_id) DO NOTHING;
 "#;
