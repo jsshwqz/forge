@@ -73,6 +73,49 @@ async fn export_endpoint_returns_not_found_for_invalid_session() {
     assert_eq!(status, StatusCode::NOT_FOUND, "export should return 404 for invalid session");
 }
 
+/// 冻结测试（V5-FIX-3）：内存库播种 session+事件 → GET export → 200 且
+/// format_version==1（此前仅有 404 路径测试，audit C-2 记录项）。
+#[tokio::test]
+async fn export_endpoint_roundtrips_format_version() {
+    use forge_session::model::SessionEventKind;
+    use forge_session::SessionStore as _;
+
+    let state = AppState::in_memory();
+    let task = state
+        .sdk
+        .create_task("export roundtrip", vec![], vec![])
+        .await
+        .unwrap();
+    let session = state.sdk.create_session(task.id.clone()).await.unwrap();
+    state
+        .sdk
+        .sessions()
+        .append(&session.id, SessionEventKind::TaskReceived, serde_json::json!({"probe": 1}))
+        .await
+        .unwrap();
+    state
+        .sdk
+        .sessions()
+        .append(&session.id, SessionEventKind::VerificationResult, serde_json::json!({"verdict": "Pass"}))
+        .await
+        .unwrap();
+
+    let app = app_with_state(state);
+    let (status, body) = send_json(
+        app,
+        get(&format!("/knowledge/sessions/{}/export", session.id)),
+    )
+    .await;
+
+    assert_eq!(status, StatusCode::OK, "export 应返回 200: {body}");
+    assert_eq!(body["format_version"], 1, "format_version 必须 roundtrip 为 1");
+    // 事件随回放归档完整返回（archive.session.events）
+    let events = body["session"]["events"]
+        .as_array()
+        .expect("archive.session 应含 events 数组");
+    assert_eq!(events.len(), 2, "播种的两条事件都应出现在归档中");
+}
+
 #[tokio::test]
 async fn limit_clamped_to_500() {
     let app = app();

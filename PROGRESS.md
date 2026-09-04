@@ -42,7 +42,7 @@
 | INT-001 | server 接入 PG 持久化 | ✅ 完成 | builder-a | R1-012 | ffd86a8 |
 | CLEAN-001 | 旧 forge 目录 PATH 清理 | ✅ 完成 | builder-a | R1-013 | n/a |
 | Q-002 | SenseNova 配额恢复后复验 live 测试 | ✅ 完成 | builder-a | R1-016 | 83ae7ae |
-| DOC-001 | README+架构文档 | ✅ 完成 | builder-a | R1-017 | effe996 |
+| DOC-001 | README+架构文档 | ✅ 完成 | builder-a | R1-017 | f16822b |
 | SRV-002 | forge serve + 全链路e2e | ✅ 完成 | builder-a | R1-018 | 12259f9 |
 | SDK-001 | SDK 门面 crate | ✅ 完成 | builder-a | R1-021 | 409636c |
 | OBS-001 | 二进制 tracing-subscriber 安装 | ✅ 完成 | builder-a | R1-022 | 409636c |
@@ -74,11 +74,11 @@
 | PROD-002 | 模板库管理 | ✅ 完成 | builder-a | - | effe996 |
 | OBS-002 | Prometheus指标 | ✅ 完成 | builder-a | - | effe996 |
 | UI-001 | Web控制台MVP | ✅ 完成 | builder-a | - | effe996 |
-| PKG-001 | 部署打包Dockerfile+compose | ✅ 完成 | builder-a | - | effe996 |
-| SEC-001 | 生产安全基线 | ✅ 完成 | builder-a | - | effe996 |
-| KNW-001 | Knowledge层MVP | ✅ 完成 | builder-a | - | effe996 |
-| E2E-GA | 终验剧本 | ✅ 完成 | builder-a | - | effe996 |
-| API-001 | 资源只读端点/evidence API | ✅ 完成 | - | - | effe996 |
+| PKG-001 | 部署打包Dockerfile+compose | ✅ 完成 | builder-a | - | f16822b |
+| SEC-001 | 生产安全基线 | ✅ 完成 | builder-a | - | f16822b |
+| KNW-001 | Knowledge层MVP | ✅ 完成 | builder-a | - | f16822b |
+| E2E-GA | 终验剧本 | ✅ 完成 | builder-a | - | f16822b |
+| API-001 | 资源只读端点/evidence API | ✅ 完成 | - | - | 2e90586 |
 | TEN-001 | 租户模型贯穿 | ✅ 完成 | - | R1-053 | 3eec0f7 |
 | MKT-001 | 能力市场目录 | ✅ 完成 | - | - | 09a9fa2 |
 | MKT-002 | 安装即注册 | ✅ 完成 | - | - | 09a9fa2 |
