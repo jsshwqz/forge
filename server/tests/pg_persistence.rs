@@ -5,8 +5,10 @@
 
 use axum::body::Body;
 use axum::http::{Request, StatusCode};
+use forge_core::ForgeError;
 use forge_server::{app_with_state, AppState};
 use forge_storage::{connect_and_migrate, PgSessionStore, PgTaskStore};
+use forge_task::TaskStore as _;
 use http_body_util::BodyExt;
 use std::sync::Arc;
 use tower::ServiceExt;
@@ -63,4 +65,51 @@ async fn task_survives_storage_restart() {
     let got: serde_json::Value =
         serde_json::from_slice(&res.into_body().collect().await.unwrap().to_bytes()).unwrap();
     assert_eq!(got["goal"], "persist-across-restart");
+}
+
+/// V5-FIX-2d（TEN-001）冻结测试：租户域列举只返回本租户任务。
+#[tokio::test]
+async fn tenant_isolation_list() {
+    let Ok(url) = std::env::var("FORGE_PG_URL") else {
+        eprintln!("[skip] FORGE_PG_URL 未设置——本测试需真实 PostgreSQL");
+        return;
+    };
+    let pool = connect_and_migrate(&url).await.unwrap();
+    let store = PgTaskStore::new(pool);
+
+    let t1 = store.create("tenant-list-1".into(), vec![], vec![]).await.unwrap();
+    let t2 = store.create("tenant-list-2".into(), vec![], vec![]).await.unwrap();
+
+    let in_default = store.list_in_tenant("default").await.unwrap();
+    assert!(in_default.contains(&t1.id), "default 租户必须看到自己的任务");
+    assert!(in_default.contains(&t2.id));
+
+    let in_ghost = store.list_in_tenant("ghost-tenant").await.unwrap();
+    assert!(in_ghost.is_empty(), "其它租户列举必须为空");
+}
+
+/// V5-FIX-2d（TEN-001）冻结测试：跨租户读取必须 PermissionDenied。
+#[tokio::test]
+async fn cross_tenant_get_blocked() {
+    let Ok(url) = std::env::var("FORGE_PG_URL") else {
+        eprintln!("[skip] FORGE_PG_URL 未设置——本测试需真实 PostgreSQL");
+        return;
+    };
+    let pool = connect_and_migrate(&url).await.unwrap();
+    let store = PgTaskStore::new(pool);
+
+    let t = store.create("cross-tenant-probe".into(), vec![], vec![]).await.unwrap();
+
+    let err = store
+        .get_in_tenant("other-tenant", &t.id)
+        .await
+        .unwrap_err();
+    assert!(
+        matches!(err, ForgeError::PermissionDenied(ref m) if m.contains("cross-tenant access blocked")),
+        "跨租户读取必须 PermissionDenied: {err}"
+    );
+
+    // 同租户可读
+    let ok = store.get_in_tenant("default", &t.id).await.unwrap();
+    assert_eq!(ok.id, t.id);
 }

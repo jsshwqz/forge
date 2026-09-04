@@ -26,6 +26,49 @@ pub trait TaskStore: Send + Sync {
 
     /// 列出所有任务 ID。
     async fn list(&self) -> ForgeResult<Vec<TaskId>>;
+
+    /// 租户域内取任务（V5-FIX-2d）。
+    ///
+    /// 默认实现等同 [`Self::get`]（内存栈无租户维度）；PG 实现按 tenant_id 过滤，
+    /// 任务存在但属其它租户时返回 `PermissionDenied("cross-tenant access blocked")`。
+    async fn get_in_tenant(&self, _tenant_id: &str, id: &TaskId) -> ForgeResult<Task> {
+        self.get(id).await
+    }
+
+    /// 租户域内列举任务 ID（V5-FIX-2d）。默认实现等同 [`Self::list`]。
+    async fn list_in_tenant(&self, _tenant_id: &str) -> ForgeResult<Vec<TaskId>> {
+        self.list().await
+    }
+
+    /// 租户域内"进行中"任务数（非终态，TEN-003 配额计数）。
+    ///
+    /// 默认实现全量扫描非终态任务（内存栈单租户语义）；PG 实现须走
+    /// tenant_id 索引计数（TEN-003 R3 禁全表扫）。
+    async fn count_running(&self, _tenant_id: &str) -> ForgeResult<i64> {
+        let mut n = 0i64;
+        for id in self.list().await? {
+            if let Ok(t) = self.get(&id).await {
+                if !matches!(t.status, TaskStatus::Completed | TaskStatus::Failed) {
+                    n += 1;
+                }
+            }
+        }
+        Ok(n)
+    }
+
+    /// 租户域内当日创建任务数（TEN-003 配额计数）。默认实现按 created_at 扫描。
+    async fn count_today(&self, _tenant_id: &str) -> ForgeResult<i64> {
+        let today = chrono::Utc::now().date_naive();
+        let mut n = 0i64;
+        for id in self.list().await? {
+            if let Ok(t) = self.get(&id).await {
+                if t.created_at.date_naive() == today {
+                    n += 1;
+                }
+            }
+        }
+        Ok(n)
+    }
 }
 
 /// 内存任务存储。

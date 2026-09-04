@@ -61,6 +61,16 @@ pub trait CapabilityRegistry: Send + Sync {
 
     /// 弃用能力。
     async fn deprecate(&self, id: &CapabilityId) -> ForgeResult<()>;
+
+    /// 置能力状态（V5-FIX-2c：MKT-002 安装激活路径）。
+    ///
+    /// 默认实现返回不支持错误（增量方法，不破坏既有实现）。
+    async fn set_status(&self, id: &CapabilityId, status: CapabilityStatus) -> ForgeResult<()> {
+        let _ = (id, status);
+        Err(ForgeError::InvalidState(
+            "registry does not support set_status".into(),
+        ))
+    }
 }
 
 /// 内存能力注册表。
@@ -124,6 +134,15 @@ impl CapabilityRegistry for InMemoryCapabilityRegistry {
             .get_mut(id)
             .ok_or_else(|| ForgeError::NotFound(format!("capability: {}", id)))?;
         cap.status = CapabilityStatus::Deprecated;
+        Ok(())
+    }
+
+    async fn set_status(&self, id: &CapabilityId, status: CapabilityStatus) -> ForgeResult<()> {
+        let mut guard = self.caps.write().await;
+        let cap = guard
+            .get_mut(id)
+            .ok_or_else(|| ForgeError::NotFound(format!("capability: {}", id)))?;
+        cap.status = status;
         Ok(())
     }
 }

@@ -39,3 +39,33 @@ pub async fn check_quota(q: &QuotaView, running: i64, today_count: i64) -> Forge
     }
     Ok(())
 }
+
+/// 默认配额（TEN-003 R1）：并发 4、日任务 100（与 0011_quotas 种子数据一致）。
+pub const DEFAULT_QUOTA: QuotaView = QuotaView { max_concurrent: 4, daily_tasks: 100 };
+
+/// 内存配额存储（开发/测试用；生产走 0011_quotas 的 PG 实现）。
+#[derive(Default)]
+pub struct InMemoryQuotaStore {
+    quotas: tokio::sync::RwLock<std::collections::HashMap<String, QuotaView>>,
+}
+
+#[async_trait::async_trait]
+impl QuotaStore for InMemoryQuotaStore {
+    async fn of(&self, tenant_id: &str) -> ForgeResult<QuotaView> {
+        Ok(self
+            .quotas
+            .read()
+            .await
+            .get(tenant_id)
+            .cloned()
+            .unwrap_or(DEFAULT_QUOTA))
+    }
+
+    async fn set(&self, tenant_id: &str, q: QuotaView) -> ForgeResult<()> {
+        self.quotas
+            .write()
+            .await
+            .insert(tenant_id.to_string(), q);
+        Ok(())
+    }
+}

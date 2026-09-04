@@ -120,21 +120,24 @@ pub async fn list_market_templates(
 }
 
 /// POST /market/install
+///
+/// 语义（V5-FIX-2c）：同库检索 → 命中且 Active → 幂等返回；
+/// 命中且非 Active → 置 Active 后返回；未命中 → 404。
 pub async fn install_capability(
     State(state): State<AppState>,
     Json(req): Json<InstallRequest>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
-    let source = state.capabilities.find_by_name(&req.name).await.map_err(|_| (StatusCode::NOT_FOUND, "capability not found".into()))?;
-    let cap = source.into_iter().find(|c| c.version == req.version).ok_or((StatusCode::NOT_FOUND, "version not found".into()))?;
+    let caps = state.capabilities.find_by_name(&req.name).await.map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let cap = caps.into_iter().find(|c| c.version == req.version).ok_or((StatusCode::NOT_FOUND, "capability not found".into()))?;
 
-    let existing_caps = state.capabilities.find_by_name(&req.name).await.map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    if let Some(already) = existing_caps.into_iter().find(|c| c.version == req.version) {
-        return Ok(Json(serde_json::json!({ "id": already.id, "installed": true })));
+    if cap.status == forge_cap::CapabilityStatus::Active {
+        return Ok(Json(serde_json::json!({ "id": cap.id, "installed": true })));
     }
+    state
+        .capabilities
+        .set_status(&cap.id, forge_cap::CapabilityStatus::Active)
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
-    let mut new_cap = cap;
-    new_cap.status = forge_cap::CapabilityStatus::Active;
-    let id = state.capabilities.register(new_cap).await.map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-
-    Ok(Json(serde_json::json!({ "id": id, "installed": true })))
+    Ok(Json(serde_json::json!({ "id": cap.id, "installed": true })))
 }

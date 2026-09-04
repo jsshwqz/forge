@@ -96,6 +96,11 @@ pub struct AppState {
     pub knowledge: Arc<InMemoryKnowledgeBase>,
     /// V5.0 MKT：能力注册表（市场源）。
     pub capabilities: Arc<InMemoryCapabilityRegistry>,
+    /// V5.0 TEN-002：鉴权配置与租户钥存储（V5-FIX-2a 接线）。
+    pub auth: AuthConfig,
+    pub tenant_keys: Arc<dyn auth::TenantKeyStore>,
+    /// V5.0 TEN-003：租户配额存储（V5-FIX-2b 接线）。
+    pub quotas: Arc<dyn quota::QuotaStore>,
 }
 
 impl AppState {
@@ -110,6 +115,9 @@ impl AppState {
             metrics: Arc::new(Metrics::default()),
             knowledge: Arc::new(Default::default()),
             capabilities: Arc::new(Default::default()),
+            auth: AuthConfig::from_env(),
+            tenant_keys: Arc::new(auth::InMemoryTenantKeyStore::default()),
+            quotas: Arc::new(quota::InMemoryQuotaStore::default()),
         }
     }
     pub fn new(tasks: Arc<dyn TaskStore>, sessions: Arc<dyn SessionStore>) -> Self {
@@ -123,6 +131,9 @@ impl AppState {
             metrics: Arc::new(Metrics::default()),
             knowledge: Arc::new(Default::default()),
             capabilities: Arc::new(Default::default()),
+            auth: AuthConfig::from_env(),
+            tenant_keys: Arc::new(auth::InMemoryTenantKeyStore::default()),
+            quotas: Arc::new(quota::InMemoryQuotaStore::default()),
         }
     }
 }
@@ -135,6 +146,16 @@ impl From<ForgeError> for ApiError {
     fn from(e: ForgeError) -> Self {
         let status = match &e {
             ForgeError::NotFound(_) => StatusCode::NOT_FOUND,
+            // TEN-003（V5-FIX-2b）：本服务配额超限 → 429 + 冻结错误体
+            ForgeError::InvalidState(msg)
+                if msg.starts_with("quota_concurrency") || msg.starts_with("quota_daily") =>
+            {
+                let code = msg.split(':').next().unwrap_or("quota_exceeded");
+                return ApiError(
+                    StatusCode::TOO_MANY_REQUESTS,
+                    serde_json::json!({ "error": { "code": code } }).to_string(),
+                );
+            }
             ForgeError::InvalidState(msg)
                 if msg.contains("llm http 429")
                     || msg.contains("insufficient_quota")
@@ -192,13 +213,31 @@ async fn create_task(State(st): State<AppState>, Json(req): Json<CreateTaskReque
     Ok(Json(st.sdk.create_task(req.goal, req.constraints, req.acceptance).await?))
 }
 
-async fn list_tasks(State(st): State<AppState>) -> Json<serde_json::Value> {
-    let ids = st.sdk.list_tasks().await.unwrap_or_default();
+async fn list_tasks(
+    State(st): State<AppState>,
+    outcome: axum::Extension<auth::AuthOutcome>,
+) -> Json<serde_json::Value> {
+    // V5-FIX-2d：有租户身份时按租户域列举
+    let ids = match outcome.0 {
+        auth::AuthOutcome::Tenant(t) => st.sdk.tasks().list_in_tenant(&t).await,
+        auth::AuthOutcome::Local => st.sdk.list_tasks().await,
+    }
+    .unwrap_or_default();
     Json(serde_json::json!({"count": ids.len(), "ids": ids.iter().map(|i| i.to_string()).collect::<Vec<_>>()}))
 }
 
-async fn get_task(State(st): State<AppState>, Path(id): Path<String>) -> Result<Json<Task>, ApiError> {
-    Ok(Json(st.sdk.get_task(&TaskId::from(id)).await?))
+async fn get_task(
+    State(st): State<AppState>,
+    outcome: axum::Extension<auth::AuthOutcome>,
+    Path(id): Path<String>,
+) -> Result<Json<Task>, ApiError> {
+    let tid = TaskId::from(id);
+    // V5-FIX-2d：有租户身份时按租户域读取（跨租户 → PermissionDenied/403）
+    let task = match outcome.0 {
+        auth::AuthOutcome::Tenant(t) => st.sdk.tasks().get_in_tenant(&t, &tid).await?,
+        auth::AuthOutcome::Local => st.sdk.get_task(&tid).await?,
+    };
+    Ok(Json(task))
 }
 
 async fn get_session(State(st): State<AppState>, Path(id): Path<String>) -> Result<Json<forge_session::Session>, ApiError> {
@@ -207,8 +246,19 @@ async fn get_session(State(st): State<AppState>, Path(id): Path<String>) -> Resu
 
 async fn orchestrate(
     State(st): State<AppState>,
+    outcome: axum::Extension<auth::AuthOutcome>,
     Json(req): Json<OrchestrateRequest>,
 ) -> Result<Json<serde_json::Value>, ApiError> {
+    // TEN-003（V5-FIX-2b）：身份解析后、执行前检查配额
+    let tenant = match outcome.0 {
+        auth::AuthOutcome::Tenant(t) => t,
+        auth::AuthOutcome::Local => auth::DEFAULT_TENANT.to_string(),
+    };
+    let qv = st.quotas.of(&tenant).await.map_err(ApiError::from)?;
+    let running = st.sdk.tasks().count_running(&tenant).await.map_err(ApiError::from)?;
+    let today_count = st.sdk.tasks().count_today(&tenant).await.map_err(ApiError::from)?;
+    quota::check_quota(&qv, running, today_count).await.map_err(ApiError::from)?;
+
     let task = st.sdk.create_task(req.goal.clone(), vec![], req.acceptance.clone()).await?;
 
     // 工具集：echo(基线) + write_file("写软件"落盘能力，根=任务工作目录)
@@ -708,11 +758,13 @@ pub fn app_with_state(st: AppState) -> Router {
         .route("/ui/sessions", get(ui_sessions))
         .route("/ui/evidence", get(ui_evidence));
 
-    // SEC-001：鉴权中间件接线（AuthConfig 经 Extension 注入；
-    // /health 永远放行，其余路由在启用 FORGE_API_KEY 时要求 Bearer）
-    let router = router
-        .layer(axum::middleware::from_fn(auth::auth_middleware))
-        .layer(axum::Extension(AuthConfig::from_env()));
+    // SEC-001 + V5-FIX-2a：鉴权中间件接线（AuthConfig/TenantKeyStore 经 AppState 注入；
+    // /health 永远放行，其余路由在启用鉴权时要求 Bearer；解析结果 AuthOutcome
+    // 写入 extensions 供下游租户过滤/配额取用）
+    let router = router.layer(axum::middleware::from_fn_with_state(
+        st.clone(),
+        auth::auth_middleware,
+    ));
 
     // SEC-001：CORS 默认关闭，白名单显式配置后才挂层
     let router = if let Some(cors) = maybe_cors() {
@@ -741,23 +793,26 @@ pub async fn run_from_env() -> Result<(), Box<dyn std::error::Error>> {
     security_gate(&host, std::env::var("FORGE_API_KEY").ok().as_deref())
         .map_err(std::convert::Into::<Box<dyn std::error::Error>>::into)?;
 
-    let state = match std::env::var("FORGE_PG_URL") {
-        Ok(url) => {
-            println!("storage: PostgreSQL ({url})");
-            AppState {
-                sdk: ForgeSdk::postgres(&url).await?,
-                evidence: Arc::new(InMemoryEvidenceStore::default()),
-                workspaces: Arc::new(WorkspaceManager::new(std::env::temp_dir().join("forge-ws")).unwrap()),
-                event_bus: Arc::new(InMemoryEventBus::new()),
-                instances: Arc::new(Default::default()),
-                templates: Arc::new(Default::default()),
-                metrics: Arc::new(Metrics::default()),
-                knowledge: Arc::new(Default::default()),
-            capabilities: Arc::new(Default::default()),
+        let state = match std::env::var("FORGE_PG_URL") {
+            Ok(url) => {
+                println!("storage: PostgreSQL ({url})");
+                AppState {
+                    sdk: ForgeSdk::postgres(&url).await?,
+                    evidence: Arc::new(InMemoryEvidenceStore::default()),
+                    workspaces: Arc::new(WorkspaceManager::new(std::env::temp_dir().join("forge-ws")).unwrap()),
+                    event_bus: Arc::new(InMemoryEventBus::new()),
+                    instances: Arc::new(Default::default()),
+                    templates: Arc::new(Default::default()),
+                    metrics: Arc::new(Metrics::default()),
+                    knowledge: Arc::new(Default::default()),
+                    capabilities: Arc::new(Default::default()),
+                    auth: AuthConfig::from_env(),
+                    tenant_keys: Arc::new(auth::InMemoryTenantKeyStore::default()),
+                    quotas: Arc::new(quota::InMemoryQuotaStore::default()),
+                }
             }
-        }
-        Err(_) => { println!("storage: in-memory"); AppState::in_memory() }
-    };
+            Err(_) => { println!("storage: in-memory"); AppState::in_memory() }
+        };
     let app = app_with_state(state);
     let addr = format!("{host}:{port}")
         .parse::<std::net::SocketAddr>()

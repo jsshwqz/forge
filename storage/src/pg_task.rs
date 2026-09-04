@@ -117,4 +117,76 @@ impl TaskStore for PgTaskStore {
             .map_err(crate::db_err)?;
         Ok(rows.into_iter().map(|(s,)| TaskId::from(s)).collect())
     }
+
+    /// 租户域内取任务：`WHERE id = $1 AND tenant_id = $2`（V5-FIX-2d）。
+    /// 任务存在但属其它租户 → `PermissionDenied("cross-tenant access blocked")`。
+    async fn get_in_tenant(&self, tenant_id: &str, id: &TaskId) -> ForgeResult<Task> {
+        let row: Option<(String, Json<Vec<String>>, Json<Vec<AcceptanceCriterion>>, String, DateTime<Utc>)> =
+            sqlx::query_as(
+                "SELECT goal, constraints, acceptance, status, created_at FROM tasks WHERE id = $1 AND tenant_id = $2",
+            )
+            .bind(id.as_ref())
+            .bind(tenant_id)
+            .fetch_optional(&self.pool)
+            .await
+            .map_err(crate::db_err)?;
+        let Some((goal, Json(constraints), Json(acceptance), status_s, created_at)) = row else {
+            let exists: Option<(String,)> =
+                sqlx::query_as("SELECT tenant_id FROM tasks WHERE id = $1")
+                    .bind(id.as_ref())
+                    .fetch_optional(&self.pool)
+                    .await
+                    .map_err(crate::db_err)?;
+            if exists.is_some() {
+                return Err(ForgeError::PermissionDenied(
+                    "cross-tenant access blocked".into(),
+                ));
+            }
+            return Err(ForgeError::NotFound(format!("task: {id}")));
+        };
+        Ok(Task {
+            id: id.clone(),
+            goal,
+            constraints,
+            acceptance,
+            status: crate::dec(&status_s)?,
+            created_at,
+        })
+    }
+
+    /// 租户域内列举：`WHERE tenant_id = $1`（V5-FIX-2d，走 idx_tasks_tenant_id）。
+    async fn list_in_tenant(&self, tenant_id: &str) -> ForgeResult<Vec<TaskId>> {
+        let rows: Vec<(String,)> =
+            sqlx::query_as("SELECT id FROM tasks WHERE tenant_id = $1 ORDER BY id")
+                .bind(tenant_id)
+                .fetch_all(&self.pool)
+                .await
+                .map_err(crate::db_err)?;
+        Ok(rows.into_iter().map(|(s,)| TaskId::from(s)).collect())
+    }
+
+    /// 租户域内进行中任务数（TEN-003 R3：走 tenant_id 索引，禁全表扫）。
+    /// status 列存 JSON 编码（如 `"Completed"` 含引号）。
+    async fn count_running(&self, tenant_id: &str) -> ForgeResult<i64> {
+        let (n,): (i64,) = sqlx::query_as(
+            "SELECT COUNT(*) FROM tasks WHERE tenant_id = $1 AND status NOT IN ('\"Completed\"', '\"Failed\"')",
+        )
+        .bind(tenant_id)
+        .fetch_one(&self.pool)
+        .await
+        .map_err(crate::db_err)?;
+        Ok(n)
+    }
+
+    /// 租户域内当日创建任务数（TEN-003 R3：走 tenant_id 索引）。
+    async fn count_today(&self, tenant_id: &str) -> ForgeResult<i64> {
+        let (n,): (i64,) = sqlx::query_as(
+            "SELECT COUNT(*) FROM tasks WHERE tenant_id = $1 AND created_at >= date_trunc('day', now())",
+        )
+        .bind(tenant_id)
+        .fetch_one(&self.pool)
+        .await
+        .map_err(crate::db_err)?;
+        Ok(n)
+    }
 }

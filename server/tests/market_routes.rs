@@ -103,9 +103,9 @@ async fn no_entry_leak() {
 #[tokio::test]
 async fn install_registers_active() {
     let state = AppState::in_memory();
-    
-    // 插入源能力
-    state.capabilities.register(Capability {
+
+    // 插入源能力（Registered 未激活态）
+    let cap_id = state.capabilities.register(Capability {
         id: forge_core::new_capability_id(),
         name: "echo".into(),
         kind: CapabilityKind::Tool,
@@ -114,9 +114,9 @@ async fn install_registers_active() {
         status: CapabilityStatus::Registered,
         permission: forge_exec::PermissionLevel::ReadOnly,
     }).await.unwrap();
-    
-    let app = app_with_state(state);
-    
+
+    let app = app_with_state(state.clone());
+
     // 安装能力
     let (status, body) = send_json(
         app,
@@ -125,10 +125,14 @@ async fn install_registers_active() {
             "version": "0.1.0"
         })),
     ).await;
-    
+
     assert_eq!(status, StatusCode::OK, "install should return 200");
     assert!(body["installed"].as_bool().unwrap_or(false), "should confirm installation");
     assert!(body["id"].is_string(), "should return capability id");
+
+    // V5-FIX-2c 补断言：install 后从 store 取回，状态必须为 Active
+    let got = state.capabilities.get(&cap_id).await.unwrap();
+    assert_eq!(got.status, CapabilityStatus::Active, "install 必须置 Active");
 }
 
 #[tokio::test]
