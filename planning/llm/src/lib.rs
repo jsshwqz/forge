@@ -3,12 +3,15 @@
 //! - [`validator::validate_plan`]：校验 LLM 原始 JSON → 合法 Plan（纯函数）
 //! - [`LlmPlanner`]：实现 Planner trait，prompt→LLM→校验→repair 循环
 //! - [`Replanner`]：原计划+失败记录 → 修订计划
+//! - [`SingleFileCodegenPlanner`]：单文件代码生成规划器（V5.1 CGN-001）
 
+pub mod codegen;
 pub mod llm_planner;
 pub mod replanner;
 pub mod usage;
 pub mod validator;
 
+pub use codegen::SingleFileCodegenPlanner;
 pub use llm_planner::{LlmPlanBackend, LlmPlanner};
 pub use replanner::{LlmReplanner, Replanner};
 pub use usage::{CostEntry, TokenUsage, UsageLedger};

@@ -193,8 +193,13 @@ pub struct OrchestrateRequest {
     pub acceptance: Vec<AcceptanceCriterion>,
     #[serde(default = "default_timeout")]
     pub timeout_secs: u64,
+    /// V5.1 CGN-001：`true`（默认，保持既有行为）时 LLM 路径选用单文件代码生成
+    /// 规划器；`false` 回退确定性顺序规划。
+    #[serde(default = "default_codegen_flag")]
+    pub codegen_flag: bool,
 }
 fn default_timeout() -> u64 { 30 }
+fn default_codegen_flag() -> bool { true }
 
 pub struct DemoAllowAll;
 impl PermissionPolicy for DemoAllowAll {
@@ -269,8 +274,9 @@ async fn orchestrate(
         .register(Box::new(forge_exec::WriteFileTool::new(workdir)))
         .map_err(ApiError::from)?;
 
-    // 规划器：配置了 FORGE_LLM_* 时用真实模型做 Architect（工具白名单=write_file）；
-    // 未配置则回退确定性 SequentialPlanner（离线全绿的基线语义）。
+    // 规划器：配置了 FORGE_LLM_* 且 codegen_flag（V5.1 CGN-001，默认 true）时
+    // 用真实模型做单文件代码生成 Architect；未配置/未启用则回退确定性
+    // SequentialPlanner（离线全绿的基线语义）。
     let llm_ready = !std::env::var("FORGE_LLM_BASE_URL")
         .unwrap_or_default()
         .trim()
@@ -279,7 +285,7 @@ async fn orchestrate(
             .unwrap_or_default()
             .trim()
             .is_empty();
-    let planner: Option<Arc<dyn forge_planner::Planner>> = if llm_ready {
+    let planner: Option<Arc<dyn forge_planner::Planner>> = if llm_ready && req.codegen_flag {
         match build_llm_planner().await {
             Ok(p) => Some(p),
             Err(e) => {
@@ -581,101 +587,20 @@ async fn ui_evidence() -> Html<&'static str> {
     Html(include_str!("../static/evidence.html"))
 }
 
-/// 单文件代码生成规划器（"写软件"路径核心，对小上限模型鲁棒）。
-///
-/// 两次**纯文本**调用，全程无 JSON：
-/// 1. 问文件名（短输出）；
-/// 2. 要完整文件内容（原始代码，strip 围栏后落盘）。
-///
-/// 执行写入与运行验收由确定性引擎/Verifier 完成，LLM 只负责产出代码。
-struct SingleFileCodegenPlanner {
-    backend: Arc<forge_api::LlmClient>,
-    model: String,
-}
-
-fn strip_code_fence(s: &str) -> String {
-    let t = s.trim();
-    if !t.starts_with("```") {
-        return t.to_string();
-    }
-    let mut lines: Vec<&str> = t.lines().collect();
-    if lines.len() >= 2 {
-        lines.remove(0); // ```lang
-        if lines.last().map(|l| l.trim() == "```").unwrap_or(false) {
-            lines.pop();
-        }
-        lines.join("\n")
-    } else {
-        t.to_string()
-    }
-}
-
-fn first_line(s: &str) -> String {
-    s.lines()
-        .map(str::trim)
-        .find(|l| !l.is_empty())
-        .unwrap_or("output.txt")
-        .to_string()
-}
-
-#[async_trait::async_trait]
-impl forge_planner::Planner for SingleFileCodegenPlanner {
-    async fn plan(&self, task: &forge_task::Task) -> ForgeResult<forge_planner::Plan> {
-        use forge_api::{ChatMessage, LlmBackend as _};
-
-        // ① 文件名（短输出，天然不受长补全截断影响）
-        let name_sys = "Answer with a single output filename including extension (like hello.py or app.js). No explanation.";
-        let name_user = format!("Task: {}\nPick the best output filename.", task.goal);
-        let name_raw = self
-            .backend
-            .chat(&self.model, &[ChatMessage::system(name_sys), ChatMessage::user(name_user)])
-            .await?;
-        let filename = first_line(&strip_code_fence(&name_raw));
-
-        // ② 完整文件内容（纯文本，无 JSON 转义/截断问题）
-        let mut ac_text = String::new();
-        for a in &task.acceptance {
-            ac_text.push_str(&format!("- {}: {}\n", a.id, a.description));
-        }
-        let code_sys = "You are a senior engineer. Output ONLY the complete final content of the requested file. No markdown fences, no explanations.";
-        let code_user = format!(
-            "Filename: {filename}\nIt will be verified by:\n{ac_text}\nGoal: {goal_text}\nWrite the complete file now.",
-            goal_text = task.goal,
-        );
-        let raw = self
-            .backend
-            .chat(&self.model, &[ChatMessage::system(code_sys), ChatMessage::user(code_user)])
-            .await?;
-        let content = strip_code_fence(&raw);
-        eprintln!("codegen[{filename}] bytes={}", content.len());
-
-        Ok(forge_planner::Plan {
-            id: forge_core::new_plan_id(),
-            task_id: task.id.clone(),
-            steps: vec![forge_planner::PlanStep {
-                id: "codegen".into(),
-                title: format!("生成 {filename}"),
-                depends_on: vec![],
-                action: forge_planner::StepAction::CallCapability {
-                    capability: "write_file".into(),
-                    input: serde_json::json!({ "path": filename, "content": content }),
-                },
-            }],
-            status: forge_planner::PlanStatus::Ready,
-        })
-    }
-}
-/// 构建服务端 LLM 规划器（单文件代码生成，纯文本双调用，对小上限模型鲁棒）。
+/// 构建服务端 LLM 规划器（V5.1 CGN-001 落位 R6-021：实现迁至 forge-plan-llm
+/// crate 冻结契约，此处仅装配；单文件代码生成，纯文本双调用，对小上限模型鲁棒）。
 async fn build_llm_planner() -> Result<Arc<dyn forge_planner::Planner>, String> {
     let base = std::env::var("FORGE_LLM_BASE_URL").unwrap_or_default();
     let key = std::env::var("FORGE_LLM_API_KEY").unwrap_or_default();
-    Ok(Arc::new(SingleFileCodegenPlanner {
-        backend: Arc::new(forge_api::LlmClient::new(base, key)),
-        model: std::env::var("FORGE_TIER_HIGH_MODEL")
+    let backend: Arc<dyn forge_plan_llm::LlmPlanBackend> =
+        Arc::new(forge_api::LlmClient::new(base, key));
+    Ok(Arc::new(forge_plan_llm::SingleFileCodegenPlanner::new(
+        backend,
+        std::env::var("FORGE_TIER_HIGH_MODEL")
             .ok()
             .filter(|m| !m.trim().is_empty())
             .unwrap_or_else(|| "glm-5.2".into()),
-    }))
+    )))
 }
 /// GET /events/stream — SSE 实时事件流（API-003）
 async fn events_stream(
