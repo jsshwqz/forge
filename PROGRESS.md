@@ -59,8 +59,8 @@
 | SRV-004 | GET /tasks list | ✅ 完成 | - | - | 19606a2 |
 | SRV-FIX-001 | server 测试覆盖整改(R7-005) | ✅ 完成 | builder-a | - | 662ac23 |
 | API-002 | Bearer auth middleware | ✅ 完成 | - | - | ae360be |
-| API-003 | placeholder | ✅ 完成 | - | - | 54523d0 |
-| API-004 | placeholder | ✅ 完成 | - | - | 54523d0 |
+| API-003 | SSE事件流 | ✅ 完成 | - | - | 54523d0 |
+| API-004 | CORS层 | ✅ 完成 | - | - | 54523d0 |
 | PLAN-L-001 | PlanSchema校验器(validator,6测试) | ✅ 完成 | - | - | c20b5dc |
 | PLAN-L-002 | LLM规划器(llm_planner+LlmPlanBackend,4测试) | ✅ 完成 | - | - | c20b5dc |
 | PLAN-R-001 | LLM重规划器(replanner,复用validator+backend) | ✅ 完成 | - | - | c20b5dc |
@@ -70,11 +70,20 @@
 | AGENT-P-002 | 分层路由TierRouter | ✅ 完成 | builder-a | - | f4b6343 |
 | AGENT-T-001 | Reviewer Agent | ✅ 完成 | builder-a | - | f4b6343 |
 | AGENT-O-001 | 四角色流水线编排 | ✅ 完成 | builder-a | - | f4b6343 |
-| PROD-001 | 产品实例生命周期 | 📌 WIP | builder-a | - | - |
-| PROD-002 | 模板库管理 | 📌 WIP | builder-a | - | - |
-| OBS-002 | Prometheus指标 | 📌 WIP | builder-a | - | - |
-| UI-001 | Web控制台MVP | 📌 WIP | builder-a | - | - |
+| PROD-001 | 产品实例生命周期 | ✅ 完成 | builder-a | - | effe996 |
+| PROD-002 | 模板库管理 | ✅ 完成 | builder-a | - | effe996 |
+| OBS-002 | Prometheus指标 | ✅ 完成 | builder-a | - | effe996 |
+| UI-001 | Web控制台MVP | ✅ 完成 | builder-a | - | effe996 |
 | PKG-001 | 部署打包Dockerfile+compose | ✅ 完成 | builder-a | - | effe996 |
 | SEC-001 | 生产安全基线 | ✅ 完成 | builder-a | - | effe996 |
 | KNW-001 | Knowledge层MVP | ✅ 完成 | builder-a | - | effe996 |
 | E2E-GA | 终验剧本 | ✅ 完成 | builder-a | - | effe996 |
+| API-001 | 资源只读端点/evidence API | ✅ 完成 | - | - | effe996 |
+| TEN-001 | 租户模型贯穿 | ✅ 完成 | - | R1-053 | 3eec0f7 |
+| MKT-001 | 能力市场目录 | ✅ 完成 | - | - | 09a9fa2 |
+| MKT-002 | 安装即注册 | ✅ 完成 | - | - | 09a9fa2 |
+| PERF-001 | 微基准测试 | ✅ 完成 | - | - | 09a9fa2 |
+| TEN-002 | 多租户鉴权 | ✅ 完成 | - | - | c693486 |
+| TEN-003 | 租户配额 | ✅ 完成 | - | - | c693486 |
+| KNW-002 | 知识建议 | ✅ 完成 | - | - | 3eec0f7 |
+| DEP-001 | 扩展评估 | ✅ 完成 | - | - | c693486 |

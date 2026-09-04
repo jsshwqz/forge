@@ -807,3 +807,17 @@ deploy/Dockerfile+compose按官方语法编写并人工审阅, 本机无docker d
 
 ---
 
+## [R1-052] ✅ 成功 · 2026-08-26 · 写软件能力打通(WriteFileTool+LLM代码生成规划器)
+
+- **任务 ID**：GENERAL
+forge-exec新增WriteFileTool(相对路径防逃逸,2测试); orchestrate注册write_file并按FORGE_LLM_*自动启用SingleFileCodegenPlanner: 两次纯文本调用(问文件名→要完整代码), 规避小上限模型JSON嵌套截断; 工作目录create_for改为确定性幂等; chat显式max_tokens=4096; 实测代码已成功落盘工作目录(290B fizzbuzz.py), 验收执行通路验证; 上游429/quota映射HTTP503; 提交21de489
+
+---
+
+## [R7-009] ⚠️ 偏差/风险 · 2026-08-26 · R7-010 商汤工作区配额耗尽(429 insufficient_quota)
+
+- **任务 ID**：GENERAL
+今日密集实测消耗殆尽Workspace配额; flash-lite模型输出硬上限约380字符且max_tokens不生效(已用纯文本双调用架构规避); 配额恢复后orchestrate写软件任务即可全绿, 代码链路已验证至落盘+验收执行
+
+---
+
