@@ -8,6 +8,18 @@ use async_trait::async_trait;
 use forge_core::{ForgeError, ForgeResult};
 use std::path::{Path, PathBuf};
 
+/// 单次写入上限默认值：1MB（V5.1 WRT-001，env `FORGE_WRITE_MAX_BYTES` 可调）。
+pub const FORGE_WRITE_MAX_BYTES_DEFAULT: usize = 1_048_576;
+
+/// 读取写入上限：env `FORGE_WRITE_MAX_BYTES` 优先，非法/未设置回退默认值。
+fn write_max_bytes() -> usize {
+    std::env::var("FORGE_WRITE_MAX_BYTES")
+        .ok()
+        .and_then(|s| s.trim().parse::<usize>().ok())
+        .filter(|n| *n > 0)
+        .unwrap_or(FORGE_WRITE_MAX_BYTES_DEFAULT)
+}
+
 /// 写文件工具：input = {"path": "...", "content": "..."}，路径限定在 root 内。
 pub struct WriteFileTool {
     desc: ToolDescriptor,
@@ -71,6 +83,13 @@ impl Tool for WriteFileTool {
             .ok_or_else(|| ForgeError::InvalidState("write_file: missing 'content'".into()))?;
 
         let full = self.resolve(rel)?;
+        // V5.1 WRT-001：resolve 之后、写入之前校验长度上限
+        //（规格写 Err(Validation)，本项目无该变体，按 R6-023 适配为 InvalidState）
+        if content.len() > write_max_bytes() {
+            return Err(ForgeError::InvalidState(
+                "write exceeds FORGE_WRITE_MAX_BYTES".into(),
+            ));
+        }
         if let Some(parent) = full.parent() {
             tokio::fs::create_dir_all(parent)
                 .await
@@ -112,5 +131,38 @@ mod tests {
             );
         }
         assert!(tool.invoke(serde_json::json!({"path":"a.txt"})).await.is_err());
+    }
+
+    /// 冻结测试（V5.1 WRT-001）：超 FORGE_WRITE_MAX_BYTES → InvalidState，文件不生成。
+    #[tokio::test]
+    async fn write_file_size_cap_enforced() {
+        let tmp = tempfile::tempdir().unwrap();
+        let tool = WriteFileTool::new(tmp.path());
+        let big = "x".repeat(FORGE_WRITE_MAX_BYTES_DEFAULT + 1);
+        let err = tool
+            .invoke(serde_json::json!({"path": "big.bin", "content": big}))
+            .await
+            .unwrap_err();
+        assert!(
+            err.to_string().contains("write exceeds FORGE_WRITE_MAX_BYTES"),
+            "应报尺寸上限错误: {err}"
+        );
+        assert!(
+            !tmp.path().join("big.bin").exists(),
+            "超限文件不得落盘"
+        );
+    }
+
+    /// 冻结测试（V5.1 WRT-001）：中文内容写入 → 读回逐字节相等。
+    #[tokio::test]
+    async fn write_file_utf8_roundtrip() {
+        let tmp = tempfile::tempdir().unwrap();
+        let tool = WriteFileTool::new(tmp.path());
+        let content = "你好，世界 — Aion Forge 中文内容 roundtrip ✅";
+        tool.invoke(serde_json::json!({"path": "docs/中文.md", "content": content}))
+            .await
+            .unwrap();
+        let on_disk = std::fs::read(tmp.path().join("docs/中文.md")).unwrap();
+        assert_eq!(on_disk, content.as_bytes(), "读回必须逐字节相等");
     }
 }
