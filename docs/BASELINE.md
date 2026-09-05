@@ -18,16 +18,25 @@
 
 ---
 
-## 压测脚本
+## 压测四数（G-V5 门禁项；2026-09-06 净库实测）
+
+| 靶路径 | 并发 | 请求数 | RPS | p50 | p95 | 错误率 |
+|--------|------|--------|-----|-----|-----|--------|
+| POST /tasks（API 面，真实 PG） | 10 | 7410 | **493.7** | 16.81ms | 29.91ms | **0%** |
+| POST /orchestrate（全链路：计划→echo→命令验收→门禁→证据→PG） | 1 | 40 | **8.2** | 117.05ms | 140.43ms | **0%** |
+
+> 环境同上（rustc 1.98.0 + Podman forge-pg 容器）。证据文件：`artifacts/load_last.json`。
+> **注意**：/orchestrate 受 TEN-003 配额门控（默认并发 4 / 日 100）——压测该路径须净库 +
+> 低并发限量，否则 429 属配额生效（本表即为净库口径）。
 
 脚本位置：deploy/bench/orch_load.ps1
 
 用法：
 ```powershell
-pwsh deploy/bench/orch_load.ps1 -Concurrent 50 -Duration 300
+pwsh deploy/bench/orch_load.ps1 -Concurrent 10 -DurationSec 15          # API 面
+MSYS_NO_PATHCONV=1 pwsh deploy/bench/orch_load.ps1 -Path /orchestrate `
+  -Body '<json>' -Concurrent 1 -MaxRequests 40                          # 全链路（Git Bash 需前缀变量）
 ```
-
-输出：RPS / p95 延迟 / 错误率
 
 ---
 
