@@ -790,5 +790,13 @@
     "task_id": "MKT-101",
     "title": "MKT-101落地: ed25519签名生态+审核状态机+安装复验全绿",
     "body": "signing.rs契约冻结(验签失败false/格式错Err); 0013迁移双轨; 发布202 pending/审核状态机(approved自动published,非法409,未知verdict400)/安装复验错签名403; 签名规范字节=name+version+package_hash; 测试真实PG全绿; workspace 359 passed/clippy零告警; 未触发停止上报条件"
+  },
+  {
+    "id": "R1-059",
+    "kind": "R1Completed",
+    "date": "2026-09-06",
+    "task_id": "MKT-102",
+    "title": "MKT-102落地: semver版本治理+钉版/约束安装+G-V6A并发认领e2e",
+    "body": "versioning.rs契约(resolve/resolve_meta/should_upgrade); 迁移0014双轨; install钉版yanked 409/约束解析排除yanked+deprecated/无果404; releases列表隐藏yanked; G-V6A门禁第2条: 100任务双worker恰执行100次不丢不重(真实PG); workspace 366 passed/clippy零告警"
   }
 ]

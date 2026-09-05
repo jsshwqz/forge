@@ -926,3 +926,10 @@ signing.rs契约冻结(验签失败false/格式错Err); 0013迁移双轨; 发布
 
 ---
 
+## [R1-059] ✅ 成功 · 2026-09-06 · MKT-102落地: semver版本治理+钉版/约束安装+G-V6A并发认领e2e
+
+- **任务 ID**：MKT-102
+versioning.rs契约(resolve/resolve_meta/should_upgrade); 迁移0014双轨; install钉版yanked 409/约束解析排除yanked+deprecated/无果404; releases列表隐藏yanked; G-V6A门禁第2条: 100任务双worker恰执行100次不丢不重(真实PG); workspace 366 passed/clippy零告警
+
+---
+
