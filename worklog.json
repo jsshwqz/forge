@@ -774,5 +774,13 @@
     "task_id": "FED-001",
     "title": "FED-001 R4接线范围解释: handler自认领循环保持同步契约",
     "body": "R4'编排执行器改为入队→认领循环'与HTTP同步返回报告的既有契约存在张力; 裁决: handler入队后自认领(单副本必赢)同步返回完整报告=行为等价; 被其它副本worker抢走时轮询任务状态返回降级响应{task_id,final_status,queued}; 后台worker仅FORGE_QUEUE_WORKER=1时启用; FORGE_QUEUE_INLINE=1完全绕过队列(R-16); 不改Orchestrator公开形状(停止条件未触发)"
+  },
+  {
+    "id": "R1-057",
+    "kind": "R1Completed",
+    "date": "2026-09-06",
+    "task_id": "FED-002",
+    "title": "FED-002落地: SSE跨副本合并流四冻结测试全绿+十三步复跑等价实证",
+    "body": "sse_relay: merge对称去重(首到胜出=本地优先)/畸形事件本地放行转发丢弃/统一规则含流关闭残余; RelaySessionStore装饰器append后转发(id=session_id:seq稳定键); events_stream合并本地+forge_events转发, 断连退化纯本地(R3); 十三步剧本复跑全PASS证明单副本行为等价; workspace 352 passed/clippy零告警"
   }
 ]

@@ -912,3 +912,10 @@ R4'编排执行器改为入队→认领循环'与HTTP同步返回报告的既有
 
 ---
 
+## [R1-057] ✅ 成功 · 2026-09-06 · FED-002落地: SSE跨副本合并流四冻结测试全绿+十三步复跑等价实证
+
+- **任务 ID**：FED-002
+sse_relay: merge对称去重(首到胜出=本地优先)/畸形事件本地放行转发丢弃/统一规则含流关闭残余; RelaySessionStore装饰器append后转发(id=session_id:seq稳定键); events_stream合并本地+forge_events转发, 断连退化纯本地(R3); 十三步剧本复跑全PASS证明单副本行为等价; workspace 352 passed/clippy零告警
+
+---
+
