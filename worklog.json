@@ -782,5 +782,13 @@
     "task_id": "FED-002",
     "title": "FED-002落地: SSE跨副本合并流四冻结测试全绿+十三步复跑等价实证",
     "body": "sse_relay: merge对称去重(首到胜出=本地优先)/畸形事件本地放行转发丢弃/统一规则含流关闭残余; RelaySessionStore装饰器append后转发(id=session_id:seq稳定键); events_stream合并本地+forge_events转发, 断连退化纯本地(R3); 十三步剧本复跑全PASS证明单副本行为等价; workspace 352 passed/clippy零告警"
+  },
+  {
+    "id": "R1-058",
+    "kind": "R1Completed",
+    "date": "2026-09-06",
+    "task_id": "MKT-101",
+    "title": "MKT-101落地: ed25519签名生态+审核状态机+安装复验全绿",
+    "body": "signing.rs契约冻结(验签失败false/格式错Err); 0013迁移双轨; 发布202 pending/审核状态机(approved自动published,非法409,未知verdict400)/安装复验错签名403; 签名规范字节=name+version+package_hash; 测试真实PG全绿; workspace 359 passed/clippy零告警; 未触发停止上报条件"
   }
 ]

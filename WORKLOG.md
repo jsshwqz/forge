@@ -919,3 +919,10 @@ sse_relay: merge对称去重(首到胜出=本地优先)/畸形事件本地放行
 
 ---
 
+## [R1-058] ✅ 成功 · 2026-09-06 · MKT-101落地: ed25519签名生态+审核状态机+安装复验全绿
+
+- **任务 ID**：MKT-101
+signing.rs契约冻结(验签失败false/格式错Err); 0013迁移双轨; 发布202 pending/审核状态机(approved自动published,非法409,未知verdict400)/安装复验错签名403; 签名规范字节=name+version+package_hash; 测试真实PG全绿; workspace 359 passed/clippy零告警; 未触发停止上报条件
+
+---
+
