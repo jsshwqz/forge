@@ -662,5 +662,37 @@
   "owner": null,
   "last_record": null,
   "commit": "c693486"
+ },
+ {
+  "task_id": "FED-001",
+  "name": "多副本任务队列认领与PG事件总线",
+  "status": "Completed",
+  "owner": "executor",
+  "last_record": "R1-056",
+  "commit": "75d2d66"
+ },
+ {
+  "task_id": "FED-002",
+  "name": "跨副本SSE事件广播",
+  "status": "Completed",
+  "owner": "executor",
+  "last_record": "R1-057",
+  "commit": "3ed148d"
+ },
+ {
+  "task_id": "MKT-101",
+  "name": "发布者签名生态与审核状态机",
+  "status": "Completed",
+  "owner": "executor",
+  "last_record": "R1-058",
+  "commit": "7eaae91"
+ },
+ {
+  "task_id": "MKT-102",
+  "name": "版本治理与semver解析",
+  "status": "Completed",
+  "owner": "executor",
+  "last_record": "R1-059",
+  "commit": "620fc12"
  }
 ]
