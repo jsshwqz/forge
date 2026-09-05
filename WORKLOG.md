@@ -898,3 +898,17 @@ G-GA: A段十三步全PASS(ga_evidence_20260905_225958) + B段H1~H6逐项实证(
 
 ---
 
+## [R1-056] ✅ 成功 · 2026-09-06 · FED-001落地: 队列认领+事件总线四冻结测试真实PG全绿
+
+- **任务 ID**：FED-001
+G-V5放行后首包; 迁移0012双轨落盘; queue.rs/bus.rs按AF-BP-V60A契约; R4接线=入队→handler自认领循环(单副本行为等价)+FORGE_QUEUE_INLINE/WORKER开关; 10并发认领恰1成功/租约过期自愈/NOTIFY收发/崩溃恢复四测试实跑通过; 认领SQL占位符起编错误当场被抓(三点核对口径); workspace 348 passed/clippy零告警
+
+---
+
+## [R6-024] ⚖️ 决策 · 2026-09-06 · FED-001 R4接线范围解释: handler自认领循环保持同步契约
+
+- **任务 ID**：FED-001
+R4'编排执行器改为入队→认领循环'与HTTP同步返回报告的既有契约存在张力; 裁决: handler入队后自认领(单副本必赢)同步返回完整报告=行为等价; 被其它副本worker抢走时轮询任务状态返回降级响应{task_id,final_status,queued}; 后台worker仅FORGE_QUEUE_WORKER=1时启用; FORGE_QUEUE_INLINE=1完全绕过队列(R-16); 不改Orchestrator公开形状(停止条件未触发)
+
+---
+
