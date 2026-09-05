@@ -877,3 +877,10 @@ install原死代码路径new_cap.status=Active后register, 但registry.register�
 
 ---
 
+## [R1-054] ✅ 成功 · 2026-09-05 · GA-FIX-4步骤3补完: 真实PG十三步全PASS+证据四要素齐备
+
+- **任务 ID**：GA-FIX-4
+环境解锁: podman machine重建启动, postgres:16-alpine经DaoCloud镜像源(docker.m.daocloud.io)拉取, forge-pg容器@15432; ga_acceptance.ps1扩展为十三步(新增G9 knowledge-failures/G10 metrics-delta, 证据JSON增补session_created/session_id(podman exec psql直查)/knowledge_count/metrics_delta字段); 实跑13步全PASS, 证据=artifacts/ga_evidence_20260905_225958.json(result=PASS,session_752046b7,delta=1); FORGE_PG_URL下全仓336 passed/0 failed, PG门控测试(tenant_isolation_list/cross_tenant_get_blocked/sessions_full_state_machine_flow/pg_events_are_replayable)真实执行通过; GA_CHECKLIST A段已回填, B段仍待规划层复核, C段签核栏留空待规划层亲签
+
+---
+

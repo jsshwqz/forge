@@ -8,23 +8,32 @@
 
 ## A. 自动化段（ga_acceptance.ps1 十三步剧本）
 
+> **实跑记录（2026-09-05 22:59）**：真实 PG（Podman forge-pg 容器，postgres:16-alpine
+> @ localhost:15432，经 DaoCloud 镜像源拉取）。证据文件：
+> `artifacts/ga_evidence_20260905_225958.json`（result=PASS，含 session_created=true +
+> session_id=session_752046b7-e4ca-4bac-aed7-3045f36ae28f（podman exec psql 直查）、
+> knowledge_count=0、metrics_delta=1）。
+
 | # | 步骤 | 结果 |
 |---|---|---|
-| G1 | build | 待重跑（证据文件：待产出 `artifacts/ga_evidence_<日期>.json`） |
-| G2 | deploy+health | 待重跑 |
-| G3 | register-capability | 待重跑 |
-| G4 | instantiate | 待重跑 |
-| G5 | product-start | 待重跑 |
-| G6 | orchestrate | 待重跑 |
-| G7 | sse-observe | 待重跑 |
-| G8 | metrics | 待重跑 |
-| G9 | knowledge-failures | 待重跑 |
-| G10 | metrics-delta | 待重跑 |
-| G11 | product-stop | 待重跑 |
-| G12 | restart-persistence | 待重跑 |
-| G13 | leave-evidence | 待重跑 |
+| G1 | build | PASS（cargo build forge-server） |
+| G2 | deploy+health | PASS（GET /health -> ok, storage=PostgreSQL） |
+| G3 | register-capability | PASS（tpl.ga@1.0.0） |
+| G4 | instantiate | PASS（instance=pinst_18d274c5b652afb80000） |
+| G5 | product-start | PASS（state=Active） |
+| G6 | orchestrate | PASS（final=Completed gate=True evidence=1） |
+| G7 | sse-observe | PASS（GET /events/stream 连接可读） |
+| G8 | metrics | PASS（tasks_total 1; executions_total 1） |
+| G9 | knowledge-failures | PASS（200, entries=0，服务面接线验证） |
+| G10 | metrics-delta | PASS（executions_total 0 -> 1, delta=1） |
+| G11 | product-stop | PASS（state=Stopped） |
+| G12 | restart-persistence | PASS（重启后 GET /tasks/task_00df74b6-… 仍存在，PG 持久化） |
+| G13 | leave-evidence | PASS（四要素齐备，见上注） |
 
-> **当前状态（2026-09-05）**：因执行环境无 docker/PG（WORKLOG R7-009），十三步剧本未能重跑。G-GA 二次签核保持阻塞，直至真实 PG 环境产出含 session 创建、重启持久化、knowledge_count、metrics_delta 四要素的证据 JSON。
+> **附加验证（同日）**：FORGE_PG_URL 指向真实 PG 全仓 `cargo test --workspace`
+> = 336 passed / 90 suites / 0 failed；此前门控跳过的 PG 测试本轮真实执行
+> （含 V5-FIX-2d 冻结测试 tenant_isolation_list / cross_tenant_get_blocked、
+> storage 的 sessions_full_state_machine_flow / pg_events_are_replayable）。
 
 ---
 

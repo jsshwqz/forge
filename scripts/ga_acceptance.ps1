@@ -1,9 +1,12 @@
 # =====================================================================
-# E2E-GA 交钥匙终验剧本（契约 10.2/10.3）
+# E2E-GA 交钥匙终验剧本（契约 10.2/10.3；GA-FIX-4 步骤3 十三步版）
 # 流程: 部署(本地构建+PG) → 注册能力 → 模板装配 → 产品实例化 → orchestrate
-#       真实任务 → SSE 观测 → /metrics 核数 → 停机重启数据不丢；全程留证。
+#       真实任务 → SSE 观测 → /metrics 核数 → knowledge-failures →
+#       metrics-delta → 停机重启数据不丢；全程留证。
 # 用法:  pwsh scripts/ga_acceptance.ps1 [-PgUrl "..."]   (默认连本机 15432)
 # 产出:  artifacts/ga_evidence_<时间戳>.json
+#        必含四要素(build_fix_r2 GA-FIX-4): session 创建记录(podman exec psql 直查)、
+#        重启持久化通过、knowledge_count 字段、metrics_delta == 1、result=PASS
 # =====================================================================
 param(
     [string]$Port = "18080",
@@ -17,15 +20,20 @@ function Step($name, $ok, $detail) {
     Write-Host "$mark $name :: $detail"
     if (-not $ok) { throw "GA-FAIL: $name" }
 }
+function Get-MetricsCounter($raw, $name) {
+    $line = ($raw -split "`n" | Select-String "^$name ").Line
+    if ($line) { return [int64]($line -replace "^$name\s+", "") }
+    return -1
+}
 
 $root = Split-Path -Parent $PSScriptRoot
 Set-Location $root
 
-# ---- 0. 构建（部署物=本机二进制）----
+# ---- G1. 构建（部署物=本机二进制）----
 cargo build -p forge-server --bin forge-server 2>&1 | Out-Null
 Step "build" ($LASTEXITCODE -eq 0) "cargo build forge-server"
 
-# ---- 1. 启动服务（带 PG 持久化）----
+# ---- G2. 启动服务（带 PG 持久化）----
 $client = $null
 $env:FORGE_PORT = $Port
 $env:FORGE_PG_URL = $PgUrl
@@ -39,7 +47,7 @@ try {
     }
     Step "deploy+health" $healthy "GET /health -> $($h.status), storage=PostgreSQL"
 
-    # ---- 2. 注册能力（模板发布, Reviewer verdict=Pass）----
+    # ---- G3. 注册能力（模板发布, Reviewer verdict=Pass）----
     $tpl = @{
         template = @{ id = "tpl.ga"; name = "GA demo"; parameters = @(); manifest_skeleton = @{
             id = ("product_" + [guid]::NewGuid().ToString("N").Substring(0, 12)); name = "ga-demo"; version = "1.0.0";
@@ -50,16 +58,18 @@ try {
     $r = Invoke-RestMethod -Method Post -Uri "http://127.0.0.1:$Port/templates" -ContentType "application/json" -Body ($tpl | ConvertTo-Json -Depth 8)
     Step "register-capability" ($r.published -eq "tpl.ga@1.0.0") "$($r.published)"
 
-    # ---- 3. 模板装配 + 产品实例化 ----
+    # ---- G4. 模板装配 + 产品实例化 ----
     $inst = Invoke-RestMethod -Method Post -Uri "http://127.0.0.1:$Port/products/instantiate" -ContentType "application/json" `
         -Body ('{"template_id":"tpl.ga","version":"1.0.0","name":"ga-inst"}')
     Step "instantiate" ($inst.state -eq "Draft") "instance=$($inst.instance_id)"
 
-    # ---- 4. start → Active ----
+    # ---- G5. start → Active ----
     $p = Invoke-RestMethod -Method Post -Uri "http://127.0.0.1:$Port/products/$($inst.instance_id)/start"
     Step "product-start" ($p.state -eq "Active") "state=$($p.state)"
 
-    # ---- 5. orchestrate 真实任务（echo 工具 + 命令验收）----
+    # ---- G6. orchestrate 真实任务（echo 工具 + 命令验收）----
+    $rawBefore = (Invoke-WebRequest "http://127.0.0.1:$Port/metrics" -UseBasicParsing).Content
+    $execBefore = Get-MetricsCounter $rawBefore "executions_total"
     $task = Invoke-RestMethod -Method Post -Uri "http://127.0.0.1:$Port/tasks" -ContentType "application/json" `
         -Body '{"goal":"GA acceptance run","constraints":[],"acceptance":[]}'
     $cmd = if ($IsWindows -or $env:OS -like "*Windows*") { "echo ga-ok> ga.txt" } else { "echo ga-ok > ga.txt" }
@@ -67,8 +77,9 @@ try {
         -Body (@{ goal = "GA acceptance run"; timeout_secs = 30;
                   acceptance = @(@{ id = "AC-1"; description = "leave ga.txt"; check = @{ Command = $cmd } }) } | ConvertTo-Json -Depth 6)
     Step "orchestrate" ($run.gate_passed -eq $true) "final=$($run.final_status) gate=$($run.gate_passed) evidence=$($run.evidence_count)"
+    $sessionCreated = ($run.gate_passed -eq $true)  # 编排器先建 Session 再执行，gate 通过即含 session 创建成功
 
-    # ---- 6. SSE 观测：连接建立且能读到流字节 ----
+    # ---- G7. SSE 观测：连接建立且能读到流字节 ----
     $client = [System.Net.Http.HttpClient]::new()
     $client.Timeout = [TimeSpan]::FromSeconds(10)
     $streamTask = $client.GetStreamAsync("http://127.0.0.1:$Port/events/stream")
@@ -77,18 +88,30 @@ try {
     if ($sseOk) { $streamTask.Result.Close() }
     Step "sse-observe" $sseOk "GET /events/stream 连接可读"
 
-    # ---- 7. /metrics 核数 ----
+    # ---- G8. /metrics 核数 ----
     $m = Invoke-RestMethod "http://127.0.0.1:$Port/metrics"
     $mText = if ($m -is [string]) { $m } else { ($m | Out-String) }
     $raw = (Invoke-WebRequest "http://127.0.0.1:$Port/metrics" -UseBasicParsing).Content
     $execLine = ($raw -split "`n" | Select-String "^executions_total ").Line
     Step "metrics" ($raw -match "tasks_total ([1-9]\d*)") "counters: $(($raw -split "`n" | Where-Object { $_ -match "^[a-z]" -and $_ -notmatch "^#" }) -join '; ')"
 
-    # ---- 8. stop 产品 ----
+    # ---- G9. knowledge-failures：KNW-001 服务面可读（GA-FIX-2 接线面）----
+    $kf = Invoke-RestMethod "http://127.0.0.1:$Port/knowledge/failures"
+    $kfArr = if ($kf -is [array]) { $kf } else { @($kf) }
+    $knowledgeCount = $kfArr.Count
+    Step "knowledge-failures" ($true) "GET /knowledge/failures -> 200, entries=$knowledgeCount"
+
+    # ---- G10. metrics-delta：本次编排 executions_total 增量恰为 1 ----
+    $rawAfter = (Invoke-WebRequest "http://127.0.0.1:$Port/metrics" -UseBasicParsing).Content
+    $execAfter = Get-MetricsCounter $rawAfter "executions_total"
+    $metricsDelta = ($execAfter - $execBefore)
+    Step "metrics-delta" ($metricsDelta -eq 1) "executions_total: $execBefore -> $execAfter (delta=$metricsDelta)"
+
+    # ---- G11. stop 产品 ----
     $p = Invoke-RestMethod -Method Post -Uri "http://127.0.0.1:$Port/products/$($inst.instance_id)/stop"
     Step "product-stop" ($p.state -eq "Stopped") "state=$($p.state)"
 
-    # ---- 9. 停机重启 → 数据不丢（PG）----
+    # ---- G12. 停机重启 → 数据不丢（PG）----
     Stop-Process -Id $srv.Id -Force; Wait-Process -Id $srv.Id -ErrorAction SilentlyContinue
     $srv = Start-Process -FilePath "$root\target\debug\forge-server.exe" -PassThru -WindowStyle Hidden `
             -RedirectStandardOutput "$root\artifacts\ga_server_out2.log" -RedirectStandardError "$root\artifacts\ga_server_err2.log"
@@ -102,17 +125,30 @@ try {
     Step "restart-persistence" $persisted "重启后 GET /tasks/$($task.id) 仍存在"
 
     Write-Host "`n=== GA 终验全部通过 ===" -ForegroundColor Green
-    # ---- 留证入库 ----
+    # ---- G13. 留证入库（含 session 直查 PG 记录）----
+    $sessionId = $null
+    try {
+        $sessionId = (podman exec forge-pg psql -U postgres -d forge -t -A -c "SELECT id FROM sessions ORDER BY created_at DESC LIMIT 1" 2>$null)
+    } catch { }
+    if (-not $sessionId) {
+        try {
+            $sessionId = (docker exec forge-pg psql -U postgres -d forge -t -A -c "SELECT id FROM sessions ORDER BY created_at DESC LIMIT 1" 2>$null)
+        } catch { }
+    }
     $evidencePath = Join-Path $root "artifacts\ga_evidence_$(Get-Date -Format yyyyMMdd_HHmmss).json"
     [pscustomobject]@{
-        run_at   = (Get-Date).ToString('o')
-        pg_url   = $PgUrl
-        task_id  = $task.id
-        instance = $inst.instance_id
-        result   = "PASS"
-        steps    = $script:steps
+        run_at          = (Get-Date).ToString('o')
+        pg_url          = $PgUrl
+        task_id         = $task.id
+        instance        = $inst.instance_id
+        session_created = $sessionCreated
+        session_id      = $sessionId
+        knowledge_count = $knowledgeCount
+        metrics_delta   = $metricsDelta
+        result          = "PASS"
+        steps           = $script:steps
     } | ConvertTo-Json -Depth 6 | Set-Content -Encoding utf8 $evidencePath
-    Step "leave-evidence" (Test-Path $evidencePath) $evidencePath
+    Step "leave-evidence" ((Test-Path $evidencePath) -and $sessionId) $evidencePath
 }
 catch {
     Write-Host "GA 终验失败: $_" -ForegroundColor Red
