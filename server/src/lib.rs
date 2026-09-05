@@ -10,6 +10,7 @@ pub mod bus;
 pub mod queue;
 pub mod quota;
 pub mod routes;
+pub mod sse_relay;
 
 use axum::{
     extract::{Path, Query, State},
@@ -736,27 +737,45 @@ async fn build_llm_planner() -> Result<Arc<dyn forge_planner::Planner>, String> 
             .unwrap_or_else(|| "glm-5.2".into()),
     )))
 }
-/// GET /events/stream — SSE 实时事件流（API-003）
+/// GET /events/stream — SSE 实时事件流（API-003；FED-002 跨副本合并）。
 async fn events_stream(
     State(st): State<AppState>,
 ) -> Sse<impl Stream<Item = Result<SseEvent, Infallible>>> {
     use futures::stream;
 
+    // 本地事件 → JSON 字符串 broadcast（merge_event_streams 契约输入形状）
     let es = st.event_bus.subscribe(Topic::Session).await.unwrap();
-    let stream = stream::unfold(es, |mut es| async move {
-        // unfold 每次调用产出一个事件；通道关闭(Err)时返回 None 结束流。
-        match es.recv().await {
-            Ok(event) => {
-                let data = serde_json::to_string(
-                    &serde_json::json!({"id": event.id, "at": event.at.to_rfc3339()}),
-                ).unwrap_or_default();
-                Some((
-                    Ok(SseEvent::default().event("forge_event").data(data)),
-                    es,
-                ))
-            }
-            Err(_) => None,
+    let (lbtx, lbrx) = tokio::sync::broadcast::channel::<String>(64);
+    tokio::spawn(async move {
+        let mut es = es;
+        while let Ok(event) = es.recv().await {
+            let data = serde_json::to_string(
+                &serde_json::json!({"id": event.id, "at": event.at.to_rfc3339()}),
+            ).unwrap_or_default();
+            let _ = lbtx.send(data);
         }
+    });
+
+    // 转发流：PG 模式下监听 forge_events 频道（断连只失去转发流，本地不受影响，R3）
+    let relayed = match st.pool.clone() {
+        Some(pool) => bus::PgBus::listen(&pool, queue::FORGE_EVENTS_CHANNEL).await.ok(),
+        None => None,
+    };
+    let merged = match relayed {
+        Some(rx) => sse_relay::merge_event_streams(lbrx, rx),
+        None => {
+            let (_dtx, drx) = tokio::sync::mpsc::channel::<String>(1);
+            sse_relay::merge_event_streams(lbrx, drx)
+        }
+    };
+
+    let stream = stream::unfold(merged, |mut rx| async move {
+        rx.recv().await.map(|data| {
+            (
+                Ok(SseEvent::default().event("forge_event").data(data)),
+                rx,
+            )
+        })
     });
 
     Sse::new(stream).keep_alive(
@@ -857,10 +876,17 @@ pub async fn run_from_env() -> Result<(), Box<dyn std::error::Error>> {
                 println!("storage: PostgreSQL ({url})");
                 // FED-001：显式建池（含 DEP-001 env 参数化），AppState 持有以支撑队列路径
                 let pool = forge_storage::connect_and_migrate(&url).await?;
+                // FED-002：会话事件追加后转发到跨副本总线（失败不阻断写入）
+                let sessions: Arc<dyn SessionStore> = Arc::new(
+                    sse_relay::RelaySessionStore::new(
+                        Arc::new(forge_storage::PgSessionStore::new(pool.clone())),
+                        Arc::new(sse_relay::PgRelay::new(pool.clone())),
+                    ),
+                );
                 AppState {
                     sdk: ForgeSdk::from_stores(
                         Arc::new(forge_storage::PgTaskStore::new(pool.clone())),
-                        Arc::new(forge_storage::PgSessionStore::new(pool.clone())),
+                        sessions,
                     ),
                     evidence: Arc::new(InMemoryEvidenceStore::default()),
                     workspaces: Arc::new(WorkspaceManager::new(std::env::temp_dir().join("forge-ws")).unwrap()),
