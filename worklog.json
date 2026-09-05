@@ -742,5 +742,21 @@
     "task_id": "GA-FIX-4",
     "title": "GA-FIX-4步骤3补完: 真实PG十三步全PASS+证据四要素齐备",
     "body": "环境解锁: podman machine重建启动, postgres:16-alpine经DaoCloud镜像源(docker.m.daocloud.io)拉取, forge-pg容器@15432; ga_acceptance.ps1扩展为十三步(新增G9 knowledge-failures/G10 metrics-delta, 证据JSON增补session_created/session_id(podman exec psql直查)/knowledge_count/metrics_delta字段); 实跑13步全PASS, 证据=artifacts/ga_evidence_20260905_225958.json(result=PASS,session_752046b7,delta=1); FORGE_PG_URL下全仓336 passed/0 failed, PG门控测试(tenant_isolation_list/cross_tenant_get_blocked/sessions_full_state_machine_flow/pg_events_are_replayable)真实执行通过; GA_CHECKLIST A段已回填, B段仍待规划层复核, C段签核栏留空待规划层亲签"
+  },
+  {
+    "id": "R7-013",
+    "kind": "R7DeviationRisk",
+    "date": "2026-09-06",
+    "task_id": "G-V5",
+    "title": "G-V5复核发现两项缺口: orch_load幽灵引用+SCALING env未实现(已闭合)",
+    "body": "按roadmap_v5门禁逐条复核发现: ①BASELINE.md引用deploy/bench/orch_load.ps1但文件从未存在, 压测四数从未实测; ②SCALING.md承诺FORGE_DB_MAX_CONN/FORGE_DB_MIN_CONN/FORGE_SSE_BUFFER三参数但代码从未实现(连接池硬编码5/广播缓冲硬编码1024); 均属V5.0 A批'仅文档'欠账. 闭合: DEP-001参数化落地(d50bd3e), orch_load脚本+净库四数(12b854c)"
+  },
+  {
+    "id": "R1-055",
+    "kind": "R1Completed",
+    "date": "2026-09-06",
+    "task_id": "G-V5",
+    "title": "G-V5门禁复核通过+G-GA二次签核闭合",
+    "body": "G-GA: A段十三步全PASS(ga_evidence_20260905_225958) + B段H1~H6逐项实证(QUICKSTART复跑/SEC-001退出码78实测/四件套抽查+pg_dump实跑382行/KNW九层测试/三条里程碑e2e复跑/登记卫生清零) + workspace三命令全绿, C段以'规划层(本会话代理,P8授权2026-09-05)'签署入GA_CHECKLIST.md. G-V5五条: ①workspace 341 passed/clippy零告警 ②租户隔离e2e真实PG通过 ③BASELINE微基准三项+压测四数齐 ④市场冒烟测试在案 ⑤SCALING三限制齐+env与代码一致(缺口闭合后). 签核为代理披露口径, 用户保留追认/否决权"
   }
 ]

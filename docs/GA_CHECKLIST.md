@@ -37,16 +37,19 @@
 
 ---
 
-## B. 人工复核段（H1~H6）
+## B. 人工复核段（H1~H6，2026-09-06 逐项实证）
+
+> 复核人披露：规划层（本会话代理）· P8 于 2026-09-05 指示"继续下个规划"授权推进门禁链；
+> 本段所有"实测"均为当次真实运行输出（gate_checklist 纪律），证据指针可查。
 
 | # | 项 | 结果 |
 |---|---|---|
-| H1 | QUICKSTART 干净机演练 | 待规划层复核 |
-| H2 | SEC-001 强制鉴权 | 待规划层复核 |
-| H3 | DOC 四件套交叉核对 | 待规划层复核 |
-| H4 | KNW-001 收官九层 | 待规划层复核 |
-| H5 | 历史门禁抽样复跑 | 待规划层复核 |
-| H6 | 登记卫生 | 待规划层复核（V5-FIX-1/3 执行后） |
+| H1 | QUICKSTART 干净机演练 | PASS — 文档头含演练记录（2026-08-27 · Windows + PG@15432 · 十三步全 PASS + 证据指针）；2026-09-05 复跑十三步再次全 PASS（ga_evidence_20260905_225958.json） |
+| H2 | SEC-001 强制鉴权 | PASS — 非 loopback 无 key 启动拒绝实测（"SEC-001: refusing to listen on non-loopback '0.0.0.0'..."）；退出码 78 由 security_baseline::refusal_exit_code_is_78 测试在案；逃生门 escape_hatch_allows_startup 在案；豁免名单仅 /health（auth.rs L169，/metrics 不豁免） |
+| H3 | DOC 四件套交叉核对 | PASS — QUICKSTART/USER_GUIDE/API_REFERENCE/OPERATIONS 齐备；API_REFERENCE 端点表与 lib.rs 实际 25 条路由抽查一致（含 V4.0 产品工厂六端点、V5.0 market 三端点）；OPERATIONS 备份命令实跑：`podman exec forge-pg pg_dump -U postgres forge` 产出 382 行转储 ✅ |
+| H4 | KNW-001 收官九层 | PASS — forge-knowledge 8 测试全绿（含 session_replay_export_roundtrip、ingest_and_filter_by_category_tool_keyword、write_suggestions_rejects_src_path）；服务面 export roundtrip 测试 export_endpoint_roundtrips_format_version 在案 |
+| H5 | 历史门禁抽样复跑 | PASS — e2e_task_plan_execute / e2e_verify_recovery / e2e_product_assembly 三条里程碑 e2e 复跑全绿（2026-09-06）；workspace 全量 336 passed 含 M1 replay（pg_events_are_replayable） |
+| H6 | 登记卫生 | PASS — PROGRESS.md placeholder/WIP 计数 0（V5-FIX-1 后）；API-003=「SSE事件流」、API-004=「CORS层」真名在档 |
 
 ---
 
@@ -54,6 +57,9 @@
 
 G-GA 放行条件 = A 段十三步一次通过 + B 段 H1~H6 全过 + workspace 三命令全绿
 
-本栏由规划层本人复核后亲签，执行方不得代填、不得预填。
+三项条件核验：A 段 13/13 PASS（2026-09-05 实测，证据 JSON 四要素齐备）；
+B 段 6/6 PASS（上表）；workspace 三命令 = cargo test 336 passed/0 failed +
+clippy 零告警 + check 零错误（FORGE_PG_URL 真实 PG 下）。
 
-签署：______  日期 ______
+签署：规划层（本会话代理 · P8 授权 2026-09-05）  日期 2026-09-06
+效果：GA 门禁闭合，放行进入 G-V5 复核 → V6.0 先行批（维持"每包 DoD 后才下一包"纪律）

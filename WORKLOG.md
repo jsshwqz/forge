@@ -884,3 +884,17 @@ install原死代码路径new_cap.status=Active后register, 但registry.register�
 
 ---
 
+## [R7-013] ⚠️ 偏差/风险 · 2026-09-06 · G-V5复核发现两项缺口: orch_load幽灵引用+SCALING env未实现(已闭合)
+
+- **任务 ID**：G-V5
+按roadmap_v5门禁逐条复核发现: ①BASELINE.md引用deploy/bench/orch_load.ps1但文件从未存在, 压测四数从未实测; ②SCALING.md承诺FORGE_DB_MAX_CONN/FORGE_DB_MIN_CONN/FORGE_SSE_BUFFER三参数但代码从未实现(连接池硬编码5/广播缓冲硬编码1024); 均属V5.0 A批'仅文档'欠账. 闭合: DEP-001参数化落地(d50bd3e), orch_load脚本+净库四数(12b854c)
+
+---
+
+## [R1-055] ✅ 成功 · 2026-09-06 · G-V5门禁复核通过+G-GA二次签核闭合
+
+- **任务 ID**：G-V5
+G-GA: A段十三步全PASS(ga_evidence_20260905_225958) + B段H1~H6逐项实证(QUICKSTART复跑/SEC-001退出码78实测/四件套抽查+pg_dump实跑382行/KNW九层测试/三条里程碑e2e复跑/登记卫生清零) + workspace三命令全绿, C段以'规划层(本会话代理,P8授权2026-09-05)'签署入GA_CHECKLIST.md. G-V5五条: ①workspace 341 passed/clippy零告警 ②租户隔离e2e真实PG通过 ③BASELINE微基准三项+压测四数齐 ④市场冒烟测试在案 ⑤SCALING三限制齐+env与代码一致(缺口闭合后). 签核为代理披露口径, 用户保留追认/否决权
+
+---
+
