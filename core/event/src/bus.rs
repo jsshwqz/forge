@@ -71,9 +71,11 @@ pub trait EventBus: Send + Sync {
     async fn subscribe(&self, topic: Topic) -> ForgeResult<EventStream>;
 }
 
-/// 基于 `tokio::sync::broadcast` 的内存事件总线，容量 >= 1024。
+/// 基于 `tokio::sync::broadcast` 的内存事件总线（缓冲容量可调，DEP-001 D2）。
 pub struct InMemoryEventBus {
     senders: Arc<tokio::sync::RwLock<HashMap<Topic, broadcast::Sender<Event>>>>,
+    /// 每 topic 的广播缓冲容量（DEP-001 D2，server 侧读 FORGE_SSE_BUFFER 注入）。
+    capacity: usize,
 }
 
 impl Default for InMemoryEventBus {
@@ -85,8 +87,14 @@ impl Default for InMemoryEventBus {
 impl InMemoryEventBus {
     /// 创建容量为 1024 的总线。
     pub fn new() -> Self {
+        Self::with_buffer(1024)
+    }
+
+    /// 以指定缓冲容量创建（DEP-001 D2：`FORGE_SSE_BUFFER` 参数化的实现面）。
+    pub fn with_buffer(capacity: usize) -> Self {
         Self {
             senders: Arc::new(tokio::sync::RwLock::new(HashMap::new())),
+            capacity: capacity.max(1),
         }
     }
 }
@@ -105,7 +113,7 @@ impl EventBus for InMemoryEventBus {
     async fn subscribe(&self, topic: Topic) -> ForgeResult<EventStream> {
         let mut guard = self.senders.write().await;
         let sender = guard.entry(topic).or_insert_with(|| {
-            let (tx, _rx) = broadcast::channel(1024);
+            let (tx, _rx) = broadcast::channel(self.capacity);
             tx
         });
         Ok(EventStream {
@@ -180,5 +188,28 @@ mod tests {
             .unwrap();
         let evt = rx.recv().await.unwrap();
         assert_eq!(evt.payload["new"], true);
+    }
+
+    /// DEP-001 D2：with_buffer 容量生效——缓冲 2 时连发 3 条，最早一条被覆盖，
+    /// 接收方首次 recv 即 Lagged(1)（tokio broadcast 覆盖语义）。
+    #[tokio::test]
+    async fn test_with_buffer_capacity_enforced() {
+        let bus = InMemoryEventBus::with_buffer(2);
+        let mut rx = bus.subscribe(Topic::Execution).await.unwrap();
+        for i in 0..3 {
+            bus.publish(Event::new(Topic::Execution, serde_json::json!({ "i": i })))
+                .await
+                .unwrap();
+        }
+        let lagged = rx.recv().await.unwrap_err();
+        assert!(
+            lagged.to_string().contains("lagged by 1"),
+            "3 条入 2 缓冲必须 Lagged(1)（容量生效）: {lagged}"
+        );
+        // 覆盖后缓冲内剩余的是最后两条（i=1, i=2）
+        let evt = rx.recv().await.unwrap();
+        assert_eq!(evt.payload["i"], 1);
+        let evt = rx.recv().await.unwrap();
+        assert_eq!(evt.payload["i"], 2);
     }
 }

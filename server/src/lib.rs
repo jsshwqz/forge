@@ -83,6 +83,15 @@ impl Metrics {
     }
 }
 
+/// DEP-001 D2：SSE 广播缓冲容量（`FORGE_SSE_BUFFER`，默认 1024，与 docs/SCALING.md 一致）。
+fn sse_buffer() -> usize {
+    std::env::var("FORGE_SSE_BUFFER")
+        .ok()
+        .and_then(|s| s.trim().parse::<usize>().ok())
+        .filter(|n| *n > 0)
+        .unwrap_or(1024)
+}
+
 #[derive(Clone)]
 pub struct AppState {
     pub sdk: ForgeSdk,
@@ -109,7 +118,7 @@ impl AppState {
             sdk: ForgeSdk::in_memory(),
             evidence: Arc::new(InMemoryEvidenceStore::default()),
             workspaces: Arc::new(WorkspaceManager::new(std::env::temp_dir().join("forge-ws")).unwrap()),
-            event_bus: Arc::new(InMemoryEventBus::new()),
+            event_bus: Arc::new(InMemoryEventBus::with_buffer(sse_buffer())),
             instances: Arc::new(Default::default()),
             templates: Arc::new(Default::default()),
             metrics: Arc::new(Metrics::default()),
@@ -125,7 +134,7 @@ impl AppState {
             sdk: ForgeSdk::from_stores(tasks, sessions),
             evidence: Arc::new(InMemoryEvidenceStore::default()),
             workspaces: Arc::new(WorkspaceManager::new(std::env::temp_dir().join("forge-ws")).unwrap()),
-            event_bus: Arc::new(InMemoryEventBus::new()),
+            event_bus: Arc::new(InMemoryEventBus::with_buffer(sse_buffer())),
             instances: Arc::new(Default::default()),
             templates: Arc::new(Default::default()),
             metrics: Arc::new(Metrics::default()),
@@ -725,7 +734,7 @@ pub async fn run_from_env() -> Result<(), Box<dyn std::error::Error>> {
                     sdk: ForgeSdk::postgres(&url).await?,
                     evidence: Arc::new(InMemoryEvidenceStore::default()),
                     workspaces: Arc::new(WorkspaceManager::new(std::env::temp_dir().join("forge-ws")).unwrap()),
-                    event_bus: Arc::new(InMemoryEventBus::new()),
+                    event_bus: Arc::new(InMemoryEventBus::with_buffer(sse_buffer())),
                     instances: Arc::new(Default::default()),
                     templates: Arc::new(Default::default()),
                     metrics: Arc::new(Metrics::default()),

@@ -57,10 +57,41 @@ pub(crate) fn dec<T: DeserializeOwned>(s: &str) -> ForgeResult<T> {
     serde_json::from_str(s).map_err(|e| ForgeError::InvalidState(format!("decode failed: {e}")))
 }
 
+/// 连接池上下限解析（DEP-001 D1：`FORGE_DB_MAX_CONN`/`FORGE_DB_MIN_CONN`）。
+///
+/// 纯函数便于离线测试；默认 (10, 2) 与 docs/SCALING.md D1 表一致。
+/// max ≤ 0 或解析失败回退默认；min 越界（≥max 或 <0）回退 2。
+pub(crate) fn parse_pool_bounds(max: Option<&str>, min: Option<&str>) -> (u32, u32) {
+    let def: (u32, u32) = (10, 2);
+    let max_v = max
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .and_then(|s| s.parse::<u32>().ok())
+        .filter(|n| *n > 0)
+        .unwrap_or(def.0);
+    let min_v = min
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .and_then(|s| s.parse::<u32>().ok())
+        .filter(|n| *n < max_v)
+        .unwrap_or(def.1.min(max_v));
+    (max_v, min_v)
+}
+
+/// 读取连接池上下限：env `FORGE_DB_MAX_CONN` / `FORGE_DB_MIN_CONN`（DEP-001 D1）。
+pub fn pool_bounds_from_env() -> (u32, u32) {
+    parse_pool_bounds(
+        std::env::var("FORGE_DB_MAX_CONN").ok().as_deref(),
+        std::env::var("FORGE_DB_MIN_CONN").ok().as_deref(),
+    )
+}
+
 /// 建池并执行幂等 DDL 迁移。
 pub async fn connect_and_migrate(url: &str) -> ForgeResult<PgPool> {
+    let (max_conn, min_conn) = pool_bounds_from_env();
     let pool = PgPoolOptions::new()
-        .max_connections(5)
+        .max_connections(max_conn)
+        .min_connections(min_conn)
         .acquire_timeout(Duration::from_secs(5))
         .connect(url)
         .await
@@ -174,3 +205,31 @@ INSERT INTO quotas (tenant_id, max_concurrent, daily_tasks)
 VALUES ('default', 4, 100)
 ON CONFLICT (tenant_id) DO NOTHING;
 "#;
+
+#[cfg(test)]
+mod pool_bounds_tests {
+    use super::parse_pool_bounds;
+
+    #[test]
+    fn defaults_when_unset() {
+        assert_eq!(parse_pool_bounds(None, None), (10, 2));
+        assert_eq!(parse_pool_bounds(Some(""), Some("")), (10, 2));
+    }
+
+    #[test]
+    fn env_values_win() {
+        assert_eq!(parse_pool_bounds(Some("20"), Some("5")), (20, 5));
+        assert_eq!(parse_pool_bounds(Some(" 30 "), None), (30, 2));
+    }
+
+    #[test]
+    fn invalid_falls_back() {
+        assert_eq!(parse_pool_bounds(Some("abc"), Some("x")), (10, 2));
+        assert_eq!(parse_pool_bounds(Some("0"), None), (10, 2));
+    }
+
+    #[test]
+    fn min_clamped_below_max() {
+        assert_eq!(parse_pool_bounds(Some("2"), Some("9")), (2, 2));
+    }
+}
