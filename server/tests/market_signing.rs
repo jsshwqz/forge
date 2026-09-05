@@ -196,3 +196,59 @@ async fn install_requires_valid_signature() {
     .await;
     assert_eq!(status, StatusCode::FORBIDDEN, "错签名 release 必须拒绝安装: {body}");
 }
+
+/// 冻结测试（MKT-102）：install 钉 yanked 版本 → 409；"*" 解析跳过 yanked → 404。
+#[tokio::test]
+async fn pinned_to_yanked_conflict_409() {
+    let Ok(url) = std::env::var("FORGE_PG_URL") else {
+        eprintln!("[skip] FORGE_PG_URL 未设置——本测试需真实 PostgreSQL");
+        return;
+    };
+    let pool = connect_and_migrate(&url).await.unwrap();
+    sqlx::query("DELETE FROM releases").execute(&pool).await.unwrap();
+    sqlx::query("DELETE FROM publisher_keys").execute(&pool).await.unwrap();
+
+    let (_, pk) = signing::generate_keypair();
+    sqlx::query("INSERT INTO publisher_keys (publisher_id, public_key) VALUES ('pub-y', $1)")
+        .bind(&pk)
+        .execute(&pool)
+        .await
+        .unwrap();
+    sqlx::query(
+        "INSERT INTO releases (name, version, publisher_id, package_hash, signature, review_status, yanked) \
+         VALUES ('cap-yank', '1.0.0', 'pub-y', 'hash-y', $1, 'published', true)",
+    )
+    .bind("ab".repeat(64))
+    .execute(&pool)
+    .await
+    .unwrap();
+
+    let mut st = AppState::in_memory();
+    st.pool = Some(pool);
+    st.capabilities.register(Capability {
+        id: forge_core::new_capability_id(),
+        name: "cap-yank".into(),
+        kind: CapabilityKind::Tool,
+        version: "1.0.0".into(),
+        entry: "cap_yank".into(),
+        status: CapabilityStatus::Registered,
+        permission: forge_exec::PermissionLevel::ReadOnly,
+    }).await.unwrap();
+    let app = app_with_state(st);
+
+    // 钉 yanked → 409（显式优于静默）
+    let (status, body) = send(
+        app.clone(),
+        post_json("/market/install", serde_json::json!({"name": "cap-yank", "version": "1.0.0"}), None),
+    )
+    .await;
+    assert_eq!(status, StatusCode::CONFLICT, "钉 yanked 必须 409: {body}");
+
+    // "*" 解析：唯一版本被 yanked 排除 → 无兼容版本
+    let (status, _body) = send(
+        app,
+        post_json("/market/install", serde_json::json!({"name": "cap-yank", "version": "*"}), None),
+    )
+    .await;
+    assert_eq!(status, StatusCode::NOT_FOUND, "全 yanked 时 * 必须 404");
+}

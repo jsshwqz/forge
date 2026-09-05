@@ -128,7 +128,65 @@ pub async fn install_capability(
     Json(req): Json<InstallRequest>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
     let caps = state.capabilities.find_by_name(&req.name).await.map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    let cap = caps.into_iter().find(|c| c.version == req.version).ok_or((StatusCode::NOT_FOUND, "capability not found".into()))?;
+
+    // MKT-102：version 字段语义升级——精确版钉版安装；约束版（^0.1/~0.1/*）解析
+    let yanked: std::collections::HashSet<String> = if let Some(pool) = state.pool.clone() {
+        sqlx::query_as("SELECT version FROM releases WHERE name = $1 AND yanked = true")
+            .bind(&req.name)
+            .fetch_all(&pool)
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?
+            .into_iter()
+            .map(|(v,): (String,)| v)
+            .collect()
+    } else {
+        Default::default()
+    };
+
+    let target: String = if let Ok(pinned) = semver::Version::parse(&req.version) {
+        // R2 钉版命中 yanked → 409（显式优于静默）
+        if yanked.contains(&req.version) {
+            return Err((StatusCode::CONFLICT, "version yanked".into()));
+        }
+        pinned.to_string()
+    } else if let Ok(_req) = semver::VersionReq::parse(&req.version) {
+        // R1：resolve 排除 yanked/deprecated（flags 来自 releases 表）
+        let mut metas: Vec<forge_cap::versioning::VersionMeta> = Vec::new();
+        if let Some(pool) = state.pool.clone() {
+            let flags: Vec<(String, bool, bool)> = sqlx::query_as(
+                "SELECT version, yanked, deprecated FROM releases WHERE name = $1",
+            )
+            .bind(&req.name)
+            .fetch_all(&pool)
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+            for c in &caps {
+                if let Ok(v) = semver::Version::parse(&c.version) {
+                    let (y, d) = flags
+                        .iter()
+                        .find(|(ver, _, _)| *ver == c.version)
+                        .map(|(_, y, d)| (*y, *d))
+                        .unwrap_or((false, false));
+                    metas.push(forge_cap::versioning::VersionMeta { version: v, yanked: y, deprecated: d });
+                }
+            }
+        } else {
+            for c in &caps {
+                if let Ok(v) = semver::Version::parse(&c.version) {
+                    metas.push(forge_cap::versioning::VersionMeta::clean(v));
+                }
+            }
+        }
+        match forge_cap::versioning::resolve_version_meta(&req.version, &metas) {
+            Some(v) => v.to_string(),
+            None => return Err((StatusCode::NOT_FOUND, "no compatible version".into())),
+        }
+    } else {
+        // 非 semver 字符串：保持既有精确匹配行为
+        req.version.clone()
+    };
+
+    let cap = caps.into_iter().find(|c| c.version == target).ok_or((StatusCode::NOT_FOUND, "capability not found".into()))?;
 
     // MKT-101 R2 出站复验：存在 release 记录的 (name, version) 必须验签通过
     if let Some(pool) = state.pool.clone() {
@@ -289,11 +347,12 @@ pub async fn list_releases(
     let Some(pool) = state.pool.clone() else {
         return Err((StatusCode::SERVICE_UNAVAILABLE, "releases require PostgreSQL storage".into()));
     };
-    let rows: Vec<(String, String, String, String, String)> = if let Some(name) = &q.kind {
+    // R1：yanked 对目录列表不可见；deprecated 可见（带标记，resolve 侧排除）
+    let rows: Vec<(String, String, String, String, String, bool)> = if let Some(name) = &q.kind {
         // kind 字段在 releases 语境下复用为 name 过滤（保持分页参数一致）
         sqlx::query_as(
-            "SELECT name, version, publisher_id, review_status, package_hash FROM releases \
-             WHERE name = $1 ORDER BY id",
+            "SELECT name, version, publisher_id, review_status, package_hash, deprecated FROM releases \
+             WHERE yanked = false AND name = $1 ORDER BY id",
         )
         .bind(name)
         .fetch_all(&pool)
@@ -301,7 +360,8 @@ pub async fn list_releases(
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?
     } else {
         sqlx::query_as(
-            "SELECT name, version, publisher_id, review_status, package_hash FROM releases ORDER BY id",
+            "SELECT name, version, publisher_id, review_status, package_hash, deprecated FROM releases \
+             WHERE yanked = false ORDER BY id",
         )
         .fetch_all(&pool)
         .await
@@ -309,9 +369,10 @@ pub async fn list_releases(
     };
     let items: Vec<serde_json::Value> = rows
         .into_iter()
-        .map(|(name, version, publisher_id, review_status, package_hash)| {
+        .map(|(name, version, publisher_id, review_status, package_hash, deprecated)| {
             serde_json::json!({ "name": name, "version": version, "publisher_id": publisher_id,
-                                "review_status": review_status, "package_hash": package_hash })
+                                "review_status": review_status, "package_hash": package_hash,
+                                "deprecated": deprecated })
         })
         .collect();
     Ok(Json(serde_json::json!({ "items": items, "total": items.len() })))

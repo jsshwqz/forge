@@ -4,6 +4,7 @@
 
 pub mod registry;
 pub mod signing;
+pub mod versioning;
 
 pub use registry::{
     Capability, CapabilityKind, CapabilityRegistry, CapabilityStatus,

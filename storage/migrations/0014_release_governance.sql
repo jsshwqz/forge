@@ -1,0 +1,4 @@
+-- MKT-102: 版本治理（build_v60.md AF-BP-V60A；同时内嵌于 storage::MIGRATIONS）
+
+ALTER TABLE releases ADD COLUMN IF NOT EXISTS deprecated BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE releases ADD COLUMN IF NOT EXISTS yanked     BOOLEAN NOT NULL DEFAULT false;

@@ -237,6 +237,10 @@ CREATE TABLE IF NOT EXISTS releases (
     review_status TEXT NOT NULL DEFAULT 'pending',
     UNIQUE(name, version, publisher_id)
 );
+
+-- MKT-102：版本治理（storage/migrations/0014 同款，内嵌保证真实应用）
+ALTER TABLE releases ADD COLUMN IF NOT EXISTS deprecated BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE releases ADD COLUMN IF NOT EXISTS yanked     BOOLEAN NOT NULL DEFAULT false;
 "#;
 
 #[cfg(test)]
