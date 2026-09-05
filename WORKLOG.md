@@ -933,3 +933,10 @@ versioning.rs契约(resolve/resolve_meta/should_upgrade); 迁移0014双轨; inst
 
 ---
 
+## [R7-014] ⚠️ 偏差/风险 · 2026-09-06 · D盘满触发构建失败(os error 112), 清理target构建产物释放24GB
+
+- **任务 ID**：V60A
+V6.0先行批施工中磁盘满(deps/incremental膨胀); 删除target/debug下incremental+deps+build释放24GB后恢复; 教训: 长会话高频cargo run需监控D盘余量(基准阈值10GB), 低于阈值先清target/debug/incremental
+
+---
+

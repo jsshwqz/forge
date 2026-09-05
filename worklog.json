@@ -798,5 +798,13 @@
     "task_id": "MKT-102",
     "title": "MKT-102落地: semver版本治理+钉版/约束安装+G-V6A并发认领e2e",
     "body": "versioning.rs契约(resolve/resolve_meta/should_upgrade); 迁移0014双轨; install钉版yanked 409/约束解析排除yanked+deprecated/无果404; releases列表隐藏yanked; G-V6A门禁第2条: 100任务双worker恰执行100次不丢不重(真实PG); workspace 366 passed/clippy零告警"
+  },
+  {
+    "id": "R7-014",
+    "kind": "R7DeviationRisk",
+    "date": "2026-09-06",
+    "task_id": "V60A",
+    "title": "D盘满触发构建失败(os error 112), 清理target构建产物释放24GB",
+    "body": "V6.0先行批施工中磁盘满(deps/incremental膨胀); 删除target/debug下incremental+deps+build释放24GB后恢复; 教训: 长会话高频cargo run需监控D盘余量(基准阈值10GB), 低于阈值先清target/debug/incremental"
   }
 ]
