@@ -832,6 +832,9 @@ pub fn app_with_state(st: AppState) -> Router {
         .route("/market/capabilities", get(routes::market::list_capabilities))
             .route("/market/templates", get(routes::market::list_market_templates))
             .route("/market/install", post(routes::market::install_capability))
+        .route("/market/publish", post(routes::market::publish_release))
+        .route("/market/review", post(routes::market::review_release))
+        .route("/market/releases", get(routes::market::list_releases))
         .route("/", get(ui_index))
         .route("/ui/sessions", get(ui_sessions))
         .route("/ui/evidence", get(ui_evidence));

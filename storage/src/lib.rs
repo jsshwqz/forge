@@ -219,6 +219,24 @@ CREATE TABLE IF NOT EXISTS task_queue (
 );
 CREATE INDEX IF NOT EXISTS idx_task_queue_claim
     ON task_queue(status, lease_expires_at) WHERE status IN ('pending','claimed');
+
+-- MKT-101：发布者生态与签名（storage/migrations/0013 同款，内嵌保证真实应用）
+CREATE TABLE IF NOT EXISTS publisher_keys (
+    publisher_id TEXT PRIMARY KEY,
+    public_key   TEXT NOT NULL,
+    created_at   TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS releases (
+    id           BIGSERIAL PRIMARY KEY,
+    name         TEXT NOT NULL,
+    version      TEXT NOT NULL,
+    publisher_id TEXT NOT NULL REFERENCES publisher_keys(publisher_id),
+    package_hash TEXT NOT NULL,
+    signature    TEXT NOT NULL,
+    review_status TEXT NOT NULL DEFAULT 'pending',
+    UNIQUE(name, version, publisher_id)
+);
 "#;
 
 #[cfg(test)]

@@ -130,6 +130,11 @@ pub async fn install_capability(
     let caps = state.capabilities.find_by_name(&req.name).await.map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     let cap = caps.into_iter().find(|c| c.version == req.version).ok_or((StatusCode::NOT_FOUND, "capability not found".into()))?;
 
+    // MKT-101 R2 出站复验：存在 release 记录的 (name, version) 必须验签通过
+    if let Some(pool) = state.pool.clone() {
+        install_signature_recheck(&pool, &req.name, &req.version).await?;
+    }
+
     if cap.status == forge_cap::CapabilityStatus::Active {
         return Ok(Json(serde_json::json!({ "id": cap.id, "installed": true })));
     }
@@ -140,4 +145,203 @@ pub async fn install_capability(
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
     Ok(Json(serde_json::json!({ "id": cap.id, "installed": true })))
+}
+
+// ==================== MKT-101：发布者生态与签名（V6.0） ====================
+
+use axum::http::HeaderMap;
+use forge_cap::signing;
+
+/// 签名覆盖的规范字节：`{name}\n{version}\n{package_hash}`（发布与安装复验一致）。
+fn package_bytes(name: &str, version: &str, package_hash: &str) -> Vec<u8> {
+    format!("{name}\n{version}\n{package_hash}").into_bytes()
+}
+
+#[derive(serde::Deserialize)]
+pub struct PublishRequest {
+    pub name: String,
+    pub version: String,
+    pub package_hash: String,
+    pub signature: String,
+}
+
+/// POST /market/publish — 发布者提交 release（Publisher-Key 头 = publisher_id）。
+///
+/// R2 入站验签：签名必须匹配该 publisher 登记公钥；未登记 publisher → 403。
+/// R3：私钥永不经过服务端（发布者本地签名），这里只接触公钥与签名。
+pub async fn publish_release(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+    Json(req): Json<PublishRequest>,
+) -> Result<(axum::http::StatusCode, Json<serde_json::Value>), (StatusCode, String)> {
+    let Some(pool) = state.pool.clone() else {
+        return Err((StatusCode::SERVICE_UNAVAILABLE, "releases require PostgreSQL storage".into()));
+    };
+    let publisher_id = headers
+        .get("Publisher-Key")
+        .and_then(|v| v.to_str().ok())
+        .unwrap_or("")
+        .trim()
+        .to_string();
+    if publisher_id.is_empty() {
+        return Err((StatusCode::FORBIDDEN, "missing Publisher-Key".into()));
+    }
+    let pk: Option<(String,)> = sqlx::query_as(
+        "SELECT public_key FROM publisher_keys WHERE publisher_id = $1",
+    )
+    .bind(&publisher_id)
+    .fetch_optional(&pool)
+    .await
+    .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let Some((public_key,)) = pk else {
+        return Err((StatusCode::FORBIDDEN, "unknown publisher".into()));
+    };
+
+    // R2 入站验签：伪造/错误签名一律 403
+    let bytes = package_bytes(&req.name, &req.version, &req.package_hash);
+    let ok = signing::verify_package(&public_key, &bytes, &req.signature)
+        .map_err(|e| (StatusCode::BAD_REQUEST, e.to_string()))?;
+    if !ok {
+        return Err((StatusCode::FORBIDDEN, "signature verification failed".into()));
+    }
+
+    let (release_id,): (i64,) = sqlx::query_as(
+        "INSERT INTO releases (name, version, publisher_id, package_hash, signature) \
+         VALUES ($1, $2, $3, $4, $5) RETURNING id",
+    )
+    .bind(&req.name)
+    .bind(&req.version)
+    .bind(&publisher_id)
+    .bind(&req.package_hash)
+    .bind(&req.signature)
+    .fetch_one(&pool)
+    .await
+    .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    Ok((
+        axum::http::StatusCode::ACCEPTED,
+        Json(serde_json::json!({ "release_id": release_id, "review_status": "pending" })),
+    ))
+}
+
+#[derive(serde::Deserialize)]
+pub struct ReviewRequest {
+    pub release_id: i64,
+    pub verdict: String,
+}
+
+/// POST /market/review — 审核裁决（仅 DEFAULT_TENANT 管理员；Local 模式视为 default）。
+///
+/// R1 状态机：pending→approved（自动转 published）/ pending→rejected（终态）；
+/// 其余迁移一律拒绝（409）。
+pub async fn review_release(
+    State(state): State<AppState>,
+    outcome: axum::Extension<crate::auth::AuthOutcome>,
+    Json(req): Json<ReviewRequest>,
+) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    // 管理员门禁：Tenant 仅 default；Local（本地模式）视为 default 管理员
+    let tenant = match outcome.0 {
+        crate::auth::AuthOutcome::Tenant(t) => t,
+        crate::auth::AuthOutcome::Local => crate::auth::DEFAULT_TENANT.to_string(),
+    };
+    if tenant != crate::auth::DEFAULT_TENANT {
+        return Err((StatusCode::FORBIDDEN, "review requires default tenant admin".into()));
+    }
+    let Some(pool) = state.pool.clone() else {
+        return Err((StatusCode::SERVICE_UNAVAILABLE, "releases require PostgreSQL storage".into()));
+    };
+
+    let (status,): (String,) = sqlx::query_as(
+        "SELECT review_status FROM releases WHERE id = $1",
+    )
+    .bind(req.release_id)
+    .fetch_optional(&pool)
+    .await
+    .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?
+    .ok_or((StatusCode::NOT_FOUND, "release not found".into()))?;
+
+    // 先校验 verdict 合法性（未知裁决一律 400），再做状态机迁移
+    let new_status = match req.verdict.as_str() {
+        "approved" => "published", // R1：approved 自动转 published
+        "rejected" => "rejected",
+        other => return Err((StatusCode::BAD_REQUEST, format!("invalid verdict: {other}"))),
+    };
+    if status != "pending" {
+        return Err((
+            StatusCode::CONFLICT,
+            format!("invalid transition: {status} is terminal or already reviewed"),
+        ));
+    }
+    sqlx::query("UPDATE releases SET review_status = $2 WHERE id = $1")
+        .bind(req.release_id)
+        .bind(new_status)
+        .execute(&pool)
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    Ok(Json(serde_json::json!({ "release_id": req.release_id, "review_status": new_status })))
+}
+
+/// GET /market/releases?name= — release 目录（公开只读）。
+pub async fn list_releases(
+    State(state): State<AppState>,
+    Query(q): Query<CapabilitiesQuery>,
+) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    let Some(pool) = state.pool.clone() else {
+        return Err((StatusCode::SERVICE_UNAVAILABLE, "releases require PostgreSQL storage".into()));
+    };
+    let rows: Vec<(String, String, String, String, String)> = if let Some(name) = &q.kind {
+        // kind 字段在 releases 语境下复用为 name 过滤（保持分页参数一致）
+        sqlx::query_as(
+            "SELECT name, version, publisher_id, review_status, package_hash FROM releases \
+             WHERE name = $1 ORDER BY id",
+        )
+        .bind(name)
+        .fetch_all(&pool)
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?
+    } else {
+        sqlx::query_as(
+            "SELECT name, version, publisher_id, review_status, package_hash FROM releases ORDER BY id",
+        )
+        .fetch_all(&pool)
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?
+    };
+    let items: Vec<serde_json::Value> = rows
+        .into_iter()
+        .map(|(name, version, publisher_id, review_status, package_hash)| {
+            serde_json::json!({ "name": name, "version": version, "publisher_id": publisher_id,
+                                "review_status": review_status, "package_hash": package_hash })
+        })
+        .collect();
+    Ok(Json(serde_json::json!({ "items": items, "total": items.len() })))
+}
+
+/// R2 出站复验（MKT-002 install）：存在 release 记录的 (name, version) 必须验签通过；
+/// 无 release 记录的既有内存能力不受影响。
+pub(crate) async fn install_signature_recheck(
+    pool: &sqlx::PgPool,
+    name: &str,
+    version: &str,
+) -> Result<(), (StatusCode, String)> {
+    let row: Option<(String, String, String)> = sqlx::query_as(
+        "SELECT r.signature, r.package_hash, pk.public_key FROM releases r \
+         JOIN publisher_keys pk ON pk.publisher_id = r.publisher_id \
+         WHERE r.name = $1 AND r.version = $2 ORDER BY r.id DESC LIMIT 1",
+    )
+    .bind(name)
+    .bind(version)
+    .fetch_optional(pool)
+    .await
+    .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let Some((signature, package_hash, public_key)) = row else {
+        return Ok(()); // 无 release 记录：非签名发布路径
+    };
+    let bytes = package_bytes(name, version, &package_hash);
+    let ok = signing::verify_package(&public_key, &bytes, &signature)
+        .map_err(|e| (StatusCode::FORBIDDEN, e.to_string()))?;
+    if !ok {
+        return Err((StatusCode::FORBIDDEN, "install rejected: invalid release signature".into()));
+    }
+    Ok(())
 }

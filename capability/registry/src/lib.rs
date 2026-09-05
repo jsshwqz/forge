@@ -3,6 +3,7 @@
 //! 一切 Skill/Tool/MCP/API 先注册、后使用。
 
 pub mod registry;
+pub mod signing;
 
 pub use registry::{
     Capability, CapabilityKind, CapabilityRegistry, CapabilityStatus,
