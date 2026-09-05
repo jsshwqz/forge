@@ -204,6 +204,21 @@ CREATE TABLE IF NOT EXISTS quotas (
 INSERT INTO quotas (tenant_id, max_concurrent, daily_tasks)
 VALUES ('default', 4, 100)
 ON CONFLICT (tenant_id) DO NOTHING;
+
+-- FED-001：多副本任务队列（storage/migrations/0012 同款，内嵌保证真实应用——R7-010）
+CREATE TABLE IF NOT EXISTS task_queue (
+    id           BIGSERIAL PRIMARY KEY,
+    task_id      TEXT NOT NULL,
+    tenant_id    TEXT NOT NULL DEFAULT 'default',
+    payload      JSONB NOT NULL,
+    status       TEXT NOT NULL DEFAULT 'pending',
+    claimed_by   TEXT,
+    claimed_at   TIMESTAMPTZ,
+    lease_expires_at TIMESTAMPTZ,
+    created_at   TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_task_queue_claim
+    ON task_queue(status, lease_expires_at) WHERE status IN ('pending','claimed');
 "#;
 
 #[cfg(test)]

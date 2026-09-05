@@ -6,6 +6,8 @@
 //!       非 loopback 监听未配 key 拒绝启动。
 
 pub mod auth;
+pub mod bus;
+pub mod queue;
 pub mod quota;
 pub mod routes;
 
@@ -110,6 +112,8 @@ pub struct AppState {
     pub tenant_keys: Arc<dyn auth::TenantKeyStore>,
     /// V5.0 TEN-003：租户配额存储（V5-FIX-2b 接线）。
     pub quotas: Arc<dyn quota::QuotaStore>,
+    /// V6.0 FED-001：PG 连接池（内存模式为 None，队列路径由此门控）。
+    pub pool: Option<sqlx::PgPool>,
 }
 
 impl AppState {
@@ -127,6 +131,7 @@ impl AppState {
             auth: AuthConfig::from_env(),
             tenant_keys: Arc::new(auth::InMemoryTenantKeyStore::default()),
             quotas: Arc::new(quota::InMemoryQuotaStore::default()),
+            pool: None,
         }
     }
     pub fn new(tasks: Arc<dyn TaskStore>, sessions: Arc<dyn SessionStore>) -> Self {
@@ -143,6 +148,7 @@ impl AppState {
             auth: AuthConfig::from_env(),
             tenant_keys: Arc::new(auth::InMemoryTenantKeyStore::default()),
             quotas: Arc::new(quota::InMemoryQuotaStore::default()),
+            pool: None,
         }
     }
 }
@@ -258,23 +264,13 @@ async fn get_session(State(st): State<AppState>, Path(id): Path<String>) -> Resu
     Ok(Json(st.sdk.sessions().get(&SessionId::from(id)).await?))
 }
 
-async fn orchestrate(
-    State(st): State<AppState>,
-    outcome: axum::Extension<auth::AuthOutcome>,
-    Json(req): Json<OrchestrateRequest>,
-) -> Result<Json<serde_json::Value>, ApiError> {
-    // TEN-003（V5-FIX-2b）：身份解析后、执行前检查配额
-    let tenant = match outcome.0 {
-        auth::AuthOutcome::Tenant(t) => t,
-        auth::AuthOutcome::Local => auth::DEFAULT_TENANT.to_string(),
-    };
-    let qv = st.quotas.of(&tenant).await.map_err(ApiError::from)?;
-    let running = st.sdk.tasks().count_running(&tenant).await.map_err(ApiError::from)?;
-    let today_count = st.sdk.tasks().count_today(&tenant).await.map_err(ApiError::from)?;
-    quota::check_quota(&qv, running, today_count).await.map_err(ApiError::from)?;
-
-    let task = st.sdk.create_task(req.goal.clone(), vec![], req.acceptance.clone()).await?;
-
+/// 执行一次编排（FED-001 R4 抽取：HTTP 直连路径与队列 worker 共用同一执行体）。
+async fn execute_orchestration(
+    st: &AppState,
+    task: &Task,
+    timeout_secs: u64,
+    codegen_flag: bool,
+) -> Result<forge_sdk::OrchestratorReport, ApiError> {
     // 工具集：echo(基线) + write_file("写软件"落盘能力，根=任务工作目录)
     let router = ToolRouter::new();
     router.register(Box::new(EchoTool::new())).map_err(ApiError::from)?;
@@ -294,7 +290,7 @@ async fn orchestrate(
             .unwrap_or_default()
             .trim()
             .is_empty();
-    let planner: Option<Arc<dyn forge_planner::Planner>> = if llm_ready && req.codegen_flag {
+    let planner: Option<Arc<dyn forge_planner::Planner>> = if llm_ready && codegen_flag {
         match build_llm_planner().await {
             Ok(p) => Some(p),
             Err(e) => {
@@ -313,7 +309,7 @@ async fn orchestrate(
         verifier_file: Arc::new(FileVerifier),
         evidence: st.evidence.clone(),
         workspace: st.workspaces.clone(),
-        timeout: Duration::from_secs(req.timeout_secs),
+        timeout: Duration::from_secs(timeout_secs),
         // ORCH-003：服务端默认有界重试 + 无 LLM 重规划器（V3.2 流水线再接入真实重规划）
         recovery: Arc::new(forge_recovery::BoundedRetryStrategy {
             max_attempts: 1,
@@ -323,10 +319,15 @@ async fn orchestrate(
         max_replans: 1,
         planner,
     };
-    let orch = Orchestrator { capability: "echo".into(), timeout: Duration::from_secs(req.timeout_secs) };
+    let orch = Orchestrator { capability: "echo".into(), timeout: Duration::from_secs(timeout_secs) };
     let report = st.sdk.run_end_to_end(&task.id, &deps, &orch).await.map_err(ApiError::from)?;
 
-    // OBS-002：执行计数与验收结果计数
+    record_report(st, &report).await;
+    Ok(report)
+}
+
+/// OBS-002 计数 + GA-FIX-2 失败自动入知识库（直连路径与队列 worker 共用）。
+async fn record_report(st: &AppState, report: &forge_sdk::OrchestratorReport) {
     use std::sync::atomic::Ordering;
     st.metrics.executions_total.fetch_add(1, Ordering::Relaxed);
     for v in &report.verifications {
@@ -340,7 +341,6 @@ async fn orchestrate(
         .replans_total
         .fetch_add(u64::from(report.replans_used), Ordering::Relaxed);
 
-    // GA-FIX-2：失败自动入知识库（KNW-001 服务面闭环）
     if report.final_status == TaskStatus::Failed {
         let summary = report
             .execution
@@ -363,8 +363,11 @@ async fn orchestrate(
                 .await;
         }
     }
+}
 
-    Ok(Json(serde_json::json!({
+/// 编排报告 → HTTP 响应体（直连与队列自认领共用，字段形状冻结）。
+fn report_response(report: &forge_sdk::OrchestratorReport) -> Json<serde_json::Value> {
+    Json(serde_json::json!({
         "task_id": report.task_id.to_string(),
         "final_status": format!("{:?}", report.final_status),
         "gate_passed": report.gate.passed,
@@ -373,7 +376,129 @@ async fn orchestrate(
         "replans_used": report.replans_used,
         "escalated_to_human": report.escalated_to_human,
         "plan_versions": report.plan_versions.iter().map(|p| p.as_str()).collect::<Vec<_>>(),
-    })))
+    }))
+}
+
+async fn orchestrate(
+    State(st): State<AppState>,
+    outcome: axum::Extension<auth::AuthOutcome>,
+    Json(req): Json<OrchestrateRequest>,
+) -> Result<Json<serde_json::Value>, ApiError> {
+    // TEN-003（V5-FIX-2b）：身份解析后、执行前检查配额
+    let tenant = match outcome.0 {
+        auth::AuthOutcome::Tenant(t) => t,
+        auth::AuthOutcome::Local => auth::DEFAULT_TENANT.to_string(),
+    };
+    let qv = st.quotas.of(&tenant).await.map_err(ApiError::from)?;
+    let running = st.sdk.tasks().count_running(&tenant).await.map_err(ApiError::from)?;
+    let today_count = st.sdk.tasks().count_today(&tenant).await.map_err(ApiError::from)?;
+    quota::check_quota(&qv, running, today_count).await.map_err(ApiError::from)?;
+
+    let task = st.sdk.create_task(req.goal.clone(), vec![], req.acceptance.clone()).await?;
+
+    // FED-001 R4：PG 模式且未设 FORGE_QUEUE_INLINE=1 时走"入队 → 认领循环执行"。
+    // 单副本行为等价：本 handler 自认领自己的任务并同步返回完整报告；
+    // 多副本下自己的任务可能被其它副本 worker 抢走 → 轮询任务状态至终态，
+    // 返回降级响应（final_status 可得，报告明细留在执行副本）。
+    let inline = std::env::var("FORGE_QUEUE_INLINE").ok().as_deref() == Some("1");
+    if let Some(pool) = st.pool.clone() {
+        if !inline {
+            let payload = serde_json::json!({
+                "timeout_secs": req.timeout_secs,
+                "codegen_flag": req.codegen_flag,
+            });
+            queue::enqueue_orchestration(&pool, task.id.as_ref(), &tenant, payload)
+                .await
+                .map_err(ApiError::from)?;
+
+            let worker = queue::new_worker_id();
+            loop {
+                let claimed = queue::claim_next_task(&pool, &worker, 300)
+                    .await
+                    .map_err(ApiError::from)?;
+                match claimed {
+                    Some(qt) => {
+                        let ours = qt.task_id == task.id.as_ref();
+                        let result = execute_queued(&st, &qt).await;
+                        let _ = queue::complete_task(&pool, qt.id, result.is_ok()).await;
+                        if ours {
+                            let report = result?;
+                            return Ok(report_response(&report));
+                        }
+                        // 认领到了其它副本入队的任务：执行完继续找自己的
+                    }
+                    None => {
+                        // 无可认领 → 自己的任务在其它副本手里，轮询至终态
+                        return Ok(poll_terminal_response(&st, &task, req.timeout_secs).await);
+                    }
+                }
+            }
+        }
+    }
+
+    let report = execute_orchestration(&st, &task, req.timeout_secs, req.codegen_flag).await?;
+    Ok(report_response(&report))
+}
+
+/// 队列 worker 执行体：按 payload 取任务并跑完整编排。
+async fn execute_queued(st: &AppState, qt: &queue::QueuedTask) -> Result<forge_sdk::OrchestratorReport, ApiError> {
+    let task = st
+        .sdk
+        .get_task(&TaskId::from(qt.task_id.clone()))
+        .await
+        .map_err(ApiError::from)?;
+    let timeout_secs = qt.payload["timeout_secs"].as_u64().unwrap_or(30);
+    let codegen_flag = qt.payload["codegen_flag"].as_bool().unwrap_or(true);
+    execute_orchestration(st, &task, timeout_secs, codegen_flag).await
+}
+
+/// 降级响应：任务被其它副本 worker 认领，轮询本库任务状态至终态。
+async fn poll_terminal_response(
+    st: &AppState,
+    task: &Task,
+    timeout_secs: u64,
+) -> Json<serde_json::Value> {
+    let deadline = tokio::time::Instant::now() + Duration::from_secs(timeout_secs + 30);
+    let mut final_status = String::from("Pending");
+    while tokio::time::Instant::now() < deadline {
+        tokio::time::sleep(Duration::from_millis(300)).await;
+        if let Ok(t) = st.sdk.get_task(&task.id).await {
+            final_status = format!("{:?}", t.status);
+            if matches!(t.status, TaskStatus::Completed | TaskStatus::Failed) {
+                break;
+            }
+        }
+    }
+    Json(serde_json::json!({
+        "task_id": task.id.to_string(),
+        "final_status": final_status,
+        "queued": true,
+    }))
+}
+
+/// FED-001：后台认领循环（FORGE_QUEUE_WORKER=1 时启用，多副本部署口径）。
+async fn worker_loop(st: AppState, worker_id: String) {
+    let Some(pool) = st.pool.clone() else { return };
+    match queue::reap_expired_leases(&pool).await {
+        Ok(n) if n > 0 => eprintln!("queue worker: reaped {n} expired leases"),
+        Err(e) => eprintln!("queue worker: reap failed: {e}"),
+        _ => {}
+    }
+    loop {
+        match queue::claim_next_task(&pool, &worker_id, 300).await {
+            Ok(Some(qt)) => {
+                let ok = execute_queued(&st, &qt).await.is_ok();
+                if let Err(e) = queue::complete_task(&pool, qt.id, ok).await {
+                    eprintln!("queue worker: complete failed: {e}");
+                }
+            }
+            Ok(None) => tokio::time::sleep(Duration::from_millis(200)).await,
+            Err(e) => {
+                eprintln!("queue worker: claim failed: {e}");
+                tokio::time::sleep(Duration::from_secs(1)).await;
+            }
+        }
+    }
 }
 
 async fn put_evidence(
@@ -730,8 +855,13 @@ pub async fn run_from_env() -> Result<(), Box<dyn std::error::Error>> {
         let state = match std::env::var("FORGE_PG_URL") {
             Ok(url) => {
                 println!("storage: PostgreSQL ({url})");
+                // FED-001：显式建池（含 DEP-001 env 参数化），AppState 持有以支撑队列路径
+                let pool = forge_storage::connect_and_migrate(&url).await?;
                 AppState {
-                    sdk: ForgeSdk::postgres(&url).await?,
+                    sdk: ForgeSdk::from_stores(
+                        Arc::new(forge_storage::PgTaskStore::new(pool.clone())),
+                        Arc::new(forge_storage::PgSessionStore::new(pool.clone())),
+                    ),
                     evidence: Arc::new(InMemoryEvidenceStore::default()),
                     workspaces: Arc::new(WorkspaceManager::new(std::env::temp_dir().join("forge-ws")).unwrap()),
                     event_bus: Arc::new(InMemoryEventBus::with_buffer(sse_buffer())),
@@ -743,10 +873,17 @@ pub async fn run_from_env() -> Result<(), Box<dyn std::error::Error>> {
                     auth: AuthConfig::from_env(),
                     tenant_keys: Arc::new(auth::InMemoryTenantKeyStore::default()),
                     quotas: Arc::new(quota::InMemoryQuotaStore::default()),
+                    pool: Some(pool),
                 }
             }
             Err(_) => { println!("storage: in-memory"); AppState::in_memory() }
         };
+        // FED-001：多副本部署口径下显式拉起后台认领 worker（FORGE_QUEUE_WORKER=1）
+        if state.pool.is_some() && std::env::var("FORGE_QUEUE_WORKER").ok().as_deref() == Some("1") {
+            let wid = queue::new_worker_id();
+            println!("queue worker started ({wid})");
+            tokio::spawn(worker_loop(state.clone(), wid));
+        }
     let app = app_with_state(state);
     let addr = format!("{host}:{port}")
         .parse::<std::net::SocketAddr>()
