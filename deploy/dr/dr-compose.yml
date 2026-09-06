@@ -1,0 +1,42 @@
+# DR-001: PG 流复制容灾编排（build_v60c.md 契约冻结：服务名/端口/镜像三要素）
+# primary@25432 / standby@25433，与生产 forge-pg@15432 完全隔离
+# MinIO 桶复制暂缓（未投产）—— TODO(DR-001-followup)
+services:
+  dr-primary:
+    image: postgres:16-alpine
+    container_name: forge-dr-primary
+    command: ["postgres", "-c", "wal_level=replica", "-c", "max_wal_senders=5"]
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: forge
+      POSTGRES_DB: forge
+    ports:
+      - "25432:5432"
+    volumes:
+      - pgprimarydata:/var/lib/postgresql/data
+      - ./primary-init.sql:/docker-entrypoint-initdb.d/10-repl.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  dr-standby:
+    image: postgres:16-alpine
+    container_name: forge-dr-standby
+    # 先空卷待命（sleep），由 standby-setup.sh basebackup 后以真 postgres 接管
+    entrypoint: ["sleep", "infinity"]
+    ports:
+      - "25433:5432"
+    volumes:
+      - pgstandbydata:/var/lib/postgresql/data
+
+networks:
+  default:
+    name: forge-dr-net
+
+volumes:
+  pgprimarydata:
+    name: forge-dr-pgdata
+  pgstandbydata:
+    name: forge-dr-standbydata
