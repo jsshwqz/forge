@@ -846,5 +846,13 @@
     "task_id": "G-V6A",
     "title": "G-V6A/G-V6B正式放行(用户2026-09-06确认)",
     "body": "用户于userselect中确认G-V6A、G-V6B两项门禁放行; V6.0六包(FED-001/002,MKT-101/102,BILL-001/002)全部正式闭合; 先行批报告与BILL章节证据链齐备; 解除V6.0范围冻结, 后续按V7.0展望或尾批解冻推进"
+  },
+  {
+    "id": "R1-062",
+    "kind": "R1Completed",
+    "date": "2026-09-06",
+    "task_id": "V60C",
+    "title": "V6.0尾批施工规格预供落盘(build_v60c.md, 队友规划代理产出)",
+    "body": "规划队友代理按AF-BP范式产出: KNW-101(沙箱复现验证+approve账本+本地分支format-patch=PR等价物, 主干HEAD不变红线, 7条冻结测试离线可跑)+DR-001(PG流复制primary/standby@25432/25433+真实promote演练S1~S10+RPO/RTO实测入档, MinIO复制暂缓); 零新增依赖零新增迁移; 开工条件=用户批准本规格; 规划层复核通过(格式/红线/冻结名/停止条件齐备)"
   }
 ]
