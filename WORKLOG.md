@@ -1024,3 +1024,10 @@ dr-compose+standby-setup(basebackup -R真搭建)+dr_drill剧本; kill_primary SI
 
 ---
 
+## [R1-067] ✅ 成功 · 2026-09-07 · ORCH-101规格预供(build_v70a.md)+roadmap_v7修订(主线程完成, 子代理通道不稳)
+
+- **任务 ID**：V70
+子代理连续4次失败(captcha×2/model×2/并发×2)后切换主线: ①build_v70a.md=ORCH-101三段规格(a多步规划接通LlmPlanner+重规划回路/b多文件工程+沙箱运行验收/c MCP工具接入), 前置决议D10解除V5.1红线(面精确限定, Irreversible永禁), 零新增依赖, 冻结测试11条; ②roadmap_v7修订: 缺口表+执行力行/ORCH-101包(最高优先实用分水岭)/D9先行批改ORCH-101+TEN-004+BILL-003/D10分叉/依赖图更新; 架构探查结论: SDK波次执行是真的, 缺的是多步规划喂入=接线工程
+
+---
+
