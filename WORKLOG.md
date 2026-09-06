@@ -996,3 +996,10 @@ llm_token计量需取complete_with_usage; planner加pub meter: Option<Arc<dyn Ll
 
 ---
 
+## [R1-064] ✅ 成功 · 2026-09-07 · KNW-101落地: 沙箱复现验证+approve账本+分支补丁, 7冻结测试+CLI全环冒烟
+
+- **任务 ID**：KNW-101
+verify/forge_pr按AF-BP-V60C契约; 主干HEAD不变红线测试断言; D3账本+≤5上限; 白名单路径核对; 修复同内容并发互撞(进程互斥)/format-patch相对路径丢失/Windows前缀; CLI全环冒烟: verify→approve→pr补丁落盘主干未动; workspace 383 passed/clippy零告警
+
+---
+
