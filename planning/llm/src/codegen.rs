@@ -33,6 +33,8 @@ pub struct SingleFileCodegenPlanner<B: LlmPlanBackend + ?Sized> {
     pub model: String,
     /// LLM 失败/输出不合规时的回退规划器（现状行为：顺序计划）。
     pub fallback: SequentialPlanner,
+    /// BILL-001 R6-026：token 计量钩子（默认 None；增量字段，new() 签名不变）。
+    pub meter: Option<Arc<dyn crate::usage::LlmMeter>>,
 }
 
 impl<B: LlmPlanBackend + ?Sized> SingleFileCodegenPlanner<B> {
@@ -41,6 +43,7 @@ impl<B: LlmPlanBackend + ?Sized> SingleFileCodegenPlanner<B> {
             backend,
             model: model.into(),
             fallback: SequentialPlanner { capability: "echo".into() },
+            meter: None,
         }
     }
 }
@@ -89,10 +92,13 @@ impl<B: LlmPlanBackend + ?Sized + 'static> Planner for SingleFileCodegenPlanner<
         let run = async {
             // ① 文件名（短输出）
             let name_user = format!("Task: {}\nPick the best output filename.", task.goal);
-            let name_raw = self
+            let (name_raw, name_usage) = self
                 .backend
-                .complete(&self.model, &[ChatMessage::system(NAME_SYS), ChatMessage::user(name_user)])
+                .complete_with_usage(&self.model, &[ChatMessage::system(NAME_SYS), ChatMessage::user(name_user)])
                 .await?;
+            if let (Some(m), Some(u)) = (&self.meter, name_usage) {
+                m.on_usage(&self.model, "codegen:filename", u.prompt_tokens, u.completion_tokens);
+            }
             let filename = first_line(&strip_code_fence(&name_raw));
 
             // R2：规划层路径防线
@@ -111,10 +117,13 @@ impl<B: LlmPlanBackend + ?Sized + 'static> Planner for SingleFileCodegenPlanner<
                 "Filename: {filename}\nIt will be verified by:\n{ac_text}\nGoal: {goal}\nWrite the complete file now.",
                 goal = task.goal,
             );
-            let raw = self
+            let (raw, code_usage) = self
                 .backend
-                .complete(&self.model, &[ChatMessage::system(CODE_SYS), ChatMessage::user(code_user)])
+                .complete_with_usage(&self.model, &[ChatMessage::system(CODE_SYS), ChatMessage::user(code_user)])
                 .await?;
+            if let (Some(m), Some(u)) = (&self.meter, code_usage) {
+                m.on_usage(&self.model, "codegen:body", u.prompt_tokens, u.completion_tokens);
+            }
             let content = strip_code_fence(&raw);
 
             Ok((filename, content))

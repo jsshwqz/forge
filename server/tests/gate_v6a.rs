@@ -26,14 +26,9 @@ async fn concurrent_claim_e2e_100_tasks_no_loss_no_duplication() {
     // 双 worker 认领循环（模拟两个副本进程），认领即视为执行并 complete
     let run_worker = |wid: String, pool: sqlx::PgPool| async move {
         let mut executed: Vec<String> = Vec::new();
-        loop {
-            match queue::claim_next_task(&pool, &wid, 300).await.unwrap() {
-                Some(qt) => {
-                    queue::complete_task(&pool, qt.id, true).await.unwrap();
-                    executed.push(qt.task_id);
-                }
-                None => break,
-            }
+        while let Some(qt) = queue::claim_next_task(&pool, &wid, 300).await.unwrap() {
+            queue::complete_task(&pool, qt.id, true).await.unwrap();
+            executed.push(qt.task_id);
         }
         executed
     };

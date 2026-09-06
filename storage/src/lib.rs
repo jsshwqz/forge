@@ -241,6 +241,17 @@ CREATE TABLE IF NOT EXISTS releases (
 -- MKT-102：版本治理（storage/migrations/0014 同款，内嵌保证真实应用）
 ALTER TABLE releases ADD COLUMN IF NOT EXISTS deprecated BOOLEAN NOT NULL DEFAULT false;
 ALTER TABLE releases ADD COLUMN IF NOT EXISTS yanked     BOOLEAN NOT NULL DEFAULT false;
+
+-- BILL-001：计量流水（storage/migrations/0015 同款，内嵌保证真实应用）
+CREATE TABLE IF NOT EXISTS usage_events (
+    id        BIGSERIAL PRIMARY KEY,
+    tenant_id TEXT NOT NULL DEFAULT 'default',
+    kind      TEXT NOT NULL,
+    quantity  BIGINT NOT NULL,
+    meta      JSONB NOT NULL DEFAULT '{}'::jsonb,
+    at        TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_usage_tenant_at ON usage_events(tenant_id, at);
 "#;
 
 #[cfg(test)]

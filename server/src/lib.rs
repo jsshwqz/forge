@@ -6,6 +6,7 @@
 //!       非 loopback 监听未配 key 拒绝启动。
 
 pub mod auth;
+pub mod billing;
 pub mod bus;
 pub mod queue;
 pub mod quota;
@@ -271,11 +272,13 @@ async fn execute_orchestration(
     task: &Task,
     timeout_secs: u64,
     codegen_flag: bool,
+    tenant: &str,
 ) -> Result<forge_sdk::OrchestratorReport, ApiError> {
     // 工具集：echo(基线) + write_file("写软件"落盘能力，根=任务工作目录)
     let router = ToolRouter::new();
     router.register(Box::new(EchoTool::new())).map_err(ApiError::from)?;
     let workdir = st.workspaces.create_for(task.id.as_ref()).map_err(ApiError::from)?;
+    let workdir_for_scan = workdir.clone();
     router
         .register(Box::new(forge_exec::WriteFileTool::new(workdir)))
         .map_err(ApiError::from)?;
@@ -291,8 +294,16 @@ async fn execute_orchestration(
             .unwrap_or_default()
             .trim()
             .is_empty();
+    // BILL-001：LLM token 计量钩子（R6-026，构造期注入）
+    let meter = st
+        .pool
+        .clone()
+        .map(|pool| {
+            Arc::new(billing::PgLlmMeter { pool, tenant: tenant.to_string() })
+                as Arc<dyn forge_plan_llm::usage::LlmMeter>
+        });
     let planner: Option<Arc<dyn forge_planner::Planner>> = if llm_ready && codegen_flag {
-        match build_llm_planner().await {
+        match build_llm_planner(meter).await {
             Ok(p) => Some(p),
             Err(e) => {
                 eprintln!("orchestrate: LLM planner unavailable ({e}), falling back to sequential");
@@ -322,6 +333,15 @@ async fn execute_orchestration(
     };
     let orch = Orchestrator { capability: "echo".into(), timeout: Duration::from_secs(timeout_secs) };
     let report = st.sdk.run_end_to_end(&task.id, &deps, &orch).await.map_err(ApiError::from)?;
+
+    // BILL-001：三维度计量（R4 失败只 warn 不阻断）
+    if let Some(pool) = st.pool.clone() {
+        billing::record_usage(&pool, tenant, "task_count", 1,
+            serde_json::json!({ "task_id": task.id.to_string() })).await;
+        let bytes = billing::workspace_bytes(&workdir_for_scan).await;
+        billing::record_usage(&pool, tenant, "storage_bytes", bytes as i64,
+            serde_json::json!({ "task_id": task.id.to_string() })).await;
+    }
 
     record_report(st, &report).await;
     Ok(report)
@@ -420,7 +440,7 @@ async fn orchestrate(
                 match claimed {
                     Some(qt) => {
                         let ours = qt.task_id == task.id.as_ref();
-                        let result = execute_queued(&st, &qt).await;
+                        let result = execute_queued(&st, &qt, &tenant).await;
                         let _ = queue::complete_task(&pool, qt.id, result.is_ok()).await;
                         if ours {
                             let report = result?;
@@ -437,12 +457,12 @@ async fn orchestrate(
         }
     }
 
-    let report = execute_orchestration(&st, &task, req.timeout_secs, req.codegen_flag).await?;
+    let report = execute_orchestration(&st, &task, req.timeout_secs, req.codegen_flag, &tenant).await?;
     Ok(report_response(&report))
 }
 
 /// 队列 worker 执行体：按 payload 取任务并跑完整编排。
-async fn execute_queued(st: &AppState, qt: &queue::QueuedTask) -> Result<forge_sdk::OrchestratorReport, ApiError> {
+async fn execute_queued(st: &AppState, qt: &queue::QueuedTask, tenant: &str) -> Result<forge_sdk::OrchestratorReport, ApiError> {
     let task = st
         .sdk
         .get_task(&TaskId::from(qt.task_id.clone()))
@@ -450,7 +470,7 @@ async fn execute_queued(st: &AppState, qt: &queue::QueuedTask) -> Result<forge_s
         .map_err(ApiError::from)?;
     let timeout_secs = qt.payload["timeout_secs"].as_u64().unwrap_or(30);
     let codegen_flag = qt.payload["codegen_flag"].as_bool().unwrap_or(true);
-    execute_orchestration(st, &task, timeout_secs, codegen_flag).await
+    execute_orchestration(st, &task, timeout_secs, codegen_flag, tenant).await
 }
 
 /// 降级响应：任务被其它副本 worker 认领，轮询本库任务状态至终态。
@@ -488,7 +508,7 @@ async fn worker_loop(st: AppState, worker_id: String) {
     loop {
         match queue::claim_next_task(&pool, &worker_id, 300).await {
             Ok(Some(qt)) => {
-                let ok = execute_queued(&st, &qt).await.is_ok();
+                let ok = execute_queued(&st, &qt, &qt.tenant_id).await.is_ok();
                 if let Err(e) = queue::complete_task(&pool, qt.id, ok).await {
                     eprintln!("queue worker: complete failed: {e}");
                 }
@@ -710,6 +730,51 @@ async fn knowledge_export_handler(
     Ok(Json(archive))
 }
 
+// ==================== BILL-001 计量查询面 ====================
+
+#[derive(Deserialize)]
+pub struct UsageQuery {
+    pub tenant: Option<String>,
+    /// RFC3339，缺省 = 近 30 天
+    pub from: Option<String>,
+    pub to: Option<String>,
+}
+
+async fn admin_usage(
+    State(st): State<AppState>,
+    outcome: axum::Extension<auth::AuthOutcome>,
+    Query(q): Query<UsageQuery>,
+) -> Result<Json<serde_json::Value>, ApiError> {
+    let caller = match outcome.0 {
+        auth::AuthOutcome::Tenant(t) => t,
+        auth::AuthOutcome::Local => auth::DEFAULT_TENANT.to_string(),
+    };
+    let tenant = q.tenant.clone().unwrap_or_else(|| caller.clone());
+    // 门禁：本租户或 DEFAULT_TENANT 管理员
+    if caller != tenant && caller != auth::DEFAULT_TENANT {
+        return Err(ApiError(StatusCode::FORBIDDEN, "usage query requires default tenant admin".into()));
+    }
+    let Some(pool) = st.pool.clone() else {
+        return Err(ApiError(StatusCode::SERVICE_UNAVAILABLE, "usage requires PostgreSQL storage".into()));
+    };
+    let parse = |s: &Option<String>, default| -> Result<chrono::DateTime<chrono::Utc>, ApiError> {
+        match s {
+            Some(v) => chrono::DateTime::parse_from_rfc3339(v)
+                .map(|d| d.with_timezone(&chrono::Utc))
+                .map_err(|e| ApiError(StatusCode::BAD_REQUEST, format!("bad rfc3339: {e}"))),
+            None => Ok(default),
+        }
+    };
+    let to = parse(&q.to, chrono::Utc::now())?;
+    let from = parse(&q.from, to - chrono::Duration::days(30))?;
+    let rows = billing::summarize_usage(&pool, &tenant, from, to).await.map_err(ApiError::from)?;
+    let items: Vec<serde_json::Value> = rows
+        .into_iter()
+        .map(|(kind, sum)| serde_json::json!({ "kind": kind, "sum": sum }))
+        .collect();
+    Ok(Json(serde_json::json!({ "tenant": tenant, "from": from.to_rfc3339(), "to": to.to_rfc3339(), "items": items })))
+}
+
 // ==================== UI-001 Web 控制台（纯静态零构建） ====================
 
 async fn ui_index() -> Html<&'static str> {
@@ -724,18 +789,22 @@ async fn ui_evidence() -> Html<&'static str> {
 
 /// 构建服务端 LLM 规划器（V5.1 CGN-001 落位 R6-021：实现迁至 forge-plan-llm
 /// crate 冻结契约，此处仅装配；单文件代码生成，纯文本双调用，对小上限模型鲁棒）。
-async fn build_llm_planner() -> Result<Arc<dyn forge_planner::Planner>, String> {
+async fn build_llm_planner(
+    meter: Option<Arc<dyn forge_plan_llm::usage::LlmMeter>>,
+) -> Result<Arc<dyn forge_planner::Planner>, String> {
     let base = std::env::var("FORGE_LLM_BASE_URL").unwrap_or_default();
     let key = std::env::var("FORGE_LLM_API_KEY").unwrap_or_default();
     let backend: Arc<dyn forge_plan_llm::LlmPlanBackend> =
         Arc::new(forge_api::LlmClient::new(base, key));
-    Ok(Arc::new(forge_plan_llm::SingleFileCodegenPlanner::new(
+    let mut planner = forge_plan_llm::SingleFileCodegenPlanner::new(
         backend,
         std::env::var("FORGE_TIER_HIGH_MODEL")
             .ok()
             .filter(|m| !m.trim().is_empty())
             .unwrap_or_else(|| "glm-5.2".into()),
-    )))
+    );
+    planner.meter = meter;
+    Ok(Arc::new(planner))
 }
 /// GET /events/stream — SSE 实时事件流（API-003；FED-002 跨副本合并）。
 async fn events_stream(
@@ -835,6 +904,7 @@ pub fn app_with_state(st: AppState) -> Router {
         .route("/market/publish", post(routes::market::publish_release))
         .route("/market/review", post(routes::market::review_release))
         .route("/market/releases", get(routes::market::list_releases))
+        .route("/admin/usage", get(admin_usage))
         .route("/", get(ui_index))
         .route("/ui/sessions", get(ui_sessions))
         .route("/ui/evidence", get(ui_evidence));
