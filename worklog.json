@@ -806,5 +806,21 @@
     "task_id": "V60A",
     "title": "D盘满触发构建失败(os error 112), 清理target构建产物释放24GB",
     "body": "V6.0先行批施工中磁盘满(deps/incremental膨胀); 删除target/debug下incremental+deps+build释放24GB后恢复; 教训: 长会话高频cargo run需监控D盘余量(基准阈值10GB), 低于阈值先清target/debug/incremental"
+  },
+  {
+    "id": "R6-025",
+    "kind": "R6Decision",
+    "date": "2026-09-06",
+    "task_id": "V60B",
+    "title": "D4修订: BILL-001/002提前启动(计量流水是'运营数据'的前置), KNW-101/DR-001维持暂缓",
+    "body": "用户2026-09-06拍板选择'BILL-001+002(推荐)'; 论据: D4'视运营数据再启'而运营数据依赖BILL-001计量, 先启BILL-001即满足D4前置; 施工规格=build_v60b.md(AF-BP-V60B-001); KNW-101/DR-001维持D4暂缓"
+  },
+  {
+    "id": "R6-026",
+    "kind": "R6Decision",
+    "date": "2026-09-06",
+    "task_id": "V51-001",
+    "title": "BILL-001 R6-026: SingleFileCodegenPlanner增可选meter字段(增量,不改new签名)",
+    "body": "llm_token计量需取complete_with_usage; planner加pub meter: Option<Arc<dyn LlmMeter>>(默认None), new()签名不变, V5.1冻结测试(mock无usage+meter None)不受影响; 属增量字段非契约破坏"
   }
 ]

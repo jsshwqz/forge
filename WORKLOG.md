@@ -940,3 +940,17 @@ V6.0先行批施工中磁盘满(deps/incremental膨胀); 删除target/debug下in
 
 ---
 
+## [R6-025] ⚖️ 决策 · 2026-09-06 · D4修订: BILL-001/002提前启动(计量流水是'运营数据'的前置), KNW-101/DR-001维持暂缓
+
+- **任务 ID**：V60B
+用户2026-09-06拍板选择'BILL-001+002(推荐)'; 论据: D4'视运营数据再启'而运营数据依赖BILL-001计量, 先启BILL-001即满足D4前置; 施工规格=build_v60b.md(AF-BP-V60B-001); KNW-101/DR-001维持D4暂缓
+
+---
+
+## [R6-026] ⚖️ 决策 · 2026-09-06 · BILL-001 R6-026: SingleFileCodegenPlanner增可选meter字段(增量,不改new签名)
+
+- **任务 ID**：V51-001
+llm_token计量需取complete_with_usage; planner加pub meter: Option<Arc<dyn LlmMeter>>(默认None), new()签名不变, V5.1冻结测试(mock无usage+meter None)不受影响; 属增量字段非契约破坏
+
+---
+
