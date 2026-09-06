@@ -710,5 +710,21 @@
   "owner": "executor",
   "last_record": "R1-060",
   "commit": "e52bca3"
+ },
+ {
+  "task_id": "KNW-101",
+  "name": "全环自进化——沙箱复现验证与本地分支补丁生成",
+  "status": "Completed",
+  "owner": "executor",
+  "last_record": "R1-064",
+  "commit": "0fcb99f"
+ },
+ {
+  "task_id": "DR-001",
+  "name": "PG流复制部署编排与容灾演练剧本",
+  "status": "Completed",
+  "owner": "executor",
+  "last_record": "R1-065",
+  "commit": "15757b0"
  }
 ]

@@ -1010,3 +1010,10 @@ dr-compose+standby-setup(basebackup -R真搭建)+dr_drill剧本; kill_primary SI
 
 ---
 
+## [R1-066] ✅ 成功 · 2026-09-07 · G-V6C门禁四项核验通过(V6.0尾批, V6.0全量闭合)
+
+- **任务 ID**：G-V6C
+①workspace三命令全绿(FORGE_PG_URL 383 passed/0 failed两连跑+clippy零告警); ②KNW全环演练: CLI冒烟实测 注入失败→verify(REPRODUCED)→approve→pr补丁落盘, 主干HEAD不变, 补丁roundtrip apply --check通过(冻结测试在案), 人工合入门禁保留; ③红线抽测: 无approve被拒(forge_pr_requires_approval_ledger)/6用例被拒(forge_pr_case_cap_five)/白名单外路径被拒(VerificationFailed+清理, 冻结测试在案); ④DR演练记录: dr_drill S1~S10全PASS, RPO=0字节/RTO=3.8s实测入档DR_EXERCISE.md八字段齐
+
+---
+

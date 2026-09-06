@@ -886,5 +886,13 @@
     "task_id": "DR-001",
     "title": "DR-001落地: PG流复制真实演练S1~S10全PASS(RPO=0/RTO=3.8s)",
     "body": "dr-compose+standby-setup(basebackup -R真搭建)+dr_drill剧本; kill_primary SIGKILL真宕机+pg_ctl promote真切换(禁止重启冒充); RPO=LSN差实测(负差值归一化0,原始值入证据), RTO=3.8s远低于120s上限; 演练幂等可重跑(S8/S10销毁复核+生产forge-pg隔离验证); 零代码面改动R5(workspace全绿)"
+  },
+  {
+    "id": "R1-066",
+    "kind": "R1Completed",
+    "date": "2026-09-07",
+    "task_id": "G-V6C",
+    "title": "G-V6C门禁四项核验通过(V6.0尾批, V6.0全量闭合)",
+    "body": "①workspace三命令全绿(FORGE_PG_URL 383 passed/0 failed两连跑+clippy零告警); ②KNW全环演练: CLI冒烟实测 注入失败→verify(REPRODUCED)→approve→pr补丁落盘, 主干HEAD不变, 补丁roundtrip apply --check通过(冻结测试在案), 人工合入门禁保留; ③红线抽测: 无approve被拒(forge_pr_requires_approval_ledger)/6用例被拒(forge_pr_case_cap_five)/白名单外路径被拒(VerificationFailed+清理, 冻结测试在案); ④DR演练记录: dr_drill S1~S10全PASS, RPO=0字节/RTO=3.8s实测入档DR_EXERCISE.md八字段齐"
   }
 ]

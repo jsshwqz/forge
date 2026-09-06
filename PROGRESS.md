@@ -93,3 +93,5 @@
 | MKT-102 | 版本治理与semver解析 | ✅ 完成 | executor | R1-059 | 620fc12 |
 | BILL-001 | 计量流水三维度落库与聚合查询 | ✅ 完成 | executor | R1-060 | 0d2c8e6 |
 | BILL-002 | 费率表+幂等账单生成与JSON/CSV导出 | ✅ 完成 | executor | R1-060 | e52bca3 |
+| KNW-101 | 全环自进化——沙箱复现验证与本地分支补丁生成 | ✅ 完成 | executor | R1-064 | 0fcb99f |
+| DR-001 | PG流复制部署编排与容灾演练剧本 | ✅ 完成 | executor | R1-065 | 15757b0 |
