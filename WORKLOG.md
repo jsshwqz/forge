@@ -954,3 +954,10 @@ llm_token计量需取complete_with_usage; planner加pub meter: Option<Arc<dyn Ll
 
 ---
 
+## [R1-060] ✅ 成功 · 2026-09-06 · BILL-002落地: 幂等账单字节一致+CSV导出+租户隔离五测试全绿
+
+- **任务 ID**：BILL-002
+费率per-tenant整数微货币; 账单upsert幂等(doc_hash=sha256(固定键序doc), 附usage_hash); unrated计0列明; CSV表头/字典序冻结; admin仅default租户; 修复并行测试互删流水的竞态(租户域清理), 6连跑压稳; workspace 375 passed/clippy零告警
+
+---
+

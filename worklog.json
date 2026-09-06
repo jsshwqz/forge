@@ -822,5 +822,13 @@
     "task_id": "V51-001",
     "title": "BILL-001 R6-026: SingleFileCodegenPlanner增可选meter字段(增量,不改new签名)",
     "body": "llm_token计量需取complete_with_usage; planner加pub meter: Option<Arc<dyn LlmMeter>>(默认None), new()签名不变, V5.1冻结测试(mock无usage+meter None)不受影响; 属增量字段非契约破坏"
+  },
+  {
+    "id": "R1-060",
+    "kind": "R1Completed",
+    "date": "2026-09-06",
+    "task_id": "BILL-002",
+    "title": "BILL-002落地: 幂等账单字节一致+CSV导出+租户隔离五测试全绿",
+    "body": "费率per-tenant整数微货币; 账单upsert幂等(doc_hash=sha256(固定键序doc), 附usage_hash); unrated计0列明; CSV表头/字典序冻结; admin仅default租户; 修复并行测试互删流水的竞态(租户域清理), 6连跑压稳; workspace 375 passed/clippy零告警"
   }
 ]
