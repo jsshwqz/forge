@@ -961,3 +961,10 @@ llm_token计量需取complete_with_usage; planner加pub meter: Option<Arc<dyn Ll
 
 ---
 
+## [R1-061] ✅ 成功 · 2026-09-06 · G-V6B门禁四项核验通过(BILL线)
+
+- **任务 ID**：G-V6B
+①workspace三命令全绿: FORGE_PG_URL下3连跑各375 passed/0 failed+clippy零告警; ②计量三维度e2e: usage_three_dimensions_recorded真实PG orchestrate后task_count=1/storage_bytes≥0/无LLM无token事件; ③幂等重放: bill_recompute_is_byte_identical同流水重算两次doc字节一致+doc_hash一致; ④CSV导出roundtrip正确(表头/字典序/金额冻结形态). 附加: 修复并行测试互删流水的竞态(租户域清理,6连跑压稳)
+
+---
+

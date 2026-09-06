@@ -91,3 +91,5 @@
 | FED-002 | 跨副本SSE事件广播 | ✅ 完成 | executor | R1-057 | 3ed148d |
 | MKT-101 | 发布者签名生态与审核状态机 | ✅ 完成 | executor | R1-058 | 7eaae91 |
 | MKT-102 | 版本治理与semver解析 | ✅ 完成 | executor | R1-059 | 620fc12 |
+| BILL-001 | 计量流水三维度落库与聚合查询 | ✅ 完成 | executor | R1-060 | 0d2c8e6 |
+| BILL-002 | 费率表+幂等账单生成与JSON/CSV导出 | ✅ 完成 | executor | R1-060 | e52bca3 |
