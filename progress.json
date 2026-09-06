@@ -694,5 +694,21 @@
   "owner": "executor",
   "last_record": "R1-059",
   "commit": "620fc12"
+ },
+ {
+  "task_id": "BILL-001",
+  "name": "计量流水三维度落库与聚合查询",
+  "status": "Completed",
+  "owner": "executor",
+  "last_record": "R1-060",
+  "commit": "0d2c8e6"
+ },
+ {
+  "task_id": "BILL-002",
+  "name": "费率表+幂等账单生成与JSON/CSV导出",
+  "status": "Completed",
+  "owner": "executor",
+  "last_record": "R1-060",
+  "commit": "HEAD"
  }
 ]
