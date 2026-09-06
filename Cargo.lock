@@ -615,9 +615,15 @@ dependencies = [
 name = "forge-cli"
 version = "0.1.0"
 dependencies = [
+ "chrono",
  "clap",
+ "forge-exec",
  "forge-knowledge",
+ "forge-sandbox",
  "forge-server",
+ "forge-session",
+ "serde_json",
+ "tempfile",
  "tokio",
 ]
 
@@ -703,9 +709,12 @@ dependencies = [
  "forge-core",
  "forge-exec",
  "forge-recovery",
+ "forge-sandbox",
  "forge-session",
  "serde",
  "serde_json",
+ "sha2",
+ "tempfile",
  "tokio",
 ]
 

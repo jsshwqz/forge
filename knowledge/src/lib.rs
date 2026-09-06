@@ -6,10 +6,14 @@
 //! 复用既有 store trait（forge-recovery / forge-session），零新存储。
 
 pub mod failures;
+pub mod forge_pr;
 pub mod suggest;
 pub mod replay;
+pub mod verify;
 
+pub use forge_pr::{append_approval, forge_pr, load_ledger, Approval, ForgePatch, KNOWLEDGE_CASES_DIR, MAX_CASES_PER_PR};
 pub use suggest::{RegressionSuggestion, suggest, write_suggestions};
+pub use verify::{case_hash, verify_suggestion, VerifyReport, VERIFY_TIMEOUT_SECS};
 pub use failures::{
     FailureKnowledgeBase, InMemoryKnowledgeBase, KnowledgeEntry,
 };

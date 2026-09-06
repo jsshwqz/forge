@@ -11,6 +11,12 @@ path = "src/main.rs"
 [dependencies]
 forge-server = { path = "../server" }
 forge-knowledge = { path = "../knowledge" }
+forge-exec = { path = "../execution/runtime" }
+forge-sandbox = { path = "../execution/sandbox" }
+forge-session = { path = "../core/session" }
+serde_json = "1"
+chrono = { version = "0.4", features = ["serde"] }
+tempfile = "3"
 tokio = { version = "1", features = ["rt-multi-thread", "macros", "net"] }
 clap = { version = "4", features = ["derive"] }
 
