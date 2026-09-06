@@ -910,5 +910,13 @@
     "task_id": "V70",
     "title": "ORCH-101规格预供(build_v70a.md)+roadmap_v7修订(主线程完成, 子代理通道不稳)",
     "body": "子代理连续4次失败(captcha×2/model×2/并发×2)后切换主线: ①build_v70a.md=ORCH-101三段规格(a多步规划接通LlmPlanner+重规划回路/b多文件工程+沙箱运行验收/c MCP工具接入), 前置决议D10解除V5.1红线(面精确限定, Irreversible永禁), 零新增依赖, 冻结测试11条; ②roadmap_v7修订: 缺口表+执行力行/ORCH-101包(最高优先实用分水岭)/D9先行批改ORCH-101+TEN-004+BILL-003/D10分叉/依赖图更新; 架构探查结论: SDK波次执行是真的, 缺的是多步规划喂入=接线工程"
+  },
+  {
+    "id": "R1-068",
+    "kind": "R1Completed",
+    "date": "2026-09-07",
+    "task_id": "V70B",
+    "title": "V7先行批三包规格预供落盘(build_v70b.md, 队友规划代理产出)",
+    "body": "FED-003(双进程e2e判据18082/18083+tenant子频道双发裁决:全频道兜底不变+信封化按需拉取GET /events零新存储)+TEN-004(PG租户钥/配额零新迁移+503降级禁内存回退+sha256口径一致)+BILL-003(六行LLM调用面审计:plan/replan/review三盲区接meter,LlmAgent范围外登记); 14条冻结测试; 零新增依赖零迁移; 规划层复核:整合修正风险编号R-32~R-36(与V70A的R-29~31冲突)"
   }
 ]
