@@ -838,5 +838,13 @@
     "task_id": "G-V6B",
     "title": "G-V6B门禁四项核验通过(BILL线)",
     "body": "①workspace三命令全绿: FORGE_PG_URL下3连跑各375 passed/0 failed+clippy零告警; ②计量三维度e2e: usage_three_dimensions_recorded真实PG orchestrate后task_count=1/storage_bytes≥0/无LLM无token事件; ③幂等重放: bill_recompute_is_byte_identical同流水重算两次doc字节一致+doc_hash一致; ④CSV导出roundtrip正确(表头/字典序/金额冻结形态). 附加: 修复并行测试互删流水的竞态(租户域清理,6连跑压稳)"
+  },
+  {
+    "id": "R6-027",
+    "kind": "R6Decision",
+    "date": "2026-09-06",
+    "task_id": "G-V6A",
+    "title": "G-V6A/G-V6B正式放行(用户2026-09-06确认)",
+    "body": "用户于userselect中确认G-V6A、G-V6B两项门禁放行; V6.0六包(FED-001/002,MKT-101/102,BILL-001/002)全部正式闭合; 先行批报告与BILL章节证据链齐备; 解除V6.0范围冻结, 后续按V7.0展望或尾批解冻推进"
   }
 ]

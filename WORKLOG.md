@@ -968,3 +968,10 @@ llm_token计量需取complete_with_usage; planner加pub meter: Option<Arc<dyn Ll
 
 ---
 
+## [R6-027] ⚖️ 决策 · 2026-09-06 · G-V6A/G-V6B正式放行(用户2026-09-06确认)
+
+- **任务 ID**：G-V6A
+用户于userselect中确认G-V6A、G-V6B两项门禁放行; V6.0六包(FED-001/002,MKT-101/102,BILL-001/002)全部正式闭合; 先行批报告与BILL章节证据链齐备; 解除V6.0范围冻结, 后续按V7.0展望或尾批解冻推进
+
+---
+
