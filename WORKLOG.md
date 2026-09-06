@@ -1003,3 +1003,10 @@ verify/forge_pr按AF-BP-V60C契约; 主干HEAD不变红线测试断言; D3账本
 
 ---
 
+## [R1-065] ✅ 成功 · 2026-09-07 · DR-001落地: PG流复制真实演练S1~S10全PASS(RPO=0/RTO=3.8s)
+
+- **任务 ID**：DR-001
+dr-compose+standby-setup(basebackup -R真搭建)+dr_drill剧本; kill_primary SIGKILL真宕机+pg_ctl promote真切换(禁止重启冒充); RPO=LSN差实测(负差值归一化0,原始值入证据), RTO=3.8s远低于120s上限; 演练幂等可重跑(S8/S10销毁复核+生产forge-pg隔离验证); 零代码面改动R5(workspace全绿)
+
+---
+
