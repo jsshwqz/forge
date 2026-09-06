@@ -139,3 +139,169 @@ mod tests {
         assert_eq!(total, 12);
     }
 }
+
+// ==================== BILL-002：费率与账单 ====================
+
+use sha2::{Digest, Sha256};
+
+fn sha256_hex(bytes: &[u8]) -> String {
+    let mut h = Sha256::new();
+    h.update(bytes);
+    h.finalize().iter().map(|b| format!("{b:02x}")).collect()
+}
+
+/// 设置/覆盖租户费率。
+pub async fn set_rate(
+    pool: &sqlx::PgPool,
+    tenant: &str,
+    kind: &str,
+    unit_price_micros: i64,
+    currency: &str,
+) -> ForgeResult<()> {
+    sqlx::query(
+        "INSERT INTO rates (tenant_id, kind, unit_price_micros, currency) VALUES ($1, $2, $3, $4) \
+         ON CONFLICT (tenant_id, kind) DO UPDATE SET unit_price_micros = $3, currency = $4",
+    )
+    .bind(tenant)
+    .bind(kind)
+    .bind(unit_price_micros)
+    .bind(currency)
+    .execute(pool)
+    .await
+    .map_err(|e| forge_core::ForgeError::InvalidState(format!("set_rate: {e}")))?;
+    Ok(())
+}
+
+/// 列出租户费率：(kind, unit_price_micros, currency)，按 kind 字典序。
+pub async fn list_rates(pool: &sqlx::PgPool, tenant: &str) -> ForgeResult<Vec<(String, i64, String)>> {
+    let rows: Vec<(String, i64, String)> = sqlx::query_as(
+        "SELECT kind, unit_price_micros, currency FROM rates WHERE tenant_id = $1 ORDER BY kind",
+    )
+    .bind(tenant)
+    .fetch_all(pool)
+    .await
+    .map_err(|e| forge_core::ForgeError::InvalidState(format!("list_rates: {e}")))?;
+    Ok(rows)
+}
+
+/// 账单行。
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize, PartialEq)]
+pub struct BillLine {
+    pub kind: String,
+    pub quantity: i64,
+    pub unit_price_micros: i64,
+    pub amount_micros: i64,
+    pub currency: String,
+}
+
+/// 账单文档（字段序固定 = 序列化字节确定；R2 全整数微货币）。
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize, PartialEq)]
+pub struct BillDoc {
+    pub tenant_id: String,
+    pub period_from: String,
+    pub period_to: String,
+    pub currency: String,
+    pub usage_hash: String,
+    pub lines: Vec<BillLine>,
+    pub unrated: Vec<String>,
+    pub total_micros: i64,
+}
+
+/// 生成/重算账单（R3 幂等：同流水 + 同费率 → doc 字节一致、doc_hash 一致）。
+///
+/// R1 费率缺失的 kind 计 0 金额并入 unrated 列；R19 doc 附 usage_hash。
+pub async fn generate_bill(
+    pool: &sqlx::PgPool,
+    tenant: &str,
+    from: chrono::DateTime<chrono::Utc>,
+    to: chrono::DateTime<chrono::Utc>,
+) -> ForgeResult<(i64, String, BillDoc)> {
+    let usage = summarize_usage(pool, tenant, from, to).await?;
+    let rates = list_rates(pool, tenant).await?;
+
+    // usage_hash：流水聚合哈希（kind:sum 按字典序拼接）
+    let usage_hash = sha256_hex(usage.iter().map(|(k, s)| format!("{k}:{s}")).collect::<Vec<_>>().join(";").as_bytes());
+
+    let rate_of = |kind: &str| rates.iter().find(|(k, _, _)| k == kind).cloned();
+    let mut lines = Vec::new();
+    let mut unrated = Vec::new();
+    let mut total = 0i64;
+    let mut currency = "CNY".to_string();
+    for (kind, sum) in &usage {
+        let (price, cur) = match rate_of(kind) {
+            Some((_, p, c)) => {
+                if !c.is_empty() {
+                    currency = c.clone();
+                }
+                (p, c)
+            }
+            None => {
+                unrated.push(kind.clone());
+                (0, currency.clone())
+            }
+        };
+        let amount = sum.saturating_mul(price);
+        total = total.saturating_add(amount);
+        lines.push(BillLine {
+            kind: kind.clone(),
+            quantity: *sum,
+            unit_price_micros: price,
+            amount_micros: amount,
+            currency: cur,
+        });
+    }
+    lines.sort_by(|a, b| a.kind.cmp(&b.kind));
+    unrated.sort();
+
+    let doc = BillDoc {
+        tenant_id: tenant.to_string(),
+        period_from: from.to_rfc3339(),
+        period_to: to.to_rfc3339(),
+        currency,
+        usage_hash,
+        lines,
+        unrated,
+        total_micros: total,
+    };
+    let doc_str = serde_json::to_string(&doc)
+        .map_err(|e| forge_core::ForgeError::InvalidState(format!("bill serialize: {e}")))?;
+    let doc_hash = sha256_hex(doc_str.as_bytes());
+
+    let (id,): (i64,) = sqlx::query_as(
+        "INSERT INTO bills (tenant_id, period_from, period_to, doc, doc_hash) \
+         VALUES ($1, $2, $3, $4, $5) \
+         ON CONFLICT (tenant_id, period_from, period_to) \
+         DO UPDATE SET doc = EXCLUDED.doc, doc_hash = EXCLUDED.doc_hash RETURNING id",
+    )
+    .bind(tenant)
+    .bind(from)
+    .bind(to)
+    .bind(serde_json::to_value(&doc).map_err(|e| forge_core::ForgeError::InvalidState(format!("bill json: {e}")))?)
+    .bind(&doc_hash)
+    .fetch_one(pool)
+    .await
+    .map_err(|e| forge_core::ForgeError::InvalidState(format!("bill upsert: {e}")))?;
+    Ok((id, doc_hash, doc))
+}
+
+/// 读取账单（doc 从 JSONB 还原为结构体——字段序由结构体决定，导出字节稳定）。
+pub async fn get_bill(pool: &sqlx::PgPool, id: i64) -> ForgeResult<Option<BillDoc>> {
+    let row: Option<(serde_json::Value,)> = sqlx::query_as("SELECT doc FROM bills WHERE id = $1")
+        .bind(id)
+        .fetch_optional(pool)
+        .await
+        .map_err(|e| forge_core::ForgeError::InvalidState(format!("get_bill: {e}")))?;
+    Ok(row.and_then(|(v,)| serde_json::from_value(v).ok()))
+}
+
+/// CSV 形态冻结：表头 + 按 kind 字典序的行（unrated 行 unit_price/amount 为 0）。
+pub fn bill_to_csv(doc: &BillDoc) -> String {
+    let mut out = String::from("kind,quantity,unit_price_micros,amount_micros,currency\n");
+    for l in &doc.lines {
+        out.push_str(&format!(
+            "{},{},{},{},{}\n",
+            l.kind, l.quantity, l.unit_price_micros, l.amount_micros, l.currency
+        ));
+    }
+    out
+}

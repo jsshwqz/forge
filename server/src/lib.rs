@@ -775,6 +775,138 @@ async fn admin_usage(
     Ok(Json(serde_json::json!({ "tenant": tenant, "from": from.to_rfc3339(), "to": to.to_rfc3339(), "items": items })))
 }
 
+// ==================== BILL-002 管理面（费率与账单，仅 DEFAULT_TENANT） ====================
+
+/// admin 门禁：Local 视为 default 管理员；非 default 租户 → 403。
+fn require_default_admin(outcome: &auth::AuthOutcome) -> Result<String, (StatusCode, String)> {
+    let tenant = match outcome {
+        auth::AuthOutcome::Tenant(t) => t.clone(),
+        auth::AuthOutcome::Local => auth::DEFAULT_TENANT.to_string(),
+    };
+    if tenant != auth::DEFAULT_TENANT {
+        return Err((StatusCode::FORBIDDEN, "admin requires default tenant".into()));
+    }
+    Ok(tenant)
+}
+
+#[derive(Deserialize)]
+pub struct SetRateRequest {
+    pub tenant_id: String,
+    pub kind: String,
+    pub unit_price_micros: i64,
+    #[serde(default = "default_currency")]
+    pub currency: String,
+}
+fn default_currency() -> String { "CNY".into() }
+
+async fn admin_set_rate(
+    State(st): State<AppState>,
+    outcome: axum::Extension<auth::AuthOutcome>,
+    Json(req): Json<SetRateRequest>,
+) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    require_default_admin(&outcome.0)?;
+    let Some(pool) = st.pool.clone() else {
+        return Err((StatusCode::SERVICE_UNAVAILABLE, "billing requires PostgreSQL storage".into()));
+    };
+    billing::set_rate(&pool, &req.tenant_id, &req.kind, req.unit_price_micros, &req.currency)
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    Ok(Json(serde_json::json!({ "tenant_id": req.tenant_id, "kind": req.kind,
+                "unit_price_micros": req.unit_price_micros, "currency": req.currency })))
+}
+
+async fn admin_list_rates(
+    State(st): State<AppState>,
+    outcome: axum::Extension<auth::AuthOutcome>,
+    Query(q): Query<std::collections::HashMap<String, String>>,
+) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    let caller = require_default_admin(&outcome.0)?;
+    let tenant = q.get("tenant_id").cloned().unwrap_or(caller);
+    let Some(pool) = st.pool.clone() else {
+        return Err((StatusCode::SERVICE_UNAVAILABLE, "billing requires PostgreSQL storage".into()));
+    };
+    let rows = billing::list_rates(&pool, &tenant)
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let items: Vec<serde_json::Value> = rows
+        .into_iter()
+        .map(|(kind, price, currency)| serde_json::json!({"kind": kind, "unit_price_micros": price, "currency": currency}))
+        .collect();
+    Ok(Json(serde_json::json!({ "tenant_id": tenant, "items": items })))
+}
+
+#[derive(Deserialize)]
+pub struct GenerateBillRequest {
+    pub tenant_id: String,
+    pub period_from: String,
+    pub period_to: String,
+}
+
+async fn admin_generate_bill(
+    State(st): State<AppState>,
+    outcome: axum::Extension<auth::AuthOutcome>,
+    Json(req): Json<GenerateBillRequest>,
+) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    require_default_admin(&outcome.0)?;
+    let Some(pool) = st.pool.clone() else {
+        return Err((StatusCode::SERVICE_UNAVAILABLE, "billing requires PostgreSQL storage".into()));
+    };
+    let parse = |v: &str| chrono::DateTime::parse_from_rfc3339(v)
+        .map(|d| d.with_timezone(&chrono::Utc))
+        .map_err(|e| (StatusCode::BAD_REQUEST, format!("bad rfc3339: {e}")));
+    let from = parse(&req.period_from)?;
+    let to = parse(&req.period_to)?;
+    let (bill_id, doc_hash, doc) = billing::generate_bill(&pool, &req.tenant_id, from, to)
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    Ok(Json(serde_json::json!({ "bill_id": bill_id, "doc_hash": doc_hash, "doc": doc })))
+}
+
+async fn admin_get_bill(
+    State(st): State<AppState>,
+    outcome: axum::Extension<auth::AuthOutcome>,
+    Path(id): Path<i64>,
+) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    require_default_admin(&outcome.0)?;
+    let Some(pool) = st.pool.clone() else {
+        return Err((StatusCode::SERVICE_UNAVAILABLE, "billing requires PostgreSQL storage".into()));
+    };
+    let doc = billing::get_bill(&pool, id)
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?
+        .ok_or((StatusCode::NOT_FOUND, "bill not found".into()))?;
+    Ok(Json(serde_json::json!({ "bill_id": id, "doc": doc })))
+}
+
+async fn admin_export_bill(
+    State(st): State<AppState>,
+    outcome: axum::Extension<auth::AuthOutcome>,
+    Path(id): Path<i64>,
+    Query(q): Query<std::collections::HashMap<String, String>>,
+) -> Result<axum::response::Response, (StatusCode, String)> {
+    require_default_admin(&outcome.0)?;
+    let Some(pool) = st.pool.clone() else {
+        return Err((StatusCode::SERVICE_UNAVAILABLE, "billing requires PostgreSQL storage".into()));
+    };
+    let doc = billing::get_bill(&pool, id)
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?
+        .ok_or((StatusCode::NOT_FOUND, "bill not found".into()))?;
+    let fmt = q.get("format").map(|s| s.as_str()).unwrap_or("json");
+    match fmt {
+        "csv" => Ok((
+            [(axum::http::header::CONTENT_TYPE, "text/csv; charset=utf-8")],
+            billing::bill_to_csv(&doc),
+        )
+            .into_response()),
+        _ => Ok((
+            [(axum::http::header::CONTENT_TYPE, "application/json")],
+            serde_json::to_string(&doc).unwrap_or_default(),
+        )
+            .into_response()),
+    }
+}
+
 // ==================== UI-001 Web 控制台（纯静态零构建） ====================
 
 async fn ui_index() -> Html<&'static str> {
@@ -905,6 +1037,10 @@ pub fn app_with_state(st: AppState) -> Router {
         .route("/market/review", post(routes::market::review_release))
         .route("/market/releases", get(routes::market::list_releases))
         .route("/admin/usage", get(admin_usage))
+        .route("/admin/rates", post(admin_set_rate).get(admin_list_rates))
+        .route("/admin/bills/generate", post(admin_generate_bill))
+        .route("/admin/bills/:id", get(admin_get_bill))
+        .route("/admin/bills/:id/export", get(admin_export_bill))
         .route("/", get(ui_index))
         .route("/ui/sessions", get(ui_sessions))
         .route("/ui/evidence", get(ui_evidence));

@@ -13,7 +13,7 @@ async fn pg_app() -> Option<axum::Router> {
         return None;
     };
     let pool = connect_and_migrate(&url).await.unwrap();
-    sqlx::query("DELETE FROM usage_events").execute(&pool).await.unwrap();
+    sqlx::query("DELETE FROM usage_events WHERE tenant_id = 'default'").execute(&pool).await.unwrap();
     sqlx::query("DELETE FROM task_queue").execute(&pool).await.unwrap();
     sqlx::query("DELETE FROM session_events").execute(&pool).await.unwrap();
     sqlx::query("DELETE FROM sessions").execute(&pool).await.unwrap();
