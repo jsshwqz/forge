@@ -5,3 +5,4 @@
 *.local.env
 
 artifacts/
+deploy/local/forge.env
