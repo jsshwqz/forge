@@ -458,6 +458,18 @@ async fn record_report(st: &AppState, report: &forge_sdk::OrchestratorReport) {
 
 /// 编排报告 → HTTP 响应体（直连与队列自认领共用，字段形状冻结）。
 fn report_response(report: &forge_sdk::OrchestratorReport) -> Json<serde_json::Value> {
+    // V7：带验收明细（verdict+reason），排障与前端直读
+    let verifications: Vec<serde_json::Value> = report
+        .verifications
+        .iter()
+        .map(|v| {
+            serde_json::json!({
+                "criterion_id": v.criterion_id,
+                "verdict": format!("{:?}", v.verdict),
+                "reason": v.reason,
+            })
+        })
+        .collect();
     Json(serde_json::json!({
         "task_id": report.task_id.to_string(),
         "final_status": format!("{:?}", report.final_status),
@@ -467,6 +479,8 @@ fn report_response(report: &forge_sdk::OrchestratorReport) -> Json<serde_json::V
         "replans_used": report.replans_used,
         "escalated_to_human": report.escalated_to_human,
         "plan_versions": report.plan_versions.iter().map(|p| p.as_str()).collect::<Vec<_>>(),
+        "verifications": verifications,
+        "evidence_ids": report.evidence_ids.iter().map(|e| e.to_string()).collect::<Vec<_>>(),
     }))
 }
 
@@ -498,7 +512,9 @@ async fn orchestrate(
             let payload = serde_json::json!({
                 "timeout_secs": req.timeout_secs,
                 "codegen_flag": req.codegen_flag,
-                "plan_mode": format!("{:?}", plan_mode).to_lowercase(),
+                // R1：经 serde 序列化（snake_case 冻结）；Debug+lowercase 曾产生
+                // "multistep" 与解析端 "multi_step" 失配——真实 E2E 撞出（V7 报告）
+                "plan_mode": plan_mode,
             });
             queue::enqueue_orchestration(&pool, task.id.as_ref(), &tenant, payload)
                 .await
@@ -541,11 +557,11 @@ async fn execute_queued(st: &AppState, qt: &queue::QueuedTask, tenant: &str) -> 
         .await
         .map_err(ApiError::from)?;
     let timeout_secs = qt.payload["timeout_secs"].as_u64().unwrap_or(30);
-    let plan_mode = match qt.payload["plan_mode"].as_str() {
-        Some("multi_step") => PlanMode::MultiStep,
-        Some("codegen") => PlanMode::Codegen,
-        _ => resolve_plan_mode(None, qt.payload["codegen_flag"].as_bool().unwrap_or(true)),
-    };
+    let plan_mode: PlanMode = qt
+        .payload
+        .get("plan_mode")
+        .and_then(|v| serde_json::from_value(v.clone()).ok())
+        .unwrap_or_else(|| resolve_plan_mode(None, qt.payload["codegen_flag"].as_bool().unwrap_or(true)));
     execute_orchestration(st, &task, timeout_secs, plan_mode, tenant).await
 }
 

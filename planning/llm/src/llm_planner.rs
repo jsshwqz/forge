@@ -108,11 +108,20 @@ impl<B: LlmPlanBackend + ?Sized> LlmPlanner<B> {
                 self.tools
             )
         };
-        let write_rule = if self.brief_mode && self.tools.iter().any(|t| t == "write_file") {
-            "\nFor write_file steps use input {\"path\":\"<relative path>\",\
-             \"brief\":\"<one-sentence description of what the file must contain>\"}. \
-             Do NOT include the file content itself."
-                .to_string()
+        let write_rule = if self.tools.iter().any(|t| t == "write_file") {
+            if self.brief_mode {
+                "\nFor write_file steps use input {\"path\":\"<relative path>\",\
+                 \"brief\":\"<one-sentence description of what the file must contain>\"}. \
+                 Do NOT include the file content itself."
+                    .to_string()
+            } else {
+                // V7 ORCH-101 真实轨修复：非 brief 模式必须冻结 write_file input
+                // 形状（path+content），否则模型自由发挥导致 missing 'path'
+                "\nFor write_file steps use input {\"path\":\"<relative path with extension>\",\
+                 \"content\":\"<complete final file content, escaped for JSON>\"}. \
+                 The content MUST be the complete file content, not a description."
+                    .to_string()
+            }
         } else {
             String::new()
         };
@@ -307,5 +316,14 @@ mod tests {
         constrained.tools = vec!["echo".into()];
         let sys = constrained.build_messages(&task)[0].content.clone();
         assert!(sys.contains("\"echo\""));
+
+        // V7 ORCH-101 冻结：write_file 工具且非 brief 模式 → 系统提示词必须
+        // 冻结 input 形状（path + content），防模型自由发挥
+        let mut wf: LlmPlanner<MockBackend> =
+            LlmPlanner::new(Arc::new(MockBackend::new(vec![])), "mock-model");
+        wf.tools = vec!["echo".into(), "write_file".into()];
+        let sys2 = wf.build_messages(&task)[0].content.clone();
+        assert!(sys2.contains("\"path\"") && sys2.contains("\"content\""),
+            "write_file 全内容规则必须在提示词中: {sys2}");
     }
 }

@@ -61,9 +61,27 @@ impl WorkspaceManager {
                 "workspace: task_id has no usable characters".into(),
             ));
         }
-        // 每次调用唯一：uuid 后缀防撞名（模块契约 ws-{task}-{短uuid}）。
-        // 修复前用纯任务 id 命名，同任务连续调用会复用同一目录，
-        // 后写的工件静默覆盖先写的——见 create_is_unique_per_call 回归。
+        // V7 ORCH-101b 修订（R6-031）：同一任务 get-or-create 幂等——
+        // 编排器内部（验证 workdir）与 handler（工具 root）各调一次 create_for，
+        // 必须落到同一目录，否则 write_file 与验收分居两处（真实 E2E 撞出的
+        // split-brain，见 V7.0 先行批报告）。跨任务仍唯一（ws-{task}- 前缀隔离）。
+        let prefix = format!("ws-{}-", safe);
+        if let Ok(entries) = std::fs::read_dir(&self.canon_root) {
+            let mut existing: Vec<PathBuf> = entries
+                .filter_map(|e| e.ok().map(|e| e.path()))
+                .filter(|p| {
+                    p.is_dir()
+                        && p.file_name()
+                            .and_then(|n| n.to_str())
+                            .map(|n| n.starts_with(&prefix))
+                            .unwrap_or(false)
+                })
+                .collect();
+            if !existing.is_empty() {
+                existing.sort();
+                return Ok(existing.remove(0));
+            }
+        }
         let suffix = uuid::Uuid::new_v4().simple();
         let dir = self.canon_root.join(format!("ws-{}-{}", safe, suffix));
         std::fs::create_dir_all(&dir).map_err(|e| io_err("workspace create", e))?;
@@ -132,31 +150,33 @@ mod tests {
         assert!(mgr.list().unwrap().is_empty());
     }
 
+    /// V7 ORCH-101b 契约（R6-031）：同任务 get-or-create 幂等，跨任务唯一。
     #[test]
-    fn create_is_unique_per_call() {
+    fn create_is_idempotent_per_task_and_unique_across_tasks() {
         let root = tempfile::tempdir().unwrap();
         let mgr = WorkspaceManager::new(root.path()).unwrap();
         let a = mgr.create_for("T").unwrap();
+        std::fs::write(a.join("artifact.txt"), b"x").unwrap();
         let b = mgr.create_for("T").unwrap();
-        assert_ne!(a, b);
+        assert_eq!(a, b, "同任务必须复用同一目录（工具与验收同仓）");
+        assert!(a.join("artifact.txt").exists(), "复用不得清空已有工件");
+        let c = mgr.create_for("OTHER").unwrap();
+        assert_ne!(a, c, "跨任务必须隔离");
         assert_eq!(mgr.list().unwrap().len(), 2);
     }
 
-    /// 高频回归：连续创建同任务目录，必须全部互不相同且都在根下。
+    /// 高频回归：同任务连续 create_for 必须幂等收敛到同一目录，且都在根下。
     #[test]
-    fn create_same_task_many_times_all_unique() {
+    fn create_same_task_many_times_idempotent() {
         let root = tempfile::tempdir().unwrap();
         let mgr = WorkspaceManager::new(root.path()).unwrap();
-        let mut dirs: Vec<PathBuf> = (0..50)
+        let dirs: Vec<PathBuf> = (0..50)
             .map(|_| mgr.create_for("SAME-TASK").unwrap())
             .collect();
-        let n = dirs.len();
-        dirs.sort();
-        dirs.dedup();
-        assert_eq!(dirs.len(), n, "50 次创建应得 50 个不同目录");
-        assert_eq!(mgr.list().unwrap().len(), n);
-        assert!(dirs.iter().all(|d| d.starts_with(mgr.root())));
-        assert!(dirs.iter().all(|d| d.file_name().unwrap().to_str().unwrap().starts_with("ws-SAME-TASK-")));
+        assert_eq!(mgr.list().unwrap().len(), 1, "同任务 50 次调用只应有 1 个目录");
+        assert!(dirs.iter().all(|d| *d == dirs[0]));
+        assert!(dirs[0].starts_with(mgr.root()));
+        assert!(dirs[0].file_name().unwrap().to_str().unwrap().starts_with("ws-SAME-TASK-"));
     }
 
     /// 清理后新建的目录不复用被删路径。

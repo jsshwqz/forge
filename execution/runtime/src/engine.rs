@@ -198,6 +198,8 @@ impl ExecutionEngine {
                 serde_json::json!({
                     "status": format!("{:?}", result.status),
                     "execution_id": result.execution_id.to_string(),
+                    // V7 可观测性：携带输出（含工具错误原因），供排障与知识采集
+                    "output": result.output,
                 }),
             )
             .await;

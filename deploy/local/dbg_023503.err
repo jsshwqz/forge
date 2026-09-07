@@ -1,0 +1,3 @@
+llm_planner[1] raw_len=399 head="{\"steps\":[{\"id\":\"s1\",\"title\":\"Write fizzbuzz.js\",\"depends_on\":[],\"action\":{\"type\":\"call\",\"capability\":\"write_file\",\"inpu"
+llm_planner[1] FAILED: invalid state: plan: missing required field 'steps' (must be array) | parsed_keys=Some(["_parse_error"]) | tail="]}]}}\"n\\}n\\}  n\\;)i(gol.elosnoc    n\\{ esle }  n\\;)'zzuB'(gol.elosnoc    n\\{ )0 === 5 % i( fi esle }  n\\;)'zziF'(gol.elosnoc    n\\{ )0 === 3 % i( fi e"
+llm_planner[2] raw_len=399 head="{\"steps\":[{\"id\":\"s1\",\"title\":\"Write fizzbuzz.js\",\"depends_on\":[],\"action\":{\"type\":\"call\",\"capability\":\"write_file\",\"inpu"
