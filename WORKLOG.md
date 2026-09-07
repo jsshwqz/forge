@@ -1115,3 +1115,17 @@ G-ORCH101: ①workspace 404 passed/0 failed+clippy零告警 ②多步任务e2e m
 
 ---
 
+## [R1-077] ✅ 成功 · 2026-09-08 · 本地实用化达成: DeepSeek真实E2E PASS+一键启动+工作台UI+桌面快捷方式
+
+- **任务 ID**：LOCAL-001
+真实多步E2E: DeepSeek出计划→write_file→沙箱验收(命令真实输出+文件检查)→gate PASS; 撞出并修复三缺陷: create_for split-brain(R6-031改幂等契约)/payload multistep失配/LlmPlanner提示词缺write_file形状; UI工作台重写(表单+明细); 一键脚本幂等; 桌面四件套; workspace 404 passed/clippy零告警; 服务保持运行中供用户直接使用
+
+---
+
+## [R7-017] ⚠️ 偏差/风险 · 2026-09-08 · 三个真实缺陷复盘: split-brain/Debug-lowercase失配/CRLF静默no-op
+
+- **任务 ID**：LOCAL-001
+①create_for uuid每次唯一是R1-052防覆盖改动, 但把工具目录与验收目录劈开=真实E2E才暴露的架构bug, 改get-or-create幂等; ②Debug格式+lowercase≠serde snake_case, 序列化口径必须统一走serde; ③CRLF文件上node字符串替换静默no-op且writeFileSync照写=假阳性'fixed', 修补丁必须用Edit工具或行为断言验证
+
+---
+
