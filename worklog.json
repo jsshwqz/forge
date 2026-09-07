@@ -918,5 +918,21 @@
     "task_id": "V70B",
     "title": "V7先行批三包规格预供落盘(build_v70b.md, 队友规划代理产出)",
     "body": "FED-003(双进程e2e判据18082/18083+tenant子频道双发裁决:全频道兜底不变+信封化按需拉取GET /events零新存储)+TEN-004(PG租户钥/配额零新迁移+503降级禁内存回退+sha256口径一致)+BILL-003(六行LLM调用面审计:plan/replan/review三盲区接meter,LlmAgent范围外登记); 14条冻结测试; 零新增依赖零迁移; 规划层复核:整合修正风险编号R-32~R-36(与V70A的R-29~31冲突)"
+  },
+  {
+    "id": "R1-069",
+    "kind": "R1Completed",
+    "date": "2026-09-07",
+    "task_id": "G-V6C",
+    "title": "KNW-101真实全环演练PASS(G-V6C第2条补强闭环): 人工合入git am一次通过",
+    "body": "队友执行代理产出: 临时仓库全环 verify(1/2 reproduced, green case正确拒判)→approve→pr→clone+git am一次通过→用例落位+主干HEAD不变; 红线复测成立(无approve拒绝/6条库级InvalidState); 记录=docs/KNW_EXERCISE.md+artifacts/knw_drill_20260907_080048.json; 附加冻结测试12全绿"
+  },
+  {
+    "id": "R7-015",
+    "kind": "R7DeviationRisk",
+    "date": "2026-09-07",
+    "task_id": "KNW-101",
+    "title": "两项发现: ①knowledge-suggest空库无CLI注入口(全环断头路) ②CLI层6用例静默截断非拒绝",
+    "body": "演练发现: ①CLI knowledge-suggest用InMemoryKnowledgeBase::default()恒空, 真实失败知识无CLI注入口→建议恒0条, KNW全环在生产口径断头(演练以手工建议文件绕过); 需KNW-003立项: PG知识库+CLI注入/自动采集接线; ②knowledge-pr对6条approve在CLI层静默截断至5(库级forge_pr_case_cap_five兜底成立), 建议CLI显式报错"
   }
 ]

@@ -1038,3 +1038,17 @@ FED-003(双进程e2e判据18082/18083+tenant子频道双发裁决:全频道兜�
 
 ---
 
+## [R1-069] ✅ 成功 · 2026-09-07 · KNW-101真实全环演练PASS(G-V6C第2条补强闭环): 人工合入git am一次通过
+
+- **任务 ID**：G-V6C
+队友执行代理产出: 临时仓库全环 verify(1/2 reproduced, green case正确拒判)→approve→pr→clone+git am一次通过→用例落位+主干HEAD不变; 红线复测成立(无approve拒绝/6条库级InvalidState); 记录=docs/KNW_EXERCISE.md+artifacts/knw_drill_20260907_080048.json; 附加冻结测试12全绿
+
+---
+
+## [R7-015] ⚠️ 偏差/风险 · 2026-09-07 · 两项发现: ①knowledge-suggest空库无CLI注入口(全环断头路) ②CLI层6用例静默截断非拒绝
+
+- **任务 ID**：KNW-101
+演练发现: ①CLI knowledge-suggest用InMemoryKnowledgeBase::default()恒空, 真实失败知识无CLI注入口→建议恒0条, KNW全环在生产口径断头(演练以手工建议文件绕过); 需KNW-003立项: PG知识库+CLI注入/自动采集接线; ②knowledge-pr对6条approve在CLI层静默截断至5(库级forge_pr_case_cap_five兜底成立), 建议CLI显式报错
+
+---
+
