@@ -1087,3 +1087,10 @@ command_level冻结分级+AllowList[WorkspaceWrite,External]策略链+拒绝留�
 
 ---
 
+## [R1-073] ✅ 成功 · 2026-09-08 · ORCH-101c落地: MCP工具真实e2e走通(mock-mcp-server), 11冻结测试全绿
+
+- **任务 ID**：ORCH-101c
+白名单注册制(mcp_<server>_<tool>桥接)+按需connect/call/shutdown桥接工具+External默认进沙箱链; mock-mcp-server真实stdio JSON-RPC全链路: 发现echo→注册→桥接调用回显成功; 未配置零开销; ORCH-101三段全部落地
+
+---
+
