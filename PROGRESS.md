@@ -95,3 +95,6 @@
 | BILL-002 | 费率表+幂等账单生成与JSON/CSV导出 | ✅ 完成 | executor | R1-060 | e52bca3 |
 | KNW-101 | 全环自进化——沙箱复现验证与本地分支补丁生成 | ✅ 完成 | executor | R1-064 | 0fcb99f |
 | DR-001 | PG流复制部署编排与容灾演练剧本 | ✅ 完成 | executor | R1-065 | 15757b0 |
+| ORCH-101 | 从echo到真实工作(多步规划+多文件沙箱验收+MCP接入) | ✅ 完成 | executor | R1-073 | ab8821c |
+| TEN-004 | 租户密钥与配额PG持久化及503降级语义 | ✅ 完成 | executor | R1-074 | 4bca3a4 |
+| BILL-003 | 编排LLM计量全覆盖(plan/replan/review入账) | ✅ 完成 | executor | R1-075 | 67b82ff |

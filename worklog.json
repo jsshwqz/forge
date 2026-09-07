@@ -998,5 +998,13 @@
     "task_id": "BILL-003",
     "title": "BILL-003落地: plan/replan/review计量全覆盖, 5冻结测试全绿",
     "body": "三构造体meter字段(R6-026先例)+PipelineDeps注入+METER_PURPOSES五标签冻结; 六行调用面审计完成(LlmAgent#6范围外登记); workspace 404 passed/clippy零告警; V7先行批五段(ORCH-101a/b/c+TEN-004+BILL-003)全部落地"
+  },
+  {
+    "id": "R1-076",
+    "kind": "R1Completed",
+    "date": "2026-09-08",
+    "task_id": "G-ORCH101",
+    "title": "G-ORCH101门禁核验+G-V70B适用项核验通过(V7先行批)",
+    "body": "G-ORCH101: ①workspace 404 passed/0 failed+clippy零告警 ②多步任务e2e mock轨全绿(multistep两步波次+三文件工程), LLM真实模型轨留FORGE_LLM_*环境复验(如实登记) ③红线抽测: Irreversible验收被拒留证+白名单外MCP不可达 ④零回归: plan_mode矩阵+基线verifier不变断言; G-V70B适用项: ①workspace全绿 ③持久化抽测pg_*_persists_across_pools两条+503禁回退 ④计量五标签冻结+meter_none_is_noop ⑤零新增迁移(diff无storage DDL); 第2条双进程e2e属FED-003(次批)未施工如实标注"
   }
 ]

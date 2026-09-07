@@ -726,5 +726,29 @@
   "owner": "executor",
   "last_record": "R1-065",
   "commit": "15757b0"
+ },
+ {
+  "task_id": "ORCH-101",
+  "name": "从echo到真实工作(多步规划+多文件沙箱验收+MCP接入)",
+  "status": "Completed",
+  "owner": "executor",
+  "last_record": "R1-073",
+  "commit": "ab8821c"
+ },
+ {
+  "task_id": "TEN-004",
+  "name": "租户密钥与配额PG持久化及503降级语义",
+  "status": "Completed",
+  "owner": "executor",
+  "last_record": "R1-074",
+  "commit": "4bca3a4"
+ },
+ {
+  "task_id": "BILL-003",
+  "name": "编排LLM计量全覆盖(plan/replan/review入账)",
+  "status": "Completed",
+  "owner": "executor",
+  "last_record": "R1-075",
+  "commit": "67b82ff"
  }
 ]

@@ -1108,3 +1108,10 @@ command_level冻结分级+AllowList[WorkspaceWrite,External]策略链+拒绝留�
 
 ---
 
+## [R1-076] ✅ 成功 · 2026-09-08 · G-ORCH101门禁核验+G-V70B适用项核验通过(V7先行批)
+
+- **任务 ID**：G-ORCH101
+G-ORCH101: ①workspace 404 passed/0 failed+clippy零告警 ②多步任务e2e mock轨全绿(multistep两步波次+三文件工程), LLM真实模型轨留FORGE_LLM_*环境复验(如实登记) ③红线抽测: Irreversible验收被拒留证+白名单外MCP不可达 ④零回归: plan_mode矩阵+基线verifier不变断言; G-V70B适用项: ①workspace全绿 ③持久化抽测pg_*_persists_across_pools两条+503禁回退 ④计量五标签冻结+meter_none_is_noop ⑤零新增迁移(diff无storage DDL); 第2条双进程e2e属FED-003(次批)未施工如实标注
+
+---
+
