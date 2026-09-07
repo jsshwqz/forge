@@ -982,5 +982,13 @@
     "task_id": "ORCH-101c",
     "title": "ORCH-101c落地: MCP工具真实e2e走通(mock-mcp-server), 11冻结测试全绿",
     "body": "白名单注册制(mcp_<server>_<tool>桥接)+按需connect/call/shutdown桥接工具+External默认进沙箱链; mock-mcp-server真实stdio JSON-RPC全链路: 发现echo→注册→桥接调用回显成功; 未配置零开销; ORCH-101三段全部落地"
+  },
+  {
+    "id": "R1-074",
+    "kind": "R1Completed",
+    "date": "2026-09-08",
+    "task_id": "TEN-004",
+    "title": "TEN-004落地: 租户钥/配额PG持久化+503降级, 5冻结测试真实PG全绿",
+    "body": "跨连接池持久化(重启不丢)+哈希口径sha256一致+FK拒绝不静默+存储不可用503禁内存回退; 内存模式零变化; workspace 399 passed/clippy零告警"
   }
 ]

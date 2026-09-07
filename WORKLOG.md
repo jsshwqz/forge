@@ -1094,3 +1094,10 @@ command_level冻结分级+AllowList[WorkspaceWrite,External]策略链+拒绝留�
 
 ---
 
+## [R1-074] ✅ 成功 · 2026-09-08 · TEN-004落地: 租户钥/配额PG持久化+503降级, 5冻结测试真实PG全绿
+
+- **任务 ID**：TEN-004
+跨连接池持久化(重启不丢)+哈希口径sha256一致+FK拒绝不静默+存储不可用503禁内存回退; 内存模式零变化; workspace 399 passed/clippy零告警
+
+---
+
