@@ -24,6 +24,8 @@ pub struct LlmReplanner<B: LlmPlanBackend + ?Sized> {
     pub tools: Vec<String>,
     /// 可选成本账本：每次成功调用后记账（G-V3.2 成本记录）。
     pub ledger: Option<Arc<crate::usage::UsageLedger>>,
+    /// BILL-003：token 计量钩子（默认 None，R6-026 先例）。
+    pub meter: Option<Arc<dyn crate::usage::LlmMeter>>,
 }
 
 #[async_trait]
@@ -81,6 +83,10 @@ in the same schema as the original plan: \
                     prompt_tokens: u.prompt_tokens,
                     completion_tokens: u.completion_tokens,
                 });
+            }
+            // BILL-003：usage_events 流水面
+            if let (Some(m), Some(u)) = (&self.meter, usage) {
+                m.on_usage(&self.model, "replan", u.prompt_tokens, u.completion_tokens);
             }
             let json_str = extract_json_str(&raw);
             let parsed: serde_json::Value = serde_json::from_str(&json_str)

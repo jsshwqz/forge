@@ -42,6 +42,8 @@ pub struct PipelineDeps {
     pub backend: Arc<dyn LlmPlanBackend>,
     /// 成本账本（planner 与调用方共享；reviewer 若需入账请复用同一实例）。
     pub ledger: Arc<UsageLedger>,
+    /// BILL-003：token 计量钩子（usage_events 流水面；R6-026 注入先例，默认 None 可后补）。
+    pub meter: Option<Arc<dyn forge_plan_llm::usage::LlmMeter>>,
     /// 分层路由器。
     pub tier: TierRouter,
     /// Builder 步骤调用的工具名（CallCapability.capability）。
@@ -158,6 +160,7 @@ pub async fn run_pipeline(
         schema_max_attempts: deps.max_schema_attempts,
         tools: vec![deps.capability.clone()],
         ledger: Some(deps.ledger.clone()),
+        meter: deps.meter.clone(),
         brief_mode: false
     };
     let plan: Plan = architect.plan(&task).await?;
@@ -412,6 +415,7 @@ mod tests {
         let tier = TierRouter::from_parts("high-model", Some("low-model".into()));
         (
             PipelineDeps {
+                meter: None,
                 router: Arc::new(router),
                 policy: Arc::new(AllowAll),
                 verifier_cmd: Arc::new(CommandVerifier),

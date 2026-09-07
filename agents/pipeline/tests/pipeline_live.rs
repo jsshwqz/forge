@@ -77,10 +77,12 @@ async fn live_four_role_pipeline_smoke() -> Result<(), Box<dyn std::error::Error
         model: reviewer_model,
         schema_max_attempts: 3,
         ledger: Some(ledger.clone()),
+        meter: None,
         tier: ModelTier::High,
     });
 
     let deps = PipelineDeps {
+        meter: None,
         router: Arc::new(router),
         policy: Arc::new(AllowAllPolicy),
         verifier_cmd: Arc::new(CommandVerifier),

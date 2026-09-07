@@ -77,6 +77,8 @@ pub struct LlmPlanner<B: LlmPlanBackend + ?Sized> {
     pub tools: Vec<String>,
     /// 可选成本账本：每次成功调用后记账（G-V3.2 成本记录）。
     pub ledger: Option<Arc<crate::usage::UsageLedger>>,
+    /// BILL-003 R6-026 先例：token 计量钩子（usage_events 流水面，默认 None）。
+    pub meter: Option<Arc<dyn crate::usage::LlmMeter>>,
     /// 简述模式（服务端"写软件"路径）：write_file 步骤只要求 `brief`
     /// （文件意图），不内嵌完整 content——由调用方二次代码生成填充，
     /// 规避小上限模型在长 JSON 转义上的截断问题。
@@ -91,6 +93,7 @@ impl<B: LlmPlanBackend + ?Sized> LlmPlanner<B> {
             schema_max_attempts: 3,
             tools: Vec::new(),
             ledger: None,
+            meter: None,
             brief_mode: false,
         }
     }
@@ -156,6 +159,10 @@ impl<B: LlmPlanBackend + ?Sized + 'static> Planner for LlmPlanner<B> {
                     prompt_tokens: u.prompt_tokens,
                     completion_tokens: u.completion_tokens,
                 });
+            }
+            // BILL-003：usage_events 流水面（与 ledger 并行，R4 不合并）
+            if let (Some(m), Some(u)) = (&self.meter, usage) {
+                m.on_usage(&self.model, "plan", u.prompt_tokens, u.completion_tokens);
             }
             // 观测：模型原始输出截断打印（排障用）
             eprintln!(

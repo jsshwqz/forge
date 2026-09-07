@@ -67,6 +67,9 @@ impl UsageLedger {
     }
 }
 
+/// BILL-003：purpose 命名冻结（五值精确集合）。
+pub const METER_PURPOSES: [&str; 5] = ["plan", "replan", "review", "codegen:filename", "codegen:body"];
+
 /// LLM token 计量钩子（BILL-001 R6-026：增量字段注入，默认 None 不计量）。
 pub trait LlmMeter: Send + Sync {
     fn on_usage(&self, model: &str, purpose: &str, prompt_tokens: u64, completion_tokens: u64);

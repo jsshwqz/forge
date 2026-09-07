@@ -127,6 +127,7 @@ async fn live_llm_plan_runs_to_completed() {
         schema_max_attempts: 3,
         tools: vec!["echo".into()],
         ledger: None,
+            meter: None,
     
         brief_mode: false
     });
@@ -136,6 +137,7 @@ async fn live_llm_plan_runs_to_completed() {
         schema_max_attempts: 3,
         tools: vec!["echo".into()],
         ledger: None,
+            meter: None,
     });
     let (deps, evidence, _tmp) = make_deps(Some(planner), Some(replanner));
 
@@ -220,6 +222,7 @@ async fn live_forced_failure_replans_or_escalates() {
         schema_max_attempts: 3,
         tools: vec!["echo".into()],
         ledger: None,
+            meter: None,
     });
     let (deps, evidence, _tmp) = make_deps(Some(Arc::new(PoisonFirstPlanner)), Some(replanner));
 

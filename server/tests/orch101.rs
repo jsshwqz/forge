@@ -119,6 +119,7 @@ async fn multistep_plan_executes_waves() {
         schema_max_attempts: 3,
         tools: vec!["echo".into(), "write_file".into()],
         ledger: None,
+        meter: None,
         brief_mode: false,
     };
     let deps = deps_with(ws.path(), Some(Arc::new(planner)), None);
@@ -159,6 +160,7 @@ async fn replanner_invoked_on_step_failure() {
         schema_max_attempts: 3,
         tools: vec!["echo".into(), "write_file".into()],
         ledger: None,
+        meter: None,
         brief_mode: false,
     };
     let replanner = LlmReplanner {
@@ -167,6 +169,7 @@ async fn replanner_invoked_on_step_failure() {
         schema_max_attempts: 3,
         tools: vec!["echo".into(), "write_file".into()],
         ledger: None,
+        meter: None,
     };
     let deps = deps_with(ws.path(), Some(Arc::new(planner)), Some(Arc::new(replanner)));
     let orch = Orchestrator { capability: "echo".into(), timeout: Duration::from_secs(15) };
@@ -229,6 +232,7 @@ fn multistep_deps(
         schema_max_attempts: 3,
         tools: vec!["echo".into(), "write_file".into()],
         ledger: None,
+        meter: None,
         brief_mode: false,
     };
     let router = ToolRouter::new();

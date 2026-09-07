@@ -364,7 +364,7 @@ async fn execute_orchestration(
             }
             PlanMode::MultiStep => {
                 if llm_ready {
-                    match build_multistep_planner() {
+                    match build_multistep_planner(meter.clone()) {
                         Ok((p, rp)) => (p, rp),
                         Err(e) => {
                             eprintln!("orchestrate: multistep planner unavailable ({e}), falling back to sequential");
@@ -1020,7 +1020,9 @@ fn build_codegen_planner(
 }
 
 /// V7 ORCH-101a：MultiStep 多步规划器 + 重规划器（共享 backend；tools 白名单冻结）。
-fn build_multistep_planner() -> Result<(PlannerOpt, ReplannerOpt), String> {
+fn build_multistep_planner(
+    meter: Option<Arc<dyn forge_plan_llm::usage::LlmMeter>>,
+) -> Result<(PlannerOpt, ReplannerOpt), String> {
     let backend = build_llm_backend();
     let tools = vec!["echo".to_string(), "write_file".to_string()];
     let planner = forge_plan_llm::LlmPlanner {
@@ -1029,6 +1031,7 @@ fn build_multistep_planner() -> Result<(PlannerOpt, ReplannerOpt), String> {
         schema_max_attempts: 3,
         tools: tools.clone(),
         ledger: None,
+        meter: meter.clone(), // BILL-003：plan 用途入账
         brief_mode: false,
     };
     let replanner = forge_plan_llm::LlmReplanner {
@@ -1037,6 +1040,7 @@ fn build_multistep_planner() -> Result<(PlannerOpt, ReplannerOpt), String> {
         schema_max_attempts: 3,
         tools,
         ledger: None,
+        meter, // BILL-003：replan 用途入账
     };
     Ok((
         Some(Arc::new(planner) as Arc<dyn forge_planner::Planner>),

@@ -79,6 +79,8 @@ pub struct LlmStepReviewer<B: forge_plan_llm::LlmPlanBackend + ?Sized> {
     pub schema_max_attempts: u32,
     /// 成本账本。
     pub ledger: Option<Arc<forge_plan_llm::UsageLedger>>,
+    /// BILL-003：token 计量钩子（默认 None，R6-026 先例）。
+    pub meter: Option<Arc<dyn forge_plan_llm::usage::LlmMeter>>,
     /// 档位标记（写成本事件用）。
     pub tier: ModelTier,
 }
@@ -131,6 +133,10 @@ impl<B: forge_plan_llm::LlmPlanBackend + ?Sized + 'static> StepReviewer for LlmS
         for attempt in 0..self.schema_max_attempts.max(1) {
             let (raw, usage) =
                 self.backend.complete_with_usage(&self.model, &messages).await?;
+            // BILL-003：usage_events 流水面（ledger 既有 review(<tier>) 格式不动）
+            if let (Some(m), Some(u)) = (&self.meter, usage) {
+                m.on_usage(&self.model, "review", u.prompt_tokens, u.completion_tokens);
+            }
             if let (Some(ledger), Some(u)) = (&self.ledger, usage) {
                 ledger.record(forge_plan_llm::CostEntry {
                     model: self.model.clone(),
