@@ -897,6 +897,7 @@ dependencies = [
  "forge-evidence",
  "forge-exec",
  "forge-knowledge",
+ "forge-mcp",
  "forge-plan-llm",
  "forge-planner",
  "forge-product",

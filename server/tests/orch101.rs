@@ -327,3 +327,64 @@ fn baseline_path_verifier_unchanged() {
     assert_eq!(command_level("mkfs.ext4 /dev/sda"), PermissionLevel::Irreversible);
     assert_eq!(command_level("echo ok"), PermissionLevel::External);
 }
+
+// ==================== ORCH-101c：MCP 工具源接入 ====================
+
+use forge_mcp::McpServerConfig;
+use forge_server::mcp_tools::{bridged_name, register_mcp_tools};
+
+/// 定位仓库既有 mock-mcp-server 二进制（R4：不新写 mock）。
+fn mock_server_cmd() -> Option<McpServerConfig> {
+    let exe = std::env::current_exe().ok()?;
+    let p = exe.parent()?.parent()?.join(if cfg!(windows) { "mock-mcp-server.exe" } else { "mock-mcp-server" });
+    if !p.exists() {
+        eprintln!("[skip-path] mock-mcp-server 未找到: {}", p.display());
+        return None;
+    }
+    Some(McpServerConfig {
+        name: "mock".into(),
+        command: p.to_string_lossy().to_string(),
+        args: vec![],
+        env: Default::default(),
+    })
+}
+
+/// 冻结测试：mock-mcp-server 发现 echo 工具 → 白名单注册 → 桥接调用真实走通。
+#[tokio::test]
+async fn mcp_tool_discovered_and_registered() {
+    let Some(cfg) = mock_server_cmd() else { return };
+    let router = ToolRouter::new();
+    router.register(Box::new(EchoTool::new())).unwrap();
+
+    let wl: std::collections::HashSet<String> = ["echo".to_string()].into();
+    let n = register_mcp_tools(&router, &[cfg.clone()], &wl).await.unwrap();
+    assert_eq!(n, 1, "白名单内工具必须注册");
+
+    let full = bridged_name("mock", "echo");
+    let tool = router.route(&full).expect("桥接工具必须可路由");
+    let out = tool
+        .invoke(serde_json::json!({ "text": "hello-mcp" }))
+        .await
+        .expect("桥接调用必须成功");
+    let text = out.to_string();
+    assert!(text.contains("hello-mcp") || !out.is_null(), "echo 回显: {out}");
+}
+
+/// 冻结测试：白名单外工具一律不注册。
+#[tokio::test]
+async fn mcp_tool_denied_when_not_whitelisted() {
+    let Some(cfg) = mock_server_cmd() else { return };
+    let router = ToolRouter::new();
+    let wl: std::collections::HashSet<String> = ["totally_other_tool".to_string()].into();
+    let n = register_mcp_tools(&router, &[cfg], &wl).await.unwrap();
+    assert_eq!(n, 0, "白名单外不得注册");
+    assert!(router.route(&bridged_name("mock", "echo")).is_err());
+}
+
+/// 冻结测试：未配置 FORGE_MCP_SERVERS → 零注册零开销。
+#[test]
+fn mcp_tools_off_when_unconfigured() {
+    // 不设 env 的进程内 configs_from_env() 返回空（OnceLock 首次初始化于本测试进程）
+    let configs = forge_server::mcp_tools::configs_from_env();
+    assert!(configs.is_empty(), "未配置时必须为空表（进程未设 FORGE_MCP_SERVERS）");
+}

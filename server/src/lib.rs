@@ -9,6 +9,7 @@ pub mod auth;
 pub mod billing;
 pub mod bus;
 pub mod queue;
+pub mod mcp_tools;
 pub mod sandbox_verify;
 pub mod quota;
 pub mod routes;
@@ -312,6 +313,21 @@ async fn execute_orchestration(
     router
         .register(Box::new(forge_exec::WriteFileTool::new(workdir)))
         .map_err(ApiError::from)?;
+
+    // ORCH-101c：MCP 工具源（未配置零开销；失败仅 warn 不阻断编排）
+    let mcp_configs = mcp_tools::configs_from_env();
+    if !mcp_configs.is_empty() {
+        match mcp_tools::allowlist_from_env() {
+            Some(wl) => {
+                if let Err(e) = mcp_tools::register_mcp_tools(&router, &mcp_configs, &wl).await {
+                    eprintln!("orchestrate: MCP tools registration failed (non-blocking): {e}");
+                }
+            }
+            None => {
+                eprintln!("orchestrate: FORGE_MCP_SERVERS set but FORGE_MCP_ALLOWLIST empty — MCP tools skipped (whitelist required)");
+            }
+        }
+    }
 
     // 规划器：配置了 FORGE_LLM_* 且 codegen_flag（V5.1 CGN-001，默认 true）时
     // 用真实模型做单文件代码生成 Architect；未配置/未启用则回退确定性
