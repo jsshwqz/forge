@@ -7,8 +7,9 @@ use forge_pipeline::{LlmStepReviewer, ModelTier, ReviewInput, StepReviewer as _}
 use std::sync::{Arc, Mutex};
 
 /// 收集型计量器。
-#[derive(Clone, Default)]
 type UsageLog = Arc<Mutex<Vec<(String, String, u64, u64)>>>;
+
+#[derive(Clone, Default)]
 struct CollectingMeter(UsageLog);
 
 impl LlmMeter for CollectingMeter {
