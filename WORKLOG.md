@@ -1059,3 +1059,10 @@ FED-003(双进程e2e判据18082/18083+tenant子频道双发裁决:全频道兜�
 
 ---
 
+## [R1-070] ✅ 成功 · 2026-09-07 · ORCH-101a落地: 多步规划+重规划回路接通, 4冻结测试全绿
+
+- **任务 ID**：ORCH-101a
+plan_mode三态解析(Auto恒等Codegen零破坏); LlmPlanner(tools白名单)+LlmReplanner从None接通; mock全离线验证: 两步波次执行落盘/逃逸路径失败触发重规划replans_used=1/无LLM降级顺序计划; workspace 387 passed/clippy零告警
+
+---
+
