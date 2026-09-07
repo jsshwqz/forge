@@ -902,6 +902,7 @@ dependencies = [
  "forge-product",
  "forge-product-instance",
  "forge-recovery",
+ "forge-sandbox",
  "forge-sdk",
  "forge-session",
  "forge-storage",

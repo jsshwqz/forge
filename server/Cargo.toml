@@ -43,6 +43,8 @@ sha2 = "0.10"
 semver = "1"
 sqlx = { version = "0.8", default-features = false, features = ["runtime-tokio", "postgres", "chrono", "json"] }
 uuid = { version = "1", features = ["v4"] }
+forge-sandbox = { path = "../execution/sandbox" }
+forge-agent = { path = "../core/agent" }
 
 [dev-dependencies]
 tower = { version = "0.4", features = ["util"] }

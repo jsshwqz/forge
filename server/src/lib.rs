@@ -9,6 +9,7 @@ pub mod auth;
 pub mod billing;
 pub mod bus;
 pub mod queue;
+pub mod sandbox_verify;
 pub mod quota;
 pub mod routes;
 pub mod sse_relay;
@@ -354,10 +355,15 @@ async fn execute_orchestration(
             PlanMode::Auto => unreachable!("resolve_plan_mode 不返回 Auto"),
         };
 
+    // ORCH-101b：仅 MultiStep 走沙箱化命令验收（基线路径零回归）
+    let (verifier_cmd, _uses_sandbox) = sandbox_verify::select_command_verifier(
+        plan_mode,
+        Arc::new(CommandVerifier),
+    );
     let deps = forge_sdk::OrchestratorDeps {
         router: Arc::new(router),
         policy: Arc::new(DemoAllowAll),
-        verifier_cmd: Arc::new(CommandVerifier),
+        verifier_cmd,
         verifier_file: Arc::new(FileVerifier),
         evidence: st.evidence.clone(),
         workspace: st.workspaces.clone(),

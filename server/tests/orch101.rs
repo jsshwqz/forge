@@ -194,3 +194,138 @@ async fn multistep_falls_back_without_llm() {
     assert_eq!(report.final_status, forge_task::TaskStatus::Completed);
     assert_eq!(report.replans_used, 0);
 }
+
+// ==================== ORCH-101b：多文件工程 + 沙箱运行验收 ====================
+
+use forge_server::sandbox_verify::{command_level, select_command_verifier, SANDBOX_DENY_MARKER};
+use forge_evidence::EvidenceStore as _;
+use forge_verify::Verifier as _;
+
+fn three_file_plan() -> String {
+    r#"{"steps":[
+        {"id":"f1","title":"a","depends_on":[],"action":{"type":"call","capability":"write_file","input":{"path":"a.txt","content":"A"}}},
+        {"id":"f2","title":"b","depends_on":["f1"],"action":{"type":"call","capability":"write_file","input":{"path":"sub/b.txt","content":"B"}}},
+        {"id":"f3","title":"c","depends_on":["f2"],"action":{"type":"call","capability":"write_file","input":{"path":"c.txt","content":"C"}}}
+    ]}"#
+    .to_string()
+}
+
+fn single_echo_plan() -> String {
+    r#"{"steps":[
+        {"id":"e1","title":"echo","depends_on":[],"action":{"type":"call","capability":"echo","input":{"goal":"run"}}}
+    ]}"#
+    .to_string()
+}
+
+/// MultiStep 装配（沙箱化 verifier + 可持有证据存储）。
+fn multistep_deps(
+    ws: &std::path::Path,
+    responses: Vec<String>,
+    evidence: Arc<forge_evidence::InMemoryEvidenceStore>,
+) -> OrchestratorDeps {
+    let mock = Arc::new(MockLlm { responses: Mutex::new(responses) });
+    let planner = LlmPlanner {
+        backend: mock.clone() as Arc<dyn LlmPlanBackend>,
+        model: "mock".into(),
+        schema_max_attempts: 3,
+        tools: vec!["echo".into(), "write_file".into()],
+        ledger: None,
+        brief_mode: false,
+    };
+    let router = ToolRouter::new();
+    router.register(Box::new(EchoTool::new())).unwrap();
+    router.register(Box::new(WriteFileTool::new(ws))).unwrap();
+    let evidence_store = evidence;
+    let deps = OrchestratorDeps {
+        router: Arc::new(router),
+        policy: Arc::new(AllowAll),
+        verifier_cmd: select_command_verifier(forge_server::PlanMode::MultiStep, Arc::new(forge_verify::CommandVerifier)).0,
+        verifier_file: Arc::new(forge_verify::FileVerifier),
+        evidence: evidence_store.clone(),
+        workspace: Arc::new(forge_workspace::WorkspaceManager::new(ws.join("ws-root")).unwrap()),
+        timeout: Duration::from_secs(15),
+        recovery: Arc::new(forge_recovery::BoundedRetryStrategy { max_attempts: 1, base_backoff_ms: 10 }),
+        replanner: None,
+        max_replans: 1,
+        planner: Some(Arc::new(planner)),
+    };
+    deps
+}
+
+/// 冻结测试：mock LLM 三 write_file 步骤（不同路径）→ 三文件落盘。
+#[tokio::test]
+async fn multi_file_project_generated() {
+    let ws = tempfile::tempdir().unwrap();
+    let sdk = ForgeSdk::in_memory();
+    let task = sdk.create_task("multi file", vec![], acceptance_command()).await.unwrap();
+    let deps = multistep_deps(ws.path(), vec![three_file_plan()], Default::default());
+    let orch = Orchestrator { capability: "echo".into(), timeout: Duration::from_secs(15) };
+
+    let report = sdk.run_end_to_end(&task.id, &deps, &orch).await.unwrap();
+    assert_eq!(report.final_status, forge_task::TaskStatus::Completed, "{:?}", report.execution.failed);
+    assert_eq!(report.execution.completed.len(), 3, "三步全部执行");
+    for f in ["a.txt", "sub/b.txt", "c.txt"] {
+        assert!(ws.path().join(f).exists(), "多文件工程必须落盘: {f}");
+    }
+}
+
+/// 冻结测试：Irreversible 级验收（format 磁盘语义）→ verdict=Fail 且拒绝标记入证据。
+#[tokio::test]
+async fn sandbox_blocks_irreversible() {
+    let ws = tempfile::tempdir().unwrap();
+    let sdk = ForgeSdk::in_memory();
+    let acceptance = vec![forge_task::AcceptanceCriterion {
+        id: "AC-1".into(),
+        description: "dangerous".into(),
+        check: forge_task::CheckSpec::Command("format c:".into()),
+    }];
+    let task = sdk.create_task("irreversible probe", vec![], acceptance).await.unwrap();
+    let store: Arc<forge_evidence::InMemoryEvidenceStore> = Default::default();
+    let deps = multistep_deps(ws.path(), vec![single_echo_plan()], store.clone());
+    let orch = Orchestrator { capability: "echo".into(), timeout: Duration::from_secs(15) };
+
+    let report = sdk.run_end_to_end(&task.id, &deps, &orch).await.unwrap();
+    assert_eq!(report.verifications[0].verdict, forge_verify::Verdict::Fail, "Irreversible 必须 Fail");
+    assert!(
+        report.verifications[0].reason.contains(SANDBOX_DENY_MARKER),
+        "拒绝原因必须带审计标记: {}",
+        report.verifications[0].reason
+    );
+    let ev = store.by_criterion("AC-1").await.unwrap();
+    assert!(!ev.is_empty() && ev[0].content.contains(SANDBOX_DENY_MARKER), "拒绝必须留证可审计");
+}
+
+/// 冻结测试：命令验收真实执行 → 证据入库非空。
+#[tokio::test]
+async fn run_acceptance_records_evidence() {
+    let ws = tempfile::tempdir().unwrap();
+    let sdk = ForgeSdk::in_memory();
+    let cmd = if cfg!(target_os = "windows") { "cmd /c echo sandbox-ok" } else { "echo sandbox-ok" };
+    let acceptance = vec![forge_task::AcceptanceCriterion {
+        id: "AC-1".into(),
+        description: "run".into(),
+        check: forge_task::CheckSpec::Command(cmd.into()),
+    }];
+    let task = sdk.create_task("evidence probe", vec![], acceptance).await.unwrap();
+    let store: Arc<forge_evidence::InMemoryEvidenceStore> = Default::default();
+    let deps = multistep_deps(ws.path(), vec![single_echo_plan()], store.clone());
+    let orch = Orchestrator { capability: "echo".into(), timeout: Duration::from_secs(15) };
+
+    let report = sdk.run_end_to_end(&task.id, &deps, &orch).await.unwrap();
+    assert_eq!(report.verifications[0].verdict, forge_verify::Verdict::Pass);
+    let ev = store.by_criterion("AC-1").await.unwrap();
+    assert!(!ev.is_empty(), "运行验收必须留证");
+}
+
+/// 冻结测试：装配矩阵——仅 MultiStep 启用沙箱（基线路径零回归断言）；命令分级冻结。
+#[test]
+fn baseline_path_verifier_unchanged() {
+    use forge_server::PlanMode;
+    let plain: Arc<dyn forge_verify::Verifier> = Arc::new(forge_verify::CommandVerifier);
+    assert!(!select_command_verifier(PlanMode::Codegen, plain.clone()).1, "Codegen 不启用沙箱");
+    assert!(select_command_verifier(PlanMode::MultiStep, plain).1, "MultiStep 必须启用沙箱");
+    // 命令风险分级冻结
+    assert_eq!(command_level("format c:"), PermissionLevel::Irreversible);
+    assert_eq!(command_level("mkfs.ext4 /dev/sda"), PermissionLevel::Irreversible);
+    assert_eq!(command_level("echo ok"), PermissionLevel::External);
+}
