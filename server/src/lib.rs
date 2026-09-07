@@ -214,9 +214,38 @@ pub struct OrchestrateRequest {
     /// 规划器；`false` 回退确定性顺序规划。
     #[serde(default = "default_codegen_flag")]
     pub codegen_flag: bool,
+    /// V7 ORCH-101a：规划模式（缺省 auto = 完全兼容既有行为）。
+    #[serde(default)]
+    pub plan_mode: Option<PlanMode>,
 }
 fn default_timeout() -> u64 { 30 }
 fn default_codegen_flag() -> bool { true }
+
+/// 规划器选择结果：（MultiStep 时的）重规划器可选项。
+type PlannerOpt = Option<Arc<dyn forge_planner::Planner>>;
+type ReplannerOpt = Option<Arc<dyn forge_plan_llm::Replanner>>;
+
+/// V7 ORCH-101a：规划模式（R1 冻结——显式 plan_mode > codegen_flag；Auto 恒等于
+/// Codegen 保证既有客户端零破坏）。
+#[derive(Clone, Copy, Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum PlanMode {
+    Auto,
+    Codegen,
+    MultiStep,
+}
+
+/// 规划模式解析（冻结纯函数，离线可测）。
+pub fn resolve_plan_mode(plan_mode: Option<PlanMode>, codegen_flag: bool) -> PlanMode {
+    match plan_mode {
+        Some(PlanMode::MultiStep) => PlanMode::MultiStep,
+        // R1：Auto 恒等于 Codegen（零破坏承诺）；None 才跟随 codegen_flag
+        Some(PlanMode::Codegen) | Some(PlanMode::Auto) => PlanMode::Codegen,
+        None => {
+            if codegen_flag { PlanMode::Codegen } else { PlanMode::MultiStep }
+        }
+    }
+}
 
 pub struct DemoAllowAll;
 impl PermissionPolicy for DemoAllowAll {
@@ -271,7 +300,7 @@ async fn execute_orchestration(
     st: &AppState,
     task: &Task,
     timeout_secs: u64,
-    codegen_flag: bool,
+    plan_mode: PlanMode,
     tenant: &str,
 ) -> Result<forge_sdk::OrchestratorReport, ApiError> {
     // 工具集：echo(基线) + write_file("写软件"落盘能力，根=任务工作目录)
@@ -302,17 +331,28 @@ async fn execute_orchestration(
             Arc::new(billing::PgLlmMeter { pool, tenant: tenant.to_string() })
                 as Arc<dyn forge_plan_llm::usage::LlmMeter>
         });
-    let planner: Option<Arc<dyn forge_planner::Planner>> = if llm_ready && codegen_flag {
-        match build_llm_planner(meter).await {
-            Ok(p) => Some(p),
-            Err(e) => {
-                eprintln!("orchestrate: LLM planner unavailable ({e}), falling back to sequential");
-                None
+    // ORCH-101a：Codegen 快速路径保留；MultiStep 接通 LlmPlanner + LlmReplanner 回路
+    let (planner, replanner): (PlannerOpt, ReplannerOpt) = match plan_mode {
+            PlanMode::Codegen => {
+                let p = if llm_ready { Some(build_codegen_planner(meter)) } else { None };
+                (p, None)
             }
-        }
-    } else {
-        None
-    };
+            PlanMode::MultiStep => {
+                if llm_ready {
+                    match build_multistep_planner() {
+                        Ok((p, rp)) => (p, rp),
+                        Err(e) => {
+                            eprintln!("orchestrate: multistep planner unavailable ({e}), falling back to sequential");
+                            (None, None)
+                        }
+                    }
+                } else {
+                    eprintln!("orchestrate: MultiStep without LLM config, falling back to sequential planner");
+                    (None, None)
+                }
+            }
+            PlanMode::Auto => unreachable!("resolve_plan_mode 不返回 Auto"),
+        };
 
     let deps = forge_sdk::OrchestratorDeps {
         router: Arc::new(router),
@@ -327,7 +367,7 @@ async fn execute_orchestration(
             max_attempts: 1,
             base_backoff_ms: 200,
         }),
-        replanner: None,
+        replanner,
         max_replans: 1,
         planner,
     };
@@ -416,6 +456,7 @@ async fn orchestrate(
     quota::check_quota(&qv, running, today_count).await.map_err(ApiError::from)?;
 
     let task = st.sdk.create_task(req.goal.clone(), vec![], req.acceptance.clone()).await?;
+    let plan_mode = resolve_plan_mode(req.plan_mode, req.codegen_flag);
 
     // FED-001 R4：PG 模式且未设 FORGE_QUEUE_INLINE=1 时走"入队 → 认领循环执行"。
     // 单副本行为等价：本 handler 自认领自己的任务并同步返回完整报告；
@@ -427,6 +468,7 @@ async fn orchestrate(
             let payload = serde_json::json!({
                 "timeout_secs": req.timeout_secs,
                 "codegen_flag": req.codegen_flag,
+                "plan_mode": format!("{:?}", plan_mode).to_lowercase(),
             });
             queue::enqueue_orchestration(&pool, task.id.as_ref(), &tenant, payload)
                 .await
@@ -457,7 +499,7 @@ async fn orchestrate(
         }
     }
 
-    let report = execute_orchestration(&st, &task, req.timeout_secs, req.codegen_flag, &tenant).await?;
+    let report = execute_orchestration(&st, &task, req.timeout_secs, plan_mode, &tenant).await?;
     Ok(report_response(&report))
 }
 
@@ -469,8 +511,12 @@ async fn execute_queued(st: &AppState, qt: &queue::QueuedTask, tenant: &str) -> 
         .await
         .map_err(ApiError::from)?;
     let timeout_secs = qt.payload["timeout_secs"].as_u64().unwrap_or(30);
-    let codegen_flag = qt.payload["codegen_flag"].as_bool().unwrap_or(true);
-    execute_orchestration(st, &task, timeout_secs, codegen_flag, tenant).await
+    let plan_mode = match qt.payload["plan_mode"].as_str() {
+        Some("multi_step") => PlanMode::MultiStep,
+        Some("codegen") => PlanMode::Codegen,
+        _ => resolve_plan_mode(None, qt.payload["codegen_flag"].as_bool().unwrap_or(true)),
+    };
+    execute_orchestration(st, &task, timeout_secs, plan_mode, tenant).await
 }
 
 /// 降级响应：任务被其它副本 worker 认领，轮询本库任务状态至终态。
@@ -921,22 +967,51 @@ async fn ui_evidence() -> Html<&'static str> {
 
 /// 构建服务端 LLM 规划器（V5.1 CGN-001 落位 R6-021：实现迁至 forge-plan-llm
 /// crate 冻结契约，此处仅装配；单文件代码生成，纯文本双调用，对小上限模型鲁棒）。
-async fn build_llm_planner(
-    meter: Option<Arc<dyn forge_plan_llm::usage::LlmMeter>>,
-) -> Result<Arc<dyn forge_planner::Planner>, String> {
+fn llm_model() -> String {
+    std::env::var("FORGE_TIER_HIGH_MODEL")
+        .ok()
+        .filter(|m| !m.trim().is_empty())
+        .unwrap_or_else(|| "glm-5.2".into())
+}
+
+fn build_llm_backend() -> Arc<dyn forge_plan_llm::LlmPlanBackend> {
     let base = std::env::var("FORGE_LLM_BASE_URL").unwrap_or_default();
     let key = std::env::var("FORGE_LLM_API_KEY").unwrap_or_default();
-    let backend: Arc<dyn forge_plan_llm::LlmPlanBackend> =
-        Arc::new(forge_api::LlmClient::new(base, key));
-    let mut planner = forge_plan_llm::SingleFileCodegenPlanner::new(
-        backend,
-        std::env::var("FORGE_TIER_HIGH_MODEL")
-            .ok()
-            .filter(|m| !m.trim().is_empty())
-            .unwrap_or_else(|| "glm-5.2".into()),
-    );
+    Arc::new(forge_api::LlmClient::new(base, key))
+}
+
+/// Codegen 快速路径（V5.1 契约保留）：单文件代码生成规划器。
+fn build_codegen_planner(
+    meter: Option<Arc<dyn forge_plan_llm::usage::LlmMeter>>,
+) -> Arc<dyn forge_planner::Planner> {
+    let mut planner = forge_plan_llm::SingleFileCodegenPlanner::new(build_llm_backend(), llm_model());
     planner.meter = meter;
-    Ok(Arc::new(planner))
+    Arc::new(planner)
+}
+
+/// V7 ORCH-101a：MultiStep 多步规划器 + 重规划器（共享 backend；tools 白名单冻结）。
+fn build_multistep_planner() -> Result<(PlannerOpt, ReplannerOpt), String> {
+    let backend = build_llm_backend();
+    let tools = vec!["echo".to_string(), "write_file".to_string()];
+    let planner = forge_plan_llm::LlmPlanner {
+        backend: backend.clone(),
+        model: llm_model(),
+        schema_max_attempts: 3,
+        tools: tools.clone(),
+        ledger: None,
+        brief_mode: false,
+    };
+    let replanner = forge_plan_llm::LlmReplanner {
+        backend,
+        model: llm_model(),
+        schema_max_attempts: 3,
+        tools,
+        ledger: None,
+    };
+    Ok((
+        Some(Arc::new(planner) as Arc<dyn forge_planner::Planner>),
+        Some(Arc::new(replanner) as Arc<dyn forge_plan_llm::Replanner>),
+    ))
 }
 /// GET /events/stream — SSE 实时事件流（API-003；FED-002 跨副本合并）。
 async fn events_stream(

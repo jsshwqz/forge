@@ -1,0 +1,196 @@
+//! V7 ORCH-101a：多步规划接通与重规划回路（build_v70a.md 冻结测试，离线 mock）。
+
+use forge_exec::{EchoTool, PermissionLevel, PermissionPolicy, PolicyContext, ToolRouter, WriteFileTool};
+use forge_plan_llm::{ChatMessage, LlmPlanBackend, LlmPlanner, LlmReplanner};
+use forge_sdk::{ForgeSdk, Orchestrator, OrchestratorDeps};
+use std::sync::{Arc, Mutex};
+use std::time::Duration;
+
+/// 顺序回放预设响应的离线 mock（planner 与 replanner 共享同一应答队列）。
+struct MockLlm {
+    responses: Mutex<Vec<String>>,
+}
+
+#[async_trait::async_trait]
+impl LlmPlanBackend for MockLlm {
+    async fn complete(&self, _m: &str, _msgs: &[ChatMessage]) -> forge_core::ForgeResult<String> {
+        let mut g = self.responses.lock().unwrap();
+        if g.is_empty() {
+            Err(forge_core::ForgeError::InvalidState("mock: exhausted".into()))
+        } else {
+            Ok(g.remove(0))
+        }
+    }
+}
+
+struct AllowAll;
+impl PermissionPolicy for AllowAll {
+    fn check(&self, _: PermissionLevel, _: &PolicyContext) -> forge_core::ForgeResult<()> {
+        Ok(())
+    }
+}
+
+fn two_step_plan() -> String {
+    r#"{"steps":[
+        {"id":"s1","title":"greet","depends_on":[],"action":{"type":"call","capability":"echo","input":{"goal":"hi"}}},
+        {"id":"s2","title":"write","depends_on":["s1"],"action":{"type":"call","capability":"write_file","input":{"path":"out.txt","content":"hello"}}}
+    ]}"#
+    .to_string()
+}
+
+fn bad_path_plan() -> String {
+    r#"{"steps":[
+        {"id":"s1","title":"escape","depends_on":[],"action":{"type":"call","capability":"write_file","input":{"path":"../evil.txt","content":"x"}}}
+    ]}"#
+    .to_string()
+}
+
+fn fixed_plan() -> String {
+    r#"{"steps":[
+        {"id":"r1","title":"echo fallback","depends_on":[],"action":{"type":"call","capability":"echo","input":{"goal":"revised"}}}
+    ]}"#
+    .to_string()
+}
+
+fn acceptance_command() -> Vec<forge_task::AcceptanceCriterion> {
+    let cmd =
+        if cfg!(target_os = "windows") { "cmd /c echo ok" } else { "true" };
+    vec![forge_task::AcceptanceCriterion {
+        id: "AC-1".into(),
+        description: "sanity command".into(),
+        check: forge_task::CheckSpec::Command(cmd.into()),
+    }]
+}
+
+fn deps_with(
+    ws: &Path2,
+    planner: Option<Arc<dyn forge_planner::Planner>>,
+    replanner: Option<Arc<dyn forge_plan_llm::Replanner>>,
+) -> OrchestratorDeps {
+    let router = ToolRouter::new();
+    router.register(Box::new(EchoTool::new())).unwrap();
+    router.register(Box::new(WriteFileTool::new(ws))).unwrap();
+    OrchestratorDeps {
+        router: Arc::new(router),
+        policy: Arc::new(AllowAll),
+        verifier_cmd: Arc::new(forge_verify::CommandVerifier),
+        verifier_file: Arc::new(forge_verify::FileVerifier),
+        evidence: Arc::new(forge_evidence::InMemoryEvidenceStore::default()),
+        workspace: Arc::new(forge_workspace::WorkspaceManager::new(ws.join("ws-root")).unwrap()),
+        timeout: Duration::from_secs(15),
+        recovery: Arc::new(forge_recovery::BoundedRetryStrategy { max_attempts: 1, base_backoff_ms: 10 }),
+        replanner,
+        max_replans: 1,
+        planner,
+    }
+}
+
+type Path2 = std::path::Path;
+
+/// 冻结测试：auto/codegen_flag/multi_step 三来源解析矩阵（R1 冻结）。
+#[test]
+fn plan_mode_resolution_matrix() {
+    use forge_server::{resolve_plan_mode, PlanMode};
+    // 缺省 = codegen_flag 兼容路径
+    assert_eq!(resolve_plan_mode(None, true), PlanMode::Codegen);
+    assert_eq!(resolve_plan_mode(None, false), PlanMode::MultiStep);
+    // 显式 Auto 恒等于 Codegen（零破坏承诺）
+    assert_eq!(resolve_plan_mode(Some(PlanMode::Auto), false), PlanMode::Codegen);
+    assert_eq!(resolve_plan_mode(Some(PlanMode::Auto), true), PlanMode::Codegen);
+    // 显式覆盖
+    assert_eq!(resolve_plan_mode(Some(PlanMode::Codegen), false), PlanMode::Codegen);
+    assert_eq!(resolve_plan_mode(Some(PlanMode::MultiStep), true), PlanMode::MultiStep);
+}
+
+/// 冻结测试：mock LLM 返回两步计划 → 波次顺序执行、写盘成功、final=Completed。
+#[tokio::test]
+async fn multistep_plan_executes_waves() {
+    let ws = tempfile::tempdir().unwrap();
+    let sdk = ForgeSdk::in_memory();
+    let task = sdk
+        .create_task("multistep probe", vec![], acceptance_command())
+        .await
+        .unwrap();
+
+    let mock = Arc::new(MockLlm { responses: Mutex::new(vec![two_step_plan()]) });
+    let planner = LlmPlanner {
+        backend: mock.clone() as Arc<dyn LlmPlanBackend>,
+        model: "mock".into(),
+        schema_max_attempts: 3,
+        tools: vec!["echo".into(), "write_file".into()],
+        ledger: None,
+        brief_mode: false,
+    };
+    let deps = deps_with(ws.path(), Some(Arc::new(planner)), None);
+    let orch = Orchestrator { capability: "echo".into(), timeout: Duration::from_secs(15) };
+
+    let report = sdk.run_end_to_end(&task.id, &deps, &orch).await.unwrap();
+    assert_eq!(report.final_status, forge_task::TaskStatus::Completed, "{:?}", report.execution.failed);
+    assert_eq!(report.execution.completed.len(), 2, "两步都要执行");
+    assert!(
+        ws.path().join("ws-root").join(task.id.as_ref()).join("out.txt").exists()
+            || ws.path().join("out.txt").exists()
+            || ws
+                .path()
+                .join("ws-root")
+                .join("out.txt")
+                .exists(),
+        "write_file 步骤必须落盘"
+    );
+}
+
+/// 冻结测试：步骤失败 → 重规划换计划续跑 → replans_used=1。
+#[tokio::test]
+async fn replanner_invoked_on_step_failure() {
+    let ws = tempfile::tempdir().unwrap();
+    let sdk = ForgeSdk::in_memory();
+    let task = sdk
+        .create_task("replan probe", vec![], acceptance_command())
+        .await
+        .unwrap();
+
+    // 第一次 plan 给出逃逸路径（WRT-001 运行时拒绝）→ 失败触发重规划
+    let mock = Arc::new(MockLlm {
+        responses: Mutex::new(vec![bad_path_plan(), fixed_plan()]),
+    });
+    let planner = LlmPlanner {
+        backend: mock.clone() as Arc<dyn LlmPlanBackend>,
+        model: "mock".into(),
+        schema_max_attempts: 3,
+        tools: vec!["echo".into(), "write_file".into()],
+        ledger: None,
+        brief_mode: false,
+    };
+    let replanner = LlmReplanner {
+        backend: mock as Arc<dyn LlmPlanBackend>,
+        model: "mock".into(),
+        schema_max_attempts: 3,
+        tools: vec!["echo".into(), "write_file".into()],
+        ledger: None,
+    };
+    let deps = deps_with(ws.path(), Some(Arc::new(planner)), Some(Arc::new(replanner)));
+    let orch = Orchestrator { capability: "echo".into(), timeout: Duration::from_secs(15) };
+
+    let report = sdk.run_end_to_end(&task.id, &deps, &orch).await.unwrap();
+    assert_eq!(report.replans_used, 1, "失败后必须恰重规划一次");
+    assert_eq!(report.final_status, forge_task::TaskStatus::Completed);
+}
+
+/// 冻结测试：MultiStep 未配 LLM → planner=None 走 SequentialPlanner 兜底完成（不报错）。
+#[tokio::test]
+async fn multistep_falls_back_without_llm() {
+    let ws = tempfile::tempdir().unwrap();
+    let sdk = ForgeSdk::in_memory();
+    let task = sdk
+        .create_task("fallback probe", vec![], acceptance_command())
+        .await
+        .unwrap();
+
+    // handler 行为镜像：MultiStep + !llm_ready ⇒ deps.planner=None（SDK 内部 SequentialPlanner）
+    let deps = deps_with(ws.path(), None, None);
+    let orch = Orchestrator { capability: "echo".into(), timeout: Duration::from_secs(15) };
+
+    let report = sdk.run_end_to_end(&task.id, &deps, &orch).await.unwrap();
+    assert_eq!(report.final_status, forge_task::TaskStatus::Completed);
+    assert_eq!(report.replans_used, 0);
+}
