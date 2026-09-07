@@ -934,5 +934,13 @@
     "task_id": "KNW-101",
     "title": "两项发现: ①knowledge-suggest空库无CLI注入口(全环断头路) ②CLI层6用例静默截断非拒绝",
     "body": "演练发现: ①CLI knowledge-suggest用InMemoryKnowledgeBase::default()恒空, 真实失败知识无CLI注入口→建议恒0条, KNW全环在生产口径断头(演练以手工建议文件绕过); 需KNW-003立项: PG知识库+CLI注入/自动采集接线; ②knowledge-pr对6条approve在CLI层静默截断至5(库级forge_pr_case_cap_five兜底成立), 建议CLI显式报错"
+  },
+  {
+    "id": "R6-030",
+    "kind": "R6Decision",
+    "date": "2026-09-07",
+    "task_id": "V70",
+    "title": "批准D10+D9: ORCH-101红线解除生效, 先行批=ORCH-101a/b/c+TEN-004+BILL-003开工",
+    "body": "用户2026-09-07回复'批准'(对应D10+D9最小启动指令); build_v51.md单文件/禁执行红线按build_v70a前置决议解除(面: 多文件生成+沙箱链内[WorkspaceWrite,External]验收, Irreversible永禁, 单文件快速路径保留); 先行批五段串行施工a→b→c→TEN-004→BILL-003; D5~D8维持待拍板(后续包前置)"
   }
 ]
