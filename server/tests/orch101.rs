@@ -357,7 +357,7 @@ async fn mcp_tool_discovered_and_registered() {
     router.register(Box::new(EchoTool::new())).unwrap();
 
     let wl: std::collections::HashSet<String> = ["echo".to_string()].into();
-    let n = register_mcp_tools(&router, &[cfg.clone()], &wl).await.unwrap();
+    let n = register_mcp_tools(&router, std::slice::from_ref(&cfg), &wl).await.unwrap();
     assert_eq!(n, 1, "白名单内工具必须注册");
 
     let full = bridged_name("mock", "echo");
