@@ -950,5 +950,13 @@
     "task_id": "ORCH-101a",
     "title": "ORCH-101a落地: 多步规划+重规划回路接通, 4冻结测试全绿",
     "body": "plan_mode三态解析(Auto恒等Codegen零破坏); LlmPlanner(tools白名单)+LlmReplanner从None接通; mock全离线验证: 两步波次执行落盘/逃逸路径失败触发重规划replans_used=1/无LLM降级顺序计划; workspace 387 passed/clippy零告警"
+  },
+  {
+    "id": "R1-071",
+    "kind": "R1Completed",
+    "date": "2026-09-07",
+    "task_id": "ORCH-101b",
+    "title": "ORCH-101b落地: 多文件工程+沙箱化运行验收, 8冻结测试全绿",
+    "body": "command_level冻结分级+AllowList[WorkspaceWrite,External]策略链+拒绝留证(sandbox_policy标记入evidence content); 仅MultiStep装配沙箱(基线零回归); 三write_file步骤多文件工程真实落盘; format c:被拒且证据可审计"
   }
 ]

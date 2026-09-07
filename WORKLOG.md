@@ -1066,3 +1066,10 @@ plan_mode三态解析(Auto恒等Codegen零破坏); LlmPlanner(tools白名单)+Ll
 
 ---
 
+## [R1-071] ✅ 成功 · 2026-09-07 · ORCH-101b落地: 多文件工程+沙箱化运行验收, 8冻结测试全绿
+
+- **任务 ID**：ORCH-101b
+command_level冻结分级+AllowList[WorkspaceWrite,External]策略链+拒绝留证(sandbox_policy标记入evidence content); 仅MultiStep装配沙箱(基线零回归); 三write_file步骤多文件工程真实落盘; format c:被拒且证据可审计
+
+---
+
