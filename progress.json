@@ -750,5 +750,13 @@
   "owner": "executor",
   "last_record": "R1-075",
   "commit": "67b82ff"
+ },
+ {
+  "task_id": "LOCAL-001",
+  "name": "本地实用化套件(DeepSeek接入+一键启动+工作台UI+桌面四件套)+真实E2E三缺陷修复",
+  "status": "Completed",
+  "owner": "executor",
+  "last_record": "R1-077",
+  "commit": "b295923"
  }
 ]
