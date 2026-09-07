@@ -43,6 +43,56 @@ pub async fn check_quota(q: &QuotaView, running: i64, today_count: i64) -> Forge
 /// 默认配额（TEN-003 R1）：并发 4、日任务 100（与 0011_quotas 种子数据一致）。
 pub const DEFAULT_QUOTA: QuotaView = QuotaView { max_concurrent: 4, daily_tasks: 100 };
 
+/// PG 配额存储（V7 TEN-004：MIGRATIONS 内嵌表 quotas(tenant_id PK, max_concurrent, daily_tasks)）。
+pub struct PgQuotaStore {
+    pool: sqlx::PgPool,
+}
+
+impl PgQuotaStore {
+    pub fn new(pool: sqlx::PgPool) -> Self {
+        Self { pool }
+    }
+}
+
+#[async_trait::async_trait]
+impl QuotaStore for PgQuotaStore {
+    /// 无记录 → DEFAULT_QUOTA(4,100)，与内存实现语义一致（非静默空数据）。
+    async fn of(&self, tenant_id: &str) -> ForgeResult<QuotaView> {
+        let row: Option<(i32, i32)> =
+            sqlx::query_as("SELECT max_concurrent, daily_tasks FROM quotas WHERE tenant_id = $1")
+                .bind(tenant_id)
+                .fetch_optional(&self.pool)
+                .await
+                .map_err(pg_store_unavailable)?;
+        Ok(row.map(|(mc, dt)| QuotaView { max_concurrent: mc, daily_tasks: dt })
+            .unwrap_or(DEFAULT_QUOTA))
+    }
+
+    /// INSERT ... ON CONFLICT DO UPDATE；租户不存在（FK）→ InvalidState。
+    async fn set(&self, tenant_id: &str, quota: QuotaView) -> ForgeResult<()> {
+        sqlx::query(
+            "INSERT INTO quotas (tenant_id, max_concurrent, daily_tasks) VALUES ($1, $2, $3)              ON CONFLICT (tenant_id) DO UPDATE SET max_concurrent = $2, daily_tasks = $3",
+        )
+        .bind(tenant_id)
+        .bind(quota.max_concurrent)
+        .bind(quota.daily_tasks)
+        .execute(&self.pool)
+        .await
+        .map_err(|e| {
+            if e.as_database_error().map(|d| d.is_foreign_key_violation()).unwrap_or(false) {
+                ForgeError::InvalidState(format!("tenant not registered: {tenant_id}"))
+            } else {
+                crate::auth::pg_store_unavailable(e)
+            }
+        })?;
+        Ok(())
+    }
+}
+
+fn pg_store_unavailable(e: sqlx::Error) -> ForgeError {
+    crate::auth::pg_store_unavailable(e)
+}
+
 /// 内存配额存储（开发/测试用；生产走 0011_quotas 的 PG 实现）。
 #[derive(Default)]
 pub struct InMemoryQuotaStore {

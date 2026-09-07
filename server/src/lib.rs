@@ -165,6 +165,14 @@ impl From<ForgeError> for ApiError {
     fn from(e: ForgeError) -> Self {
         let status = match &e {
             ForgeError::NotFound(_) => StatusCode::NOT_FOUND,
+            // TEN-004（R2）：PG 租户态不可用 → 503 显式失败，禁止静默空数据
+            ForgeError::InvalidState(msg) if auth::is_pg_store_unavailable(&e) => {
+                let _ = msg;
+                return ApiError(
+                    StatusCode::SERVICE_UNAVAILABLE,
+                    serde_json::json!({ "error": { "code": "storage_unavailable" } }).to_string(),
+                );
+            }
             // TEN-003（V5-FIX-2b）：本服务配额超限 → 429 + 冻结错误体
             ForgeError::InvalidState(msg)
                 if msg.starts_with("quota_concurrency") || msg.starts_with("quota_daily") =>
@@ -1203,8 +1211,9 @@ pub async fn run_from_env() -> Result<(), Box<dyn std::error::Error>> {
                     knowledge: Arc::new(Default::default()),
                     capabilities: Arc::new(Default::default()),
                     auth: AuthConfig::from_env(),
-                    tenant_keys: Arc::new(auth::InMemoryTenantKeyStore::default()),
-                    quotas: Arc::new(quota::InMemoryQuotaStore::default()),
+                    // TEN-004 R1：PG 模式用 PG 实现（重启不丢）；内存模式保留内存实现
+                    tenant_keys: Arc::new(auth::PgTenantKeyStore::new(pool.clone())),
+                    quotas: Arc::new(quota::PgQuotaStore::new(pool.clone())),
                     pool: Some(pool),
                 }
             }

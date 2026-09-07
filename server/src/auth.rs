@@ -62,7 +62,7 @@ fn constant_time_eq(a: &[u8], b: &[u8]) -> bool {
 }
 
 /// sha256 十六进制摘要（钥哈希口径，与 0010_tenant_keys 存储一致）。
-pub(crate) fn sha256_hex(input: &[u8]) -> String {
+pub fn sha256_hex(input: &[u8]) -> String {
     let mut h = Sha256::new();
     h.update(input);
     h.finalize().iter().map(|b| format!("{b:02x}")).collect()
@@ -120,6 +120,64 @@ pub async fn authenticate(
             }
         }
     }
+}
+
+/// PG 租户钥存储（V7 TEN-004：MIGRATIONS 内嵌表 tenant_keys(tenant_id, key_hash) 复合主键）。
+pub struct PgTenantKeyStore {
+    pool: sqlx::PgPool,
+}
+
+impl PgTenantKeyStore {
+    pub fn new(pool: sqlx::PgPool) -> Self {
+        Self { pool }
+    }
+}
+
+#[async_trait::async_trait]
+impl TenantKeyStore for PgTenantKeyStore {
+    async fn tenant_of(&self, key_hash: &str) -> ForgeResult<Option<String>> {
+        sqlx::query_scalar("SELECT tenant_id FROM tenant_keys WHERE key_hash = $1 LIMIT 1")
+            .bind(key_hash)
+            .fetch_optional(&self.pool)
+            .await
+            .map_err(pg_store_unavailable)
+    }
+
+    /// 明文生成与内存实现同口径（counter+nanos → sha256 截 32 hex）；
+    /// 库存 sha256_hex(明文)（R3）。租户不存在（FK tenants）→ InvalidState。
+    async fn issue(&self, tenant_id: &str) -> ForgeResult<String> {
+        let n = ISSUE_COUNTER.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+        let nanos = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map(|d| d.as_nanos())
+            .unwrap_or_default();
+        let full = sha256_hex(format!("{tenant_id}:{n}:{nanos}").as_bytes());
+        let raw = full[..32].to_string();
+        let hash = sha256_hex(raw.as_bytes());
+        sqlx::query("INSERT INTO tenant_keys (tenant_id, key_hash) VALUES ($1, $2)")
+            .bind(tenant_id)
+            .bind(&hash)
+            .execute(&self.pool)
+            .await
+            .map_err(|e| {
+                if e.as_database_error().map(|d| d.is_foreign_key_violation()).unwrap_or(false) {
+                    ForgeError::InvalidState(format!("tenant not registered: {tenant_id}"))
+                } else {
+                    pg_store_unavailable(e)
+                }
+            })?;
+        Ok(raw)
+    }
+}
+
+/// R2 冻结：PG 存储不可用错误前缀（映射 503，禁止内存回退静默空数据）。
+pub fn pg_store_unavailable(e: sqlx::Error) -> ForgeError {
+    ForgeError::InvalidState(format!("pg_store_unavailable: {e}"))
+}
+
+/// R2 冻结纯函数：判定是否 PG 存储不可用错误（ApiError 映射 503 依据）。
+pub fn is_pg_store_unavailable(e: &ForgeError) -> bool {
+    matches!(e, ForgeError::InvalidState(m) if m.starts_with("pg_store_unavailable"))
 }
 
 /// 内存租户钥存储（开发/测试用；生产走 0010_tenant_keys 的 PG 实现）。
@@ -189,6 +247,13 @@ pub async fn auth_middleware(
         Ok(outcome) => {
             req.extensions_mut().insert(outcome);
             next.run(req).await
+        }
+        // TEN-004 R2：存储不可用（非凭据问题）→ 503 显式失败，禁止静默
+        Err(e) if is_pg_store_unavailable(&e) => {
+            let body = serde_json::json!({
+                "error": { "code": "storage_unavailable", "message": "tenant store unavailable" }
+            });
+            (StatusCode::SERVICE_UNAVAILABLE, Json(body)).into_response()
         }
         Err(_) => {
             let body = serde_json::json!({
