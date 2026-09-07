@@ -199,7 +199,6 @@ async fn multistep_falls_back_without_llm() {
 
 use forge_server::sandbox_verify::{command_level, select_command_verifier, SANDBOX_DENY_MARKER};
 use forge_evidence::EvidenceStore as _;
-use forge_verify::Verifier as _;
 
 fn three_file_plan() -> String {
     r#"{"steps":[
@@ -236,7 +235,7 @@ fn multistep_deps(
     router.register(Box::new(EchoTool::new())).unwrap();
     router.register(Box::new(WriteFileTool::new(ws))).unwrap();
     let evidence_store = evidence;
-    let deps = OrchestratorDeps {
+    OrchestratorDeps {
         router: Arc::new(router),
         policy: Arc::new(AllowAll),
         verifier_cmd: select_command_verifier(forge_server::PlanMode::MultiStep, Arc::new(forge_verify::CommandVerifier)).0,
@@ -248,8 +247,7 @@ fn multistep_deps(
         replanner: None,
         max_replans: 1,
         planner: Some(Arc::new(planner)),
-    };
-    deps
+    }
 }
 
 /// 冻结测试：mock LLM 三 write_file 步骤（不同路径）→ 三文件落盘。

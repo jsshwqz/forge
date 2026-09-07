@@ -1073,3 +1073,17 @@ command_level冻结分级+AllowList[WorkspaceWrite,External]策略链+拒绝留�
 
 ---
 
+## [R7-016] ⚠️ 偏差/风险 · 2026-09-07 · 二次审计发现: market_signing离线panic阻断测试+orch101警告+租户/市场欠账
+
+- **任务 ID**：AUDIT-002
+详见 audit_report_v2_20260907.md (AF-AUDIT-002)。主要发现: ①server/tests/market_signing.rs在无FORGE_PG_URL时connect_stub无条件panic导致离线cargo test --workspace退出码1; ②orch101.rs存在unused import警告; ③租户态tenant_keys/quotas仍为内存版; ④市场releases缺少包体存储; ⑤ORCH-101a/b未登账
+
+---
+
+## [R1-072] ✅ 成功 · 2026-09-07 · Aion Forge 全项目真实度二次审计(AF-AUDIT-002)完成并落档
+
+- **任务 ID**：AUDIT-002
+完成代码直验、全仓命令实测与历史10项缺陷对账，形成 AF-AUDIT-002 报告并落档至 audit_report_v2_20260907.md。实测确认: 核心能力真实度80%~85%，历史缺陷整改到位；新识别1项阻断缺陷(market_signing离线panic导致退出码1)+1项警告(orch101未用导入)+租户/市场欠账
+
+---
+
