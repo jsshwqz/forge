@@ -118,6 +118,8 @@ pub struct AppState {
     pub quotas: Arc<dyn quota::QuotaStore>,
     /// V6.0 FED-001：PG 连接池（内存模式为 None，队列路径由此门控）。
     pub pool: Option<sqlx::PgPool>,
+    /// 大模型运行时配置（支持页面热更新与持久化）。
+    pub llm_config: Arc<tokio::sync::RwLock<routes::llm::LlmRuntimeConfig>>,
 }
 
 impl AppState {
@@ -136,6 +138,7 @@ impl AppState {
             tenant_keys: Arc::new(auth::InMemoryTenantKeyStore::default()),
             quotas: Arc::new(quota::InMemoryQuotaStore::default()),
             pool: None,
+            llm_config: Arc::new(tokio::sync::RwLock::new(routes::llm::LlmRuntimeConfig::from_env())),
         }
     }
     pub fn new(tasks: Arc<dyn TaskStore>, sessions: Arc<dyn SessionStore>) -> Self {
@@ -153,6 +156,7 @@ impl AppState {
             tenant_keys: Arc::new(auth::InMemoryTenantKeyStore::default()),
             quotas: Arc::new(quota::InMemoryQuotaStore::default()),
             pool: None,
+            llm_config: Arc::new(tokio::sync::RwLock::new(routes::llm::LlmRuntimeConfig::from_env())),
         }
     }
 }
@@ -337,17 +341,11 @@ async fn execute_orchestration(
         }
     }
 
-    // 规划器：配置了 FORGE_LLM_* 且 codegen_flag（V5.1 CGN-001，默认 true）时
-    // 用真实模型做单文件代码生成 Architect；未配置/未启用则回退确定性
+    // 规划器：配置了大模型且开启 codegen/multistep 时
+    // 用真实模型做多步规划/单文件生成；未配置则回退确定性
     // SequentialPlanner（离线全绿的基线语义）。
-    let llm_ready = !std::env::var("FORGE_LLM_BASE_URL")
-        .unwrap_or_default()
-        .trim()
-        .is_empty()
-        && !std::env::var("FORGE_LLM_API_KEY")
-            .unwrap_or_default()
-            .trim()
-            .is_empty();
+    let llm_cfg = st.llm_config.read().await.clone();
+    let llm_ready = !llm_cfg.base_url.trim().is_empty() && !llm_cfg.api_key.trim().is_empty();
     // BILL-001：LLM token 计量钩子（R6-026，构造期注入）
     let meter = st
         .pool
@@ -359,12 +357,12 @@ async fn execute_orchestration(
     // ORCH-101a：Codegen 快速路径保留；MultiStep 接通 LlmPlanner + LlmReplanner 回路
     let (planner, replanner): (PlannerOpt, ReplannerOpt) = match plan_mode {
             PlanMode::Codegen => {
-                let p = if llm_ready { Some(build_codegen_planner(meter)) } else { None };
+                let p = if llm_ready { Some(build_codegen_planner(&llm_cfg, meter)) } else { None };
                 (p, None)
             }
             PlanMode::MultiStep => {
                 if llm_ready {
-                    match build_multistep_planner(meter.clone()) {
+                    match build_multistep_planner(&llm_cfg, meter.clone()) {
                         Ok((p, rp)) => (p, rp),
                         Err(e) => {
                             eprintln!("orchestrate: multistep planner unavailable ({e}), falling back to sequential");
@@ -1011,39 +1009,39 @@ async fn ui_evidence() -> Html<&'static str> {
     Html(include_str!("../static/evidence.html"))
 }
 
-/// 构建服务端 LLM 规划器（V5.1 CGN-001 落位 R6-021：实现迁至 forge-plan-llm
-/// crate 冻结契约，此处仅装配；单文件代码生成，纯文本双调用，对小上限模型鲁棒）。
-fn llm_model() -> String {
-    std::env::var("FORGE_TIER_HIGH_MODEL")
-        .ok()
-        .filter(|m| !m.trim().is_empty())
-        .unwrap_or_else(|| "glm-5.2".into())
+/// 构建服务端 LLM 规划器（支持运行时动态配置）。
+fn llm_model(cfg: &routes::llm::LlmRuntimeConfig) -> String {
+    if !cfg.model.trim().is_empty() {
+        cfg.model.clone()
+    } else {
+        "deepseek-chat".into()
+    }
 }
 
-fn build_llm_backend() -> Arc<dyn forge_plan_llm::LlmPlanBackend> {
-    let base = std::env::var("FORGE_LLM_BASE_URL").unwrap_or_default();
-    let key = std::env::var("FORGE_LLM_API_KEY").unwrap_or_default();
-    Arc::new(forge_api::LlmClient::new(base, key))
+fn build_llm_backend(cfg: &routes::llm::LlmRuntimeConfig) -> Arc<dyn forge_plan_llm::LlmPlanBackend> {
+    Arc::new(forge_api::LlmClient::new(cfg.base_url.clone(), cfg.api_key.clone()))
 }
 
 /// Codegen 快速路径（V5.1 契约保留）：单文件代码生成规划器。
 fn build_codegen_planner(
+    cfg: &routes::llm::LlmRuntimeConfig,
     meter: Option<Arc<dyn forge_plan_llm::usage::LlmMeter>>,
 ) -> Arc<dyn forge_planner::Planner> {
-    let mut planner = forge_plan_llm::SingleFileCodegenPlanner::new(build_llm_backend(), llm_model());
+    let mut planner = forge_plan_llm::SingleFileCodegenPlanner::new(build_llm_backend(cfg), llm_model(cfg));
     planner.meter = meter;
     Arc::new(planner)
 }
 
 /// V7 ORCH-101a：MultiStep 多步规划器 + 重规划器（共享 backend；tools 白名单冻结）。
 fn build_multistep_planner(
+    cfg: &routes::llm::LlmRuntimeConfig,
     meter: Option<Arc<dyn forge_plan_llm::usage::LlmMeter>>,
 ) -> Result<(PlannerOpt, ReplannerOpt), String> {
-    let backend = build_llm_backend();
+    let backend = build_llm_backend(cfg);
     let tools = vec!["echo".to_string(), "write_file".to_string()];
     let planner = forge_plan_llm::LlmPlanner {
         backend: backend.clone(),
-        model: llm_model(),
+        model: llm_model(cfg),
         schema_max_attempts: 3,
         tools: tools.clone(),
         ledger: None,
@@ -1052,7 +1050,7 @@ fn build_multistep_planner(
     };
     let replanner = forge_plan_llm::LlmReplanner {
         backend,
-        model: llm_model(),
+        model: llm_model(cfg),
         schema_max_attempts: 3,
         tools,
         ledger: None,
@@ -1166,6 +1164,9 @@ pub fn app_with_state(st: AppState) -> Router {
         .route("/admin/bills/generate", post(admin_generate_bill))
         .route("/admin/bills/:id", get(admin_get_bill))
         .route("/admin/bills/:id/export", get(admin_export_bill))
+        // LLM 动态配置与连通测试
+        .route("/api/llm/config", get(routes::llm::get_llm_config).post(routes::llm::update_llm_config))
+        .route("/api/llm/test", post(routes::llm::test_llm_connection))
         .route("/", get(ui_index))
         .route("/ui/sessions", get(ui_sessions))
         .route("/ui/evidence", get(ui_evidence));
@@ -1235,6 +1236,7 @@ pub async fn run_from_env() -> Result<(), Box<dyn std::error::Error>> {
                     tenant_keys: Arc::new(auth::PgTenantKeyStore::new(pool.clone())),
                     quotas: Arc::new(quota::PgQuotaStore::new(pool.clone())),
                     pool: Some(pool),
+                    llm_config: Arc::new(tokio::sync::RwLock::new(routes::llm::LlmRuntimeConfig::from_env())),
                 }
             }
             Err(_) => { println!("storage: in-memory"); AppState::in_memory() }

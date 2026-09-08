@@ -1129,3 +1129,10 @@ G-ORCH101: ①workspace 404 passed/0 failed+clippy零告警 ②多步任务e2e m
 
 ---
 
+## [R6-031] ⚖️ 决策 · 2026-09-08 · V8.0'结对编程'立项: 六包规划, 先行批四包(CTX/EDIT/STREAM/SANDBOX)按用户②③指示批准施工
+
+- **任务 ID**：V80
+用户采纳Gemini外部评审+规划层裁决: 实用分水岭第二级=结对编程(看得见/改得动/可追溯); 六包=CTX-001工作区感知/EDIT-001增量编辑/STREAM-001进度流/SANDBOX-002容器隔离/GIT-001任务Git(后续批,复用KNW-101机制)/NOTIFY-001通知(后续批); 先行批四包规格=build_v80a.md直接施工; GIT-001粒度与NOTIFY载荷留D11/D12
+
+---
+

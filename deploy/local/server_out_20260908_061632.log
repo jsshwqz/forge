@@ -1,0 +1,25 @@
+storage: PostgreSQL (postgres://postgres:forge@localhost:15432/forge)
+[2m2026-09-07T22:16:34.423801Z[0m [32m INFO[0m [2msqlx::postgres::notice[0m[2m:[0m relation "sessions" already exists, skipping
+[2m2026-09-07T22:16:34.439540Z[0m [32m INFO[0m [2msqlx::postgres::notice[0m[2m:[0m relation "session_events" already exists, skipping
+[2m2026-09-07T22:16:34.463449Z[0m [32m INFO[0m [2msqlx::postgres::notice[0m[2m:[0m relation "artifacts" already exists, skipping
+[2m2026-09-07T22:16:34.485468Z[0m [32m INFO[0m [2msqlx::postgres::notice[0m[2m:[0m relation "tasks" already exists, skipping
+[2m2026-09-07T22:16:34.507966Z[0m [32m INFO[0m [2msqlx::postgres::notice[0m[2m:[0m relation "evidence" already exists, skipping
+[2m2026-09-07T22:16:34.508883Z[0m [32m INFO[0m [2msqlx::postgres::notice[0m[2m:[0m relation "idx_evidence_criterion" already exists, skipping
+[2m2026-09-07T22:16:34.509162Z[0m [32m INFO[0m [2msqlx::postgres::notice[0m[2m:[0m relation "tenants" already exists, skipping
+[2m2026-09-07T22:16:34.509553Z[0m [32m INFO[0m [2msqlx::postgres::notice[0m[2m:[0m column "tenant_id" of relation "tasks" already exists, skipping
+[2m2026-09-07T22:16:34.510387Z[0m [32m INFO[0m [2msqlx::postgres::notice[0m[2m:[0m column "tenant_id" of relation "sessions" already exists, skipping
+[2m2026-09-07T22:16:34.511435Z[0m [32m INFO[0m [2msqlx::postgres::notice[0m[2m:[0m relation "idx_tasks_tenant_id" already exists, skipping
+[2m2026-09-07T22:16:34.512172Z[0m [32m INFO[0m [2msqlx::postgres::notice[0m[2m:[0m relation "idx_sessions_tenant_id" already exists, skipping
+[2m2026-09-07T22:16:34.512728Z[0m [32m INFO[0m [2msqlx::postgres::notice[0m[2m:[0m relation "tenant_keys" already exists, skipping
+[2m2026-09-07T22:16:34.513213Z[0m [32m INFO[0m [2msqlx::postgres::notice[0m[2m:[0m relation "quotas" already exists, skipping
+[2m2026-09-07T22:16:34.513554Z[0m [32m INFO[0m [2msqlx::postgres::notice[0m[2m:[0m relation "task_queue" already exists, skipping
+[2m2026-09-07T22:16:34.514002Z[0m [32m INFO[0m [2msqlx::postgres::notice[0m[2m:[0m relation "idx_task_queue_claim" already exists, skipping
+[2m2026-09-07T22:16:34.514300Z[0m [32m INFO[0m [2msqlx::postgres::notice[0m[2m:[0m relation "publisher_keys" already exists, skipping
+[2m2026-09-07T22:16:34.514584Z[0m [32m INFO[0m [2msqlx::postgres::notice[0m[2m:[0m relation "releases" already exists, skipping
+[2m2026-09-07T22:16:34.514878Z[0m [32m INFO[0m [2msqlx::postgres::notice[0m[2m:[0m column "deprecated" of relation "releases" already exists, skipping
+[2m2026-09-07T22:16:34.515168Z[0m [32m INFO[0m [2msqlx::postgres::notice[0m[2m:[0m column "yanked" of relation "releases" already exists, skipping
+[2m2026-09-07T22:16:34.515561Z[0m [32m INFO[0m [2msqlx::postgres::notice[0m[2m:[0m relation "usage_events" already exists, skipping
+[2m2026-09-07T22:16:34.516034Z[0m [32m INFO[0m [2msqlx::postgres::notice[0m[2m:[0m relation "idx_usage_tenant_at" already exists, skipping
+[2m2026-09-07T22:16:34.516310Z[0m [32m INFO[0m [2msqlx::postgres::notice[0m[2m:[0m relation "rates" already exists, skipping
+[2m2026-09-07T22:16:34.516589Z[0m [32m INFO[0m [2msqlx::postgres::notice[0m[2m:[0m relation "bills" already exists, skipping
+forge-server listening on http://127.0.0.1:8787

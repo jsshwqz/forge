@@ -24,11 +24,20 @@ Get-Content (Join-Path $local "forge.env") | Where-Object { $_ -match '^\s*FORGE
     Set-Item -Path "env:$($k.Trim())" -Value $v.Trim()
 }
 Write-Host "[1/4] config loaded (LLM: $env:FORGE_LLM_BASE_URL / model: $env:FORGE_TIER_HIGH_MODEL)"
+if ($env:HTTP_PROXY -match '127\.0\.0\.1:(\d+)') {
+    $proxyPort = [int]$matches[1]
+    $reachable = (Test-NetConnection -ComputerName 127.0.0.1 -Port $proxyPort -WarningAction SilentlyContinue).TcpTestSucceeded
+    if (-not $reachable) {
+        Write-Host "    [info] 检测到代理端口 $proxyPort 未开启，已临时旁路无效代理以确保直连" -ForegroundColor DarkYellow
+        $env:HTTP_PROXY = ""
+        $env:HTTPS_PROXY = ""
+    }
+}
 
 # ---- 2. Podman machine + PG container ----
 # machine 已运行时 start 会挂起——先查状态
- = (podman machine list --format '{{.Running}}' 2> | Select-Object -First 1)
-if ( -ne 'true') { podman machine start 2>&1 | Out-Null }
+$running = (podman machine list --format '{{.Running}}' 2>$null | Select-Object -First 1)
+if ($running -ne 'true') { podman machine start 2>&1 | Out-Null }
 podman start forge-pg 2>&1 | Out-Null
 $pgOk = $false
 foreach ($i in 1..30) {

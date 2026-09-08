@@ -1022,5 +1022,13 @@
     "task_id": "LOCAL-001",
     "title": "三个真实缺陷复盘: split-brain/Debug-lowercase失配/CRLF静默no-op",
     "body": "①create_for uuid每次唯一是R1-052防覆盖改动, 但把工具目录与验收目录劈开=真实E2E才暴露的架构bug, 改get-or-create幂等; ②Debug格式+lowercase≠serde snake_case, 序列化口径必须统一走serde; ③CRLF文件上node字符串替换静默no-op且writeFileSync照写=假阳性'fixed', 修补丁必须用Edit工具或行为断言验证"
+  },
+  {
+    "id": "R6-031",
+    "kind": "R6Decision",
+    "date": "2026-09-08",
+    "task_id": "V80",
+    "title": "V8.0'结对编程'立项: 六包规划, 先行批四包(CTX/EDIT/STREAM/SANDBOX)按用户②③指示批准施工",
+    "body": "用户采纳Gemini外部评审+规划层裁决: 实用分水岭第二级=结对编程(看得见/改得动/可追溯); 六包=CTX-001工作区感知/EDIT-001增量编辑/STREAM-001进度流/SANDBOX-002容器隔离/GIT-001任务Git(后续批,复用KNW-101机制)/NOTIFY-001通知(后续批); 先行批四包规格=build_v80a.md直接施工; GIT-001粒度与NOTIFY载荷留D11/D12"
   }
 ]

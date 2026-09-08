@@ -5,22 +5,28 @@
 <title>Aion Forge · 工作台</title>
 <style>
   body{font-family:system-ui,sans-serif;margin:0;background:#0f1115;color:#e6e6e6}
-  nav{background:#161a22;padding:12px 20px;display:flex;gap:18px}
+  nav{background:#161a22;padding:12px 20px;display:flex;gap:18px;align-items:center}
   nav a{color:#7aa2f7;text-decoration:none}
   main{padding:24px;max-width:960px;margin:0 auto}
   table{width:100%;border-collapse:collapse;margin-top:12px}
   td,th{border:1px solid #2a2f3a;padding:8px;text-align:left}
   th{background:#1b2029}
-  textarea,input,select{background:#1b2029;color:#eee;border:1px solid #2a2f3a;padding:8px;width:100%;box-sizing:border-box;font-family:inherit}
+  textarea,input,select{background:#1b2029;color:#eee;border:1px solid #2a2f3a;padding:8px;width:100%;box-sizing:border-box;font-family:inherit;border-radius:4px}
   textarea{min-height:72px}
-  button{padding:10px 22px;background:#2f4dd3;color:#fff;border:0;border-radius:6px;cursor:pointer;font-size:15px}
-  button:disabled{opacity:.5}
+  button{padding:10px 22px;background:#2f4dd3;color:#fff;border:0;border-radius:6px;cursor:pointer;font-size:15px;transition:background .2s}
+  button:hover{background:#3b5ce8}
+  button:disabled{opacity:.5;cursor:not-allowed}
+  .btn-sec{background:#21262d;color:#c9d1d9;border:1px solid #30363d;padding:8px 16px;font-size:13px}
+  .btn-sec:hover{background:#30363d}
   .card{background:#161a22;border:1px solid #2a2f3a;border-radius:8px;padding:16px;margin-bottom:18px}
   .row{display:flex;gap:12px;margin-top:10px}
   .row>*{flex:1}
   #result{background:#0f1115;border:1px solid #2a2f3a;border-radius:6px;padding:12px;margin-top:10px;white-space:pre-wrap;font-family:Consolas,monospace;font-size:13px;max-height:340px;overflow:auto;display:none}
-  .ok{color:#9ece6a}.bad{color:#f7768e}.dim{color:#565f73}
+  .ok{color:#9ece6a}.bad{color:#f7768e}.dim{color:#7a839e}
   a{color:#7aa2f7}
+  .badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:12px;font-weight:600}
+  .badge-green{background:#132d21;color:#7ee787;border:1px solid #238636}
+  .badge-dim{background:#21262d;color:#8b949e;border:1px solid #30363d}
 </style>
 </head>
 <body>
@@ -29,6 +35,56 @@
   <span style="margin-left:auto;color:#565f73">Aion Forge 控制台</span>
 </nav>
 <main>
+  <!-- 大模型配置面板 -->
+  <div class="card" id="model-card">
+    <div style="display:flex;align-items:center;justify-content:space-between">
+      <div style="display:flex;align-items:center;gap:10px">
+        <span style="font-size:16px;font-weight:bold">🤖 大模型配置 (LLM Provider)</span>
+        <span id="cur-model-badge" class="badge badge-dim">检测中...</span>
+      </div>
+      <div>
+        <button id="toggle-model-btn" class="btn-sec" onclick="toggleModelPanel()">⚙️ 展开设置</button>
+      </div>
+    </div>
+
+    <div id="model-panel" style="display:none;margin-top:14px;border-top:1px solid #2a2f3a;padding-top:14px">
+      <div class="row">
+        <div>
+          <label>厂商快速预设 (一键填充)</label>
+          <select id="preset-select" onchange="onPresetChange()">
+            <option value="">-- 选择厂商预设 --</option>
+          </select>
+        </div>
+        <div>
+          <label>服务 Base URL</label>
+          <input id="llm-base-url" placeholder="例如：https://api.deepseek.com/v1">
+        </div>
+      </div>
+
+      <div class="row">
+        <div>
+          <label>主模型 (High Tier / 规划、重规划与审查)</label>
+          <input id="llm-high-model" placeholder="例如：deepseek-chat">
+        </div>
+        <div>
+          <label>辅助模型 (Low Tier / 单步代码生成，可选)</label>
+          <input id="llm-low-model" placeholder="可选，未填时自动回退至主模型">
+        </div>
+      </div>
+
+      <div style="margin-top:10px">
+        <label>API Key / 访问密钥 (留空或掩码表示保持原已存密钥)</label>
+        <input id="llm-api-key" type="password" placeholder="请输入 API Key">
+      </div>
+
+      <div style="display:flex;gap:12px;align-items:center;margin-top:14px">
+        <button id="btn-test-llm" class="btn-sec" onclick="testLlm()">⚡ 测试连接</button>
+        <button id="btn-save-llm" onclick="saveLlm()">💾 保存并立即生效</button>
+        <span id="llm-msg" style="font-size:13px"></span>
+      </div>
+    </div>
+  </div>
+
   <div class="card">
     <h2 style="margin-top:0">提交任务</h2>
     <label>目标（交给 AI 的工作描述）</label>
@@ -52,13 +108,162 @@
   </div>
 
   <div class="card">
-    <h2 style="margin-top:0">任务列表 <button style="padding:4px 12px;font-size:13px" onclick="load()">刷新</button></h2>
+    <h2 style="margin-top:0">任务列表 <button class="btn-sec" style="padding:4px 12px;font-size:13px" onclick="load()">刷新</button></h2>
     <table id="tbl"><thead><tr><th>任务 ID</th><th>状态</th><th>目标</th></tr></thead><tbody></tbody></table>
     <p id="count" class="dim"></p>
   </div>
 </main>
 <script>
 const STATUS_LABEL = {Pending:'⬜ 待处理',Planned:'📋 已规划',Executing:'⚙️ 执行中',Verifying:'🔍 验证中',Completed:'✅ 完成',Failed:'❌ 失败'};
+let currentPresets = [];
+
+function toggleModelPanel(){
+  const p = document.getElementById('model-panel');
+  const b = document.getElementById('toggle-model-btn');
+  if(p.style.display === 'none'){
+    p.style.display = 'block';
+    b.textContent = '▲ 收起设置';
+  } else {
+    p.style.display = 'none';
+    b.textContent = '⚙️ 展开设置';
+  }
+}
+
+async function loadLlmConfig(){
+  try{
+    const r = await fetch('/api/llm/config');
+    if(!r.ok) return;
+    const j = await r.json();
+    currentPresets = j.presets || [];
+    
+    // 渲染预设下拉菜单
+    const sel = document.getElementById('preset-select');
+    sel.innerHTML = '<option value="">-- 选择厂商预设 --</option>';
+    currentPresets.forEach(p => {
+      const opt = document.createElement('option');
+      opt.value = p.id;
+      opt.textContent = p.name;
+      sel.appendChild(opt);
+    });
+
+    // 填充字段
+    document.getElementById('llm-base-url').value = j.base_url || '';
+    document.getElementById('llm-high-model').value = j.model || '';
+    document.getElementById('llm-low-model').value = j.low_model || '';
+    const keyInp = document.getElementById('llm-api-key');
+    if(j.has_key){
+      keyInp.placeholder = j.key_masked + ' (已保存，若不更改请留空)';
+    } else {
+      keyInp.placeholder = '尚未配置 API Key';
+    }
+
+    // 更新当前徽标
+    const badge = document.getElementById('cur-model-badge');
+    if(j.model){
+      badge.textContent = '🟢 ' + j.model + (j.base_url ? ' (' + (new URL(j.base_url.startsWith('http') ? j.base_url : 'http://' + j.base_url)).host + ')' : '');
+      badge.className = 'badge badge-green';
+    } else {
+      badge.textContent = '⚪ 未配置模型';
+      badge.className = 'badge badge-dim';
+    }
+  }catch(e){
+    console.error('loadLlmConfig failed', e);
+  }
+}
+
+function onPresetChange(){
+  const val = document.getElementById('preset-select').value;
+  const p = currentPresets.find(x => x.id === val);
+  if(!p) return;
+  if(p.base_url) document.getElementById('llm-base-url').value = p.base_url;
+  if(p.default_model) document.getElementById('llm-high-model').value = p.default_model;
+  if(p.default_low_model !== undefined) document.getElementById('llm-low-model').value = p.default_low_model || '';
+  const keyInp = document.getElementById('llm-api-key');
+  if(p.id === 'ollama'){
+    keyInp.value = 'ollama';
+    keyInp.placeholder = 'ollama (免密)';
+  } else {
+    keyInp.value = '';
+    keyInp.placeholder = p.key_hint || '请输入 API Key';
+  }
+}
+
+async function testLlm(){
+  const btn = document.getElementById('btn-test-llm');
+  const msg = document.getElementById('llm-msg');
+  const base_url = document.getElementById('llm-base-url').value.trim();
+  const model = document.getElementById('llm-high-model').value.trim();
+  const api_key = document.getElementById('llm-api-key').value.trim();
+
+  btn.disabled = true;
+  msg.className = 'dim';
+  msg.textContent = '⏳ 正在测试端点连通性...';
+  try{
+    const r = await fetch('/api/llm/test', {
+      method: 'POST',
+      headers: {'content-type':'application/json'},
+      body: JSON.stringify({ base_url, model, api_key: api_key || null })
+    });
+    const j = await r.json();
+    if(j.ok){
+      msg.className = 'ok';
+      msg.textContent = '✅ ' + (j.message || '连通成功') + ' (' + j.latency_ms + 'ms)';
+    } else {
+      msg.className = 'bad';
+      msg.textContent = '❌ ' + (j.error || '连通失败');
+    }
+  }catch(e){
+    msg.className = 'bad';
+    msg.textContent = '❌ 请求异常: ' + e;
+  }
+  btn.disabled = false;
+}
+
+async function saveLlm(){
+  const btn = document.getElementById('btn-save-llm');
+  const msg = document.getElementById('llm-msg');
+  const base_url = document.getElementById('llm-base-url').value.trim();
+  const model = document.getElementById('llm-high-model').value.trim();
+  const low_model = document.getElementById('llm-low-model').value.trim();
+  const api_key = document.getElementById('llm-api-key').value.trim();
+
+  if(!base_url || !model){
+    alert('Base URL 和 主模型名称不能为空');
+    return;
+  }
+
+  btn.disabled = true;
+  msg.className = 'dim';
+  msg.textContent = '⏳ 正在保存并应用配置...';
+  try{
+    const r = await fetch('/api/llm/config', {
+      method: 'POST',
+      headers: {'content-type':'application/json'},
+      body: JSON.stringify({
+        base_url,
+        model,
+        low_model: low_model || null,
+        api_key: api_key || null,
+        persist_to_env: true
+      })
+    });
+    const j = await r.json();
+    if(r.ok && j.ok){
+      msg.className = 'ok';
+      msg.textContent = '✅ 已保存并即刻热生效（无需重启服务）！';
+      document.getElementById('llm-api-key').value = '';
+      loadLlmConfig();
+      setTimeout(() => { msg.textContent = ''; }, 4000);
+    } else {
+      msg.className = 'bad';
+      msg.textContent = '❌ 保存失败: ' + JSON.stringify(j);
+    }
+  }catch(e){
+    msg.className = 'bad';
+    msg.textContent = '❌ 请求异常: ' + e;
+  }
+  btn.disabled = false;
+}
 
 async function submit(){
   const goal = document.getElementById('goal').value.trim();
@@ -111,7 +316,11 @@ async function load(){
     tb.appendChild(tr);
   }
 }
+
+// 初始化
+loadLlmConfig();
 load();
 </script>
 </body>
 </html>
+
