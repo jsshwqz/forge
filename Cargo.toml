@@ -32,6 +32,7 @@ members = [
     "tools/parsing",
     "tools/text",
     "tools/metatool",
+    "tools/zl",
     "server",
     "storage",
     "sdk",

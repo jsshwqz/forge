@@ -21,6 +21,7 @@ use forge_tools_search::register_all as register_search;
 use forge_tools_parsing::register_all as register_parsing;
 use forge_tools_text::register_all as register_text;
 use forge_tools_metatool::register_all as register_metatool;
+use forge_tools_zl::register_all as register_zl;
 use serde_json::Value;
 
 /// JSON-RPC 2.0 标准错误码。
@@ -135,6 +136,7 @@ fn build_router() -> ToolRouter {
     register_parsing(&router).expect("parsing tools register");
     register_text(&router).expect("text tools register");
     register_metatool(&router).expect("metatool tools register");
+    register_zl(&router).expect("zl tools register");
     router
 }
 
@@ -282,7 +284,20 @@ mod tests {
         assert!(names.contains(&"text_wordcount"), "text_wordcount missing: {names:?}");
         assert!(names.contains(&"text_classify"), "text_classify missing: {names:?}");
         assert!(names.contains(&"text_embed"), "text_embed missing: {names:?}");
-        assert_eq!(all.len(), 25, "expected 25 tools, got {names:?}");
+        for zl in [
+            "check_sufficiency",
+            "verify_result",
+            "compile_contract",
+            "detect_drift",
+            "contradiction_analyze",
+            "prompt_audit",
+            "verify_contract",
+            "strategic_plan",
+            "evolver_governance",
+        ] {
+            assert!(names.contains(&zl), "{zl} missing: {names:?}");
+        }
+        assert_eq!(all.len(), 34, "expected 34 tools, got {names:?}");
     }
 
     #[test]
@@ -304,7 +319,7 @@ mod tests {
         let frame = handle_tools_list(&id, &router).unwrap();
         let v: Value = serde_json::from_str(&frame).unwrap();
         let arr = v["result"]["tools"].as_array().unwrap();
-        assert_eq!(arr.len(), 25);
+        assert_eq!(arr.len(), 34);
         let names: Vec<&str> = arr.iter().map(|t| t["name"].as_str().unwrap()).collect();
         assert!(names.contains(&"echo"));
         assert!(names.contains(&"worklog_status"));

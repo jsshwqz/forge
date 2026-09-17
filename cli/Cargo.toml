@@ -23,6 +23,7 @@ forge-tools-search = { path = "../tools/search" }
 forge-tools-parsing = { path = "../tools/parsing" }
 forge-tools-text = { path = "../tools/text" }
 forge-tools-metatool = { path = "../tools/metatool" }
+forge-tools-zl = { path = "../tools/zl" }
 anyhow = "1"
 chrono = { version = "0.4", features = ["serde"] }
 clap = { version = "4", features = ["derive"] }

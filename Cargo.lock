@@ -839,6 +839,7 @@ dependencies = [
  "forge-tools-parsing",
  "forge-tools-search",
  "forge-tools-text",
+ "forge-tools-zl",
  "forge-worklog",
  "serde",
  "serde_json",
@@ -1312,6 +1313,20 @@ dependencies = [
  "serde",
  "serde_json",
  "similar",
+ "tempfile",
+ "tokio",
+]
+
+[[package]]
+name = "forge-tools-zl"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "async-trait",
+ "forge-core",
+ "forge-exec",
+ "serde",
+ "serde_json",
  "tempfile",
  "tokio",
 ]
