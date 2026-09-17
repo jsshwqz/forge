@@ -15,6 +15,14 @@ pub enum ForgeError {
     #[error("invalid state: {0}")]
     InvalidState(String),
 
+    /// 配置错误：配置缺失，或配置指向的实体不存在/不可用（MODEL-A-001 引入）。
+    ///
+    /// 与 [`InvalidState`](Self::InvalidState) 的语义分工：`Config` 表示"调用方
+    /// 给了一份可判定为错的配置"，应作为 400 类错误暴露给使用者修正；
+    /// `InvalidState` 表示"运行时状态不允许该操作"，与配置对错无关。
+    #[error("config error: {0}")]
+    Config(String),
+
     /// 依赖缺失（如引用了不存在的实体）。
     #[error("dependency missing: {0}")]
     DependencyMissing(String),

@@ -1,0 +1,20 @@
+[33m986ae79[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmaster[m[33m)[m docs: V8.0立项(roadmap_v8六包)+build_v80a先行批四包规格+R6-033
+[33m760436f[m chore: progress登记LOCAL-001
+[33m00299dd[m security: forge.env(API密钥)移出git跟踪, 本地保留
+[33m02405de[m chore: WORKLOG落档LOCAL-001+R7-016
+[33mb295923[m LOCAL-001: 本地实用化套件+真实E2E三缺陷修复+工作台UI
+[33m062fcee[m chore: progress登记ORCH-101/TEN-004/BILL-003+G-ORCH101/G-V70B核验落档
+[33ma4b7198[m fix: meter测试derive与类型别名顺序(clippy零告警修正, 补BILL-003)
+[33m06ba347[m chore: WORKLOG落档BILL-003(V7先行批五段全部落地)
+[33m67b82ff[m BILL-003: 编排LLM计量全覆盖（plan/replan/review入账）
+[33m0ca79c2[m chore: WORKLOG落档TEN-004
+[33m4bca3a4[m TEN-004: 租户密钥与配额PG持久化及503降级语义
+[33m3055e69[m fix: orch101切片clone改from_ref(clippy零告警修正, 补101c)
+[33m720c6bd[m chore: WORKLOG落档ORCH-101c
+[33mab8821c[m ORCH-101c: MCP工具源接入与白名单注册
+[33m740fb54[m fix: orch101测试let绑定与未用导入(clippy零告警修正, 补101b)
+[33m25d08b6[m chore: WORKLOG落档ORCH-101b
+[33m0154701[m ORCH-101b: 多文件工程与沙箱化运行验收
+[33m596bfd0[m chore: WORKLOG落档ORCH-101a
+[33m577f9eb[m ORCH-101a: 多步规划接通与重规划回路
+[33mb1eac56[m chore: R6-030 批准D10+D9, V7先行批开工

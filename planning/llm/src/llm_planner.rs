@@ -191,6 +191,19 @@ impl<B: LlmPlanBackend + ?Sized + 'static> Planner for LlmPlanner<B> {
                 parsed = serde_json::json!({ "steps": parsed });
             }
 
+            if let Some(err) = parsed.get("_parse_error").and_then(|v| v.as_str()) {
+                last_error = format!("JSON syntax error: {err}");
+                eprintln!("llm_planner[{}] parse error: {err}", attempt + 1);
+                if attempt + 1 < self.schema_max_attempts {
+                    messages.push(ChatMessage::assistant(raw.clone()));
+                    messages.push(ChatMessage::user(format!(
+                        "Validation failed:\n{last_error}\n\
+Please output a valid, well-escaped JSON object matching the schema. Ensure all quotes inside strings are escaped like \\\" and no unescaped control characters."
+                    )));
+                }
+                continue;
+            }
+
             match validate_plan(&parsed, &task.id) {
                 Ok(plan) => return Ok(plan),
                 Err(e) => {

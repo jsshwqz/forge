@@ -43,11 +43,11 @@
         <span id="cur-model-badge" class="badge badge-dim">检测中...</span>
       </div>
       <div>
-        <button id="toggle-model-btn" class="btn-sec" onclick="toggleModelPanel()">⚙️ 展开设置</button>
+        <button id="toggle-model-btn" class="btn-sec" onclick="toggleModelPanel()">▲ 收起设置</button>
       </div>
     </div>
 
-    <div id="model-panel" style="display:none;margin-top:14px;border-top:1px solid #2a2f3a;padding-top:14px">
+    <div id="model-panel" style="display:block;margin-top:14px;border-top:1px solid #2a2f3a;padding-top:14px">
       <div class="row">
         <div>
           <label>厂商快速预设 (一键填充)</label>
@@ -279,9 +279,16 @@ async function submit(){
   box.textContent = '⏳ 已提交，AI 规划与执行中（通常 10~90 秒，不要关闭页面）……';
   try{
     const r = await fetch('/orchestrate', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify(body) });
-    const j = await r.json();
-    if(!r.ok){ box.innerHTML = '<span class="bad">执行失败</span>\n' + JSON.stringify(j, null, 2); }
-    else {
+    const text = await r.text();
+    let j = null;
+    try { j = JSON.parse(text); } catch(_) {}
+
+    if(!r.ok){
+      const errDetail = j && j.error ? (j.error.message || JSON.stringify(j.error)) : (text || ('HTTP ' + r.status));
+      box.innerHTML = '<span class="bad">❌ 执行被拒绝或失败 (HTTP ' + r.status + ')</span>\n'
+        + '<div style="margin-top:6px;color:#f7768e;word-break:break-all">' + errDetail + '</div>';
+    } else {
+      if (!j) { throw new Error("服务端返回了空数据或非 JSON: " + text); }
       const ok = j.gate_passed === true;
       box.innerHTML = '<span class="' + (ok ? 'ok' : 'bad') + '">' + (ok ? '✅ 执行成功' : '❌ 未通过门禁') + '</span>\n'
         + '任务 ID: ' + j.task_id + '\n'
@@ -291,7 +298,7 @@ async function submit(){
       document.getElementById('goal').value = '';
     }
     load();
-  }catch(e){ box.innerHTML = '<span class="bad">网络错误</span> ' + e; }
+  }catch(e){ box.innerHTML = '<span class="bad">网络/解析异常</span> ' + e; }
   btn.disabled = false;
 }
 

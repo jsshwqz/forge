@@ -3,18 +3,19 @@ name = "forge-worklog"
 version = "0.1.0"
 edition = "2021"
 license = "MIT OR Apache-2.0"
-description = "多 AI 协作工作记录管理 CLI（Rust 实现）"
-
-# 注意：此 crate 暂未加入 workspace members。
-# 原因：当前环境 cargo 不可用，无法验证编译。
-# 待环境恢复后验证通过，再将其加入 aion-forge/Cargo.toml 的 members。
+description = "多 AI 协作工作记录管理（Rust 实现）"
 
 [dependencies]
-clap = { version = "4", features = ["derive"] }
+forge-core = { path = "../../core/runtime" }
+forge-exec = { path = "../../execution/runtime" }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
+thiserror = "2"
+async-trait = "0.1"
+clap = { version = "4", features = ["derive"] }
 chrono = { version = "0.4", features = ["serde"] }
-thiserror = "1"
+dirs = "6"
 
 [dev-dependencies]
 tempfile = "3"
+tokio = { version = "1", features = ["macros", "rt"] }

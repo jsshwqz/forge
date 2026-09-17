@@ -146,15 +146,38 @@ impl LlmClient {
         });
         self.post_json_retry_429("chat/completions", &body).await
     }
-    /// 从响应 JSON 提取 choices[0].message.content。
+    /// 从响应 JSON 提取 choices[0].message.content（兼容 reasoning_content / text / delta 等变体）。
     pub fn extract_content(v: &serde_json::Value) -> ForgeResult<String> {
-        v.pointer("/choices/0/message/content")
-            .and_then(|c| c.as_str())
-            // 推理型模型(6.7/6.8)的 content 常带前后空白/换行，统一 trim
-            .map(|s| s.trim().to_string())
-            .ok_or_else(|| {
-                ForgeError::InvalidState("llm: missing choices[0].message.content".into())
-            })
+        // 1. 标准 content 字段
+        if let Some(c) = v.pointer("/choices/0/message/content").and_then(|c| c.as_str()) {
+            let trimmed = c.trim();
+            if !trimmed.is_empty() {
+                return Ok(trimmed.to_string());
+            }
+        }
+
+        // 2. 推理/思考型模型（如 DeepSeek-R1、SenseNova 6.7/6.8）的 reasoning_content
+        if let Some(rc) = v.pointer("/choices/0/message/reasoning_content").and_then(|c| c.as_str()) {
+            let trimmed = rc.trim();
+            if !trimmed.is_empty() {
+                return Ok(trimmed.to_string());
+            }
+        }
+
+        // 3. 部分厂商直接放在 choices[0].text
+        if let Some(t) = v.pointer("/choices/0/text").and_then(|t| t.as_str()) {
+            let trimmed = t.trim();
+            if !trimmed.is_empty() {
+                return Ok(trimmed.to_string());
+            }
+        }
+
+        // 4. 如果全为空，返回详细的结构错误方便排查
+        let sample = v.to_string();
+        let short: String = sample.chars().take(200).collect();
+        Err(ForgeError::InvalidState(format!(
+            "llm: missing choices[0].message.content (response: {short})"
+        )))
     }
 }
 

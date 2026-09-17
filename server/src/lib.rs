@@ -204,7 +204,15 @@ impl From<ForgeError> for ApiError {
 }
 
 impl IntoResponse for ApiError {
-    fn into_response(self) -> Response { (self.0, self.1).into_response() }
+    fn into_response(self) -> Response {
+        let body = serde_json::json!({
+            "error": {
+                "status": self.0.as_u16(),
+                "message": self.1,
+            }
+        });
+        (self.0, axum::Json(body)).into_response()
+    }
 }
 
 // ==================== 请求体 ====================
@@ -400,7 +408,14 @@ async fn execute_orchestration(
         planner,
     };
     let orch = Orchestrator { capability: "echo".into(), timeout: Duration::from_secs(timeout_secs) };
-    let report = st.sdk.run_end_to_end(&task.id, &deps, &orch).await.map_err(ApiError::from)?;
+    let report = match st.sdk.run_end_to_end(&task.id, &deps, &orch).await {
+        Ok(r) => r,
+        Err(e) => {
+            eprintln!("orchestrate: execution failed for task {}: {e}", task.id);
+            let _ = st.sdk.tasks().update_status(&task.id, TaskStatus::Failed).await;
+            return Err(ApiError::from(e));
+        }
+    };
 
     // BILL-001：三维度计量（R4 失败只 warn 不阻断）
     if let Some(pool) = st.pool.clone() {

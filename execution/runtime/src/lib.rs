@@ -9,6 +9,7 @@ pub mod permission_level;
 pub mod policy;
 pub mod router;
 pub mod tools_file;
+pub mod tools_path;
 
 pub use dispatcher::EngineDispatcher;
 pub use engine::{ExecutionEngine, ExecutionRequest, ExecutionResult, ExecutionStatus};
@@ -16,3 +17,4 @@ pub use permission_level::PermissionLevel;
 pub use policy::{PermissionPolicy, PolicyContext};
 pub use router::{EchoTool, Tool, ToolDescriptor, ToolRouter};
 pub use tools_file::WriteFileTool;
+pub use tools_path::resolve_in_root;

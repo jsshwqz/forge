@@ -1,0 +1,10 @@
+llm_planner[1] raw_len=2559 head="{\"steps\":[{\"id\":\"s1\",\"title\":\"说明能力限制并输出检查建议\",\"depends_on\":[],\"action\":{\"type\":\"call\",\"capability\":\"echo\",\"input\":{\"messa"
+llm_planner[1] parse error: expected `,` or `}` at line 1 column 2558: {"steps":[{"id":"s1","title":"说明能力限制并输出检查建议","depends_on":[],"action":{"type":"call","capability":"echo","input":{"messa
+orchestrate: execution failed for task task_99e81902-1b79-4f45-b0bb-cb619882ec80: invalid state: llm: missing choices[0].message.content (response: {"choices":[{"finish_reason":"length","index":0,"message":{"reasoning":"The user wants me to check a project at D:\\test\\aionui\\新forge for unfinished items. I need to produce a valid JSON plan. The )
+llm_planner[1] raw_len=2850 head="{\"steps\":[{\"id\":\"s1\",\"title\":\"输出检查项目未完成任务的排查清单\",\"depends_on\":[],\"action\":{\"type\":\"call\",\"capability\":\"echo\",\"input\":{\"me"
+llm_planner[1] parse error: expected `,` or `}` at line 1 column 996: {"steps":[{"id":"s1","title":"输出检查项目未完成任务的排查清单","depends_on":[],"action":{"type":"call","capability":"echo","input":{"me
+llm_planner[2] raw_len=14478 head="The user wants me to check a project at D:\\test\\aionui\\新forge for unfinished tasks. I need to produce a valid JSON objec"
+llm_planner[2] parse error: expected `:` at line 1 column 7: {".py", ".js", ".ts", ".tsx", ".jsx", ".java", ".cs", ".cpp", ".c", ".h", ".go", ".rs", ".vue", ".svelte", ".md", ".txt"
+llm_planner[3] raw_len=2380 head="{\"steps\":[{\"id\":\"s1\",\"title\":\"输出排查清单说明\",\"depends_on\":[],\"action\":{\"type\":\"call\",\"capability\":\"echo\",\"input\":{\"message\":\""
+llm_planner[3] parse error: expected `,` or `}` at line 1 column 2379: {"steps":[{"id":"s1","title":"输出排查清单说明","depends_on":[],"action":{"type":"call","capability":"echo","input":{"message":"
+orchestrate: execution failed for task task_8a00a81f-fdea-4984-8be0-5071f6caf4fb: invalid state: plan rejected after 3 attempts. Last error: JSON syntax error: expected `,` or `}` at line 1 column 2379: {"steps":[{"id":"s1","title":"输出排查清单说明","depends_on":[],"action":{"type":"call","capability":"echo","input":{"message":"

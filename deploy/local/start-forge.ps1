@@ -34,18 +34,23 @@ if ($env:HTTP_PROXY -match '127\.0\.0\.1:(\d+)') {
     }
 }
 
-# ---- 2. Podman machine + PG container ----
-# machine 已运行时 start 会挂起——先查状态
-$running = (podman machine list --format '{{.Running}}' 2>$null | Select-Object -First 1)
-if ($running -ne 'true') { podman machine start 2>&1 | Out-Null }
-podman start forge-pg 2>&1 | Out-Null
-$pgOk = $false
-foreach ($i in 1..30) {
-    $null = podman exec forge-pg pg_isready -U postgres 2>$null
-    if ($LASTEXITCODE -eq 0) { $pgOk = $true; break }
-    Start-Sleep 2
+# ---- 2. Podman / WSL PG container & Port Check ----
+$pgOk = (Test-NetConnection -ComputerName 127.0.0.1 -Port 15432 -WarningAction SilentlyContinue).TcpTestSucceeded
+if (-not $pgOk) {
+    wsl -d podman-machine-default podman start forge-pg 2>&1 | Out-Null
+    $wslIp = (wsl -d podman-machine-default ip -4 addr show eth0 2>$null | Select-String 'inet\s+(\d+\.\d+\.\d+\.\d+)' | ForEach-Object { $_.Matches.Groups[1].Value })
+    if ($wslIp) {
+        netsh interface portproxy add v4tov4 listenport=15432 listenaddress=127.0.0.1 connectport=15432 connectaddress=$wslIp 2>&1 | Out-Null
+    }
+    foreach ($i in 1..20) {
+        if ((Test-NetConnection -ComputerName 127.0.0.1 -Port 15432 -WarningAction SilentlyContinue).TcpTestSucceeded) {
+            $pgOk = $true
+            break
+        }
+        Start-Sleep 1
+    }
 }
-if (-not $pgOk) { Write-Host "[FAIL] PostgreSQL did not start (forge-pg container)" -ForegroundColor Red; pause; exit 1 }
+if (-not $pgOk) { Write-Host "[FAIL] PostgreSQL did not start (port 15432 unreachable)" -ForegroundColor Red; pause; exit 1 }
 Write-Host "[2/4] PostgreSQL ready (15432)"
 
 # ---- 3. forge-server ----

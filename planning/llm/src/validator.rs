@@ -126,23 +126,64 @@ fn parse_action(v: &Value) -> ForgeResult<StepAction> {
     }
 }
 
-/// 从 LLM 原始输出中提取 JSON 字符串：裸对象直取；``` 围栏取首对之间内容；否则原样返回。
-///
-/// 供 [`validate_plan`] 的调用方（LlmPlanner / LlmReplanner / Reviewer）解析前统一清洗。
+/// 从 LLM 原始输出中提取 JSON 字符串：优先按匹配的花括号精准定位 outermost JSON 对象，
+/// 兼容 ```json 代码围栏与前置/后置思考文本。
 pub fn extract_json_str(text: &str) -> String {
     let t = text.trim();
-    if t.starts_with('{') {
-        return t.to_string();
-    }
+
+    // 1. 如果带代码围栏，先尝试提取围栏内文本
     if let Some((_, after_open)) = t.split_once("```") {
         let body = match after_open.split_once("```") {
             Some((inside, _)) => inside.trim(),
-            // 只有开围栏没有闭合：取围栏之后的剩余部分
             None => after_open.trim(),
         };
-        return body.strip_prefix("json").map(str::trim).unwrap_or(body).to_string();
+        let candidate = body.strip_prefix("json").map(str::trim).unwrap_or(body);
+        if let Some(json) = find_outermost_json(candidate) {
+            return json;
+        }
     }
+
+    // 2. 直接在全文本中寻找最外层匹配的 JSON 对象
+    if let Some(json) = find_outermost_json(t) {
+        return json;
+    }
+
     t.to_string()
+}
+
+/// 扫描文本并截取第一个平衡的花括号 `{ ... }` 块
+fn find_outermost_json(s: &str) -> Option<String> {
+    let start = s.find('{')?;
+    let mut depth = 0;
+    let mut in_str = false;
+    let mut escape = false;
+
+    for (idx, ch) in s[start..].char_indices() {
+        if escape {
+            escape = false;
+            continue;
+        }
+        if ch == '\\' {
+            escape = true;
+            continue;
+        }
+        if ch == '"' {
+            in_str = !in_str;
+            continue;
+        }
+        if !in_str {
+            if ch == '{' {
+                depth += 1;
+            } else if ch == '}' {
+                depth -= 1;
+                if depth == 0 {
+                    return Some(s[start..=start + idx].to_string());
+                }
+            }
+        }
+    }
+    // 未严格闭合但已找到开始：截取剩余部分
+    Some(s[start..].to_string())
 }
 
 #[cfg(test)]

@@ -10,8 +10,10 @@
 
 pub mod export;
 pub mod models;
+pub mod tool;
 pub mod store;
 
 pub use export::{render_handoff, render_progress, render_worklog};
 pub use models::{Handoff, NextTask, ProgressEntry, RecordKind, TaskStatus, WorkRecord};
 pub use store::{Store, StoreError};
+pub use tool::{register_all, WorklogAppendTool, WorklogExportTool, WorklogStatusTool};

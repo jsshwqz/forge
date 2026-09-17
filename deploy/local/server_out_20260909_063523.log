@@ -1,0 +1,2 @@
+storage: PostgreSQL (postgres://postgres:forge@localhost:15432/forge)
+forge-server listening on http://127.0.0.1:8787

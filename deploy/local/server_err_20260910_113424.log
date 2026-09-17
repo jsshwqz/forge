@@ -1,0 +1,5 @@
+llm_planner[1] raw_len=3048 head="{\"steps\":[{\"id\":\"s1\",\"title\":\"说明工具限制\",\"depends_on\":[],\"action\":{\"type\":\"call\",\"capability\":\"echo\",\"input\":{\"text\":\"我无法直接"
+llm_planner[1] parse error: expected `,` or `}` at line 1 column 3047: {"steps":[{"id":"s1","title":"说明工具限制","depends_on":[],"action":{"type":"call","capability":"echo","input":{"text":"我无法直接
+llm_planner[2] raw_len=3044 head="{\"steps\":[{\"id\":\"s1\",\"title\":\"说明工具限制\",\"depends_on\":[],\"action\":{\"type\":\"call\",\"capability\":\"echo\",\"input\":{\"text\":\"我无法直接"
+llm_planner[2] parse error: expected `,` or `}` at line 1 column 3043: {"steps":[{"id":"s1","title":"说明工具限制","depends_on":[],"action":{"type":"call","capability":"echo","input":{"text":"我无法直接
+orchestrate: execution failed for task task_af46fe15-970b-4480-a5ab-f10ae9f7b5d6: invalid state: llm: missing choices[0].message.content

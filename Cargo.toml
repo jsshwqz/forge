@@ -1,7 +1,7 @@
 [workspace]
 members = [
     "crates/bench",
-    
+
     "core/runtime",
     "core/session",
     "core/event",
@@ -27,6 +27,11 @@ members = [
     "products/instance",
     "knowledge",
     "tools/worklog",
+    "tools/fs",
+    "tools/search",
+    "tools/parsing",
+    "tools/text",
+    "tools/metatool",
     "server",
     "storage",
     "sdk",

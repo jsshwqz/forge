@@ -4,9 +4,12 @@
 //!
 //! 子命令：
 //! - `forge serve`  启动 HTTP 服务（等价 forge-server；FORGE_PORT/FORGE_PG_URL 生效）
+//! - `forge mcp-server`  以 MCP stdio server 身份暴露内置工具（initialize → tools/list → tools/call）
 //! - `forge version` / 默认  输出版本行
 
 use clap::{Parser, Subcommand};
+
+mod mcp_server;
 
 /// Aion Forge 2.0 —— AI 交付流水线核心。
 #[derive(Parser)]
@@ -21,6 +24,10 @@ struct Cli {
 enum Commands {
     /// 启动 HTTP 服务。
     Serve,
+    /// 以 MCP stdio server 身份暴露内置工具（initialize → tools/list → tools/call）。
+    /// 供 AionUI 等 MCP 客户端通过子进程调用；日志走 stderr，stdout 仅协议帧。
+    #[command(name = "mcp-server")]
+    McpServer,
     /// 打印版本信息后退出。
     Version,
     /// 从失败知识库生成回归建议。
@@ -77,17 +84,40 @@ enum Commands {
     },
 }
 
-#[tokio::main]
-async fn main() {
+/// 同步主入口。
+///
+/// mcp-server 走纯同步阻塞行协议（stdin/stdout 逐行 JSON-RPC），内部需要
+/// 为工具调用构建 current-thread Runtime；若运行线程已在 tokio 上下文内，
+/// `Builder::build()` 会 panic "Cannot start a runtime from within a runtime"。
+/// 因此入口必须是普通同步 fn：先 parse，mcp-server 同步分发并阻塞到 EOF，
+/// 其余命令才手动构造 tokio runtime 执行 async 分发。
+fn main() {
     let cli = Cli::parse();
 
-    match cli.command {
+    if let Some(Commands::McpServer) = cli.command {
+        mcp_server::run();
+        return;
+    }
+
+    let rt = tokio::runtime::Builder::new_multi_thread()
+        .enable_all()
+        .build()
+        .expect("build tokio runtime");
+
+    rt.block_on(async_main(cli.command));
+}
+
+async fn async_main(command: Option<Commands>) {
+    match command {
+        None => {}
         Some(Commands::Serve) => {
             if let Err(e) = forge_server::run_from_env().await {
                 eprintln!("server error: {e}");
                 std::process::exit(1);
             }
         }
+        // mcp-server 在同步 main() 中已分发并 return，此处无需 match 分支。
+        Some(Commands::McpServer) => unreachable!("mcp-server dispatched synchronously in main()"),
         Some(Commands::KnowledgeSuggest { out, top_n }) => {
             use forge_knowledge::{InMemoryKnowledgeBase, suggest as gen_suggest, write_suggestions};
             let kb = InMemoryKnowledgeBase::default();
@@ -200,7 +230,7 @@ async fn main() {
                 patch.branch, patch.case_count, patch.patch_path.display(), &patch.head_before[..12]
             );
         }
-        Some(Commands::Version) | None => {
+        Some(Commands::Version) => {
             println!("forge {}", env!("CARGO_PKG_VERSION"));
         }
     }

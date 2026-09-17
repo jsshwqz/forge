@@ -4,7 +4,7 @@ use crate::permission_level::PermissionLevel;
 use async_trait::async_trait;
 use forge_core::{ForgeError, ForgeResult};
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
+use std::collections::BTreeMap;
 use std::sync::{Arc, RwLock};
 
 /// 工具描述符。
@@ -32,17 +32,17 @@ pub trait Tool: Send + Sync {
 
 /// 工具路由器。
 ///
-/// 路由表内部用 `RwLock<HashMap<String, Arc<dyn Tool>>>`。
+/// 路由表内部用 `RwLock<BTreeMap<String, Arc<dyn Tool>>>`。
 /// `route` 返回 `Arc<dyn Tool>` 以保证跨锁引用的内存安全。
 pub struct ToolRouter {
-    tools: RwLock<HashMap<String, Arc<dyn Tool>>>,
+    tools: RwLock<BTreeMap<String, Arc<dyn Tool>>>,
 }
 
 impl ToolRouter {
     /// 创建空路由器。
     pub fn new() -> Self {
         Self {
-            tools: RwLock::new(HashMap::new()),
+            tools: RwLock::new(BTreeMap::new()),
         }
     }
 
@@ -75,10 +75,12 @@ impl ToolRouter {
             .ok_or_else(|| ForgeError::NotFound(format!("tool: {}", name)))
     }
 
-    /// 列出所有工具描述符。
+    /// 列出所有工具描述符（按名称排序，顺序稳定）。
     pub fn list(&self) -> Vec<ToolDescriptor> {
         let guard = self.tools.read().unwrap_or_else(|e| e.into_inner());
-        guard.values().map(|t| t.descriptor().clone()).collect()
+        let mut v: Vec<ToolDescriptor> = guard.values().map(|t| t.descriptor().clone()).collect();
+        v.sort_by(|a, b| a.name.cmp(&b.name));
+        v
     }
 }
 

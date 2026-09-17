@@ -11,6 +11,7 @@
 //! 成本记录（G-V3.2）：每次 LLM 调用的档位/模型/token 数经
 //! [`forge_plan_llm::UsageLedger`] 汇总后写进 Session payload。
 
+pub mod autoselect;
 pub mod pipeline;
 pub mod reviewer;
 pub mod role;
