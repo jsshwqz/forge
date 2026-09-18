@@ -133,9 +133,55 @@ impl Tool for GlobTool {
     }
 }
 
+pub struct RegexMatchTool { descriptor: ToolDescriptor }
+
+impl Default for RegexMatchTool {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl RegexMatchTool {
+    pub fn new() -> Self {
+        Self { descriptor: ToolDescriptor {
+            name: "regex_match".into(),
+            description: "对给定文本执行正则匹配，返回匹配起止位置与内容。输入 {pattern, text, case_insensitive?}，返回 {matched, count, matches}。".into(),
+            input_schema: json!({
+                "type":"object",
+                "required":["pattern","text"],
+                "properties":{
+                    "pattern":{"type":"string","description":"正则表达式"},
+                    "text":{"type":"string","description":"待匹配文本"},
+                    "case_insensitive":{"type":"boolean","description":"忽略大小写（默认 false）"}
+                }
+            }),
+            permission: PermissionLevel::ReadOnly,
+        }}
+    }
+}
+
+#[async_trait]
+impl Tool for RegexMatchTool {
+    fn descriptor(&self) -> &ToolDescriptor { &self.descriptor }
+    async fn invoke(&self, input: serde_json::Value) -> ForgeResult<serde_json::Value> {
+        let pattern = input.get("pattern").and_then(|v| v.as_str())
+            .ok_or_else(|| err("pattern is required"))?;
+        let text = input.get("text").and_then(|v| v.as_str())
+            .ok_or_else(|| err("text is required"))?;
+        let ci = input.get("case_insensitive").and_then(|v| v.as_bool()).unwrap_or(false);
+        let p = if ci { format!("(?i){pattern}") } else { pattern.to_string() };
+        let re = regex::Regex::new(&p).map_err(|e| err(format!("invalid regex: {e}")))?;
+        let matches: Vec<_> = re.find_iter(text)
+            .map(|m| json!({ "start": m.start(), "end": m.end(), "text": m.as_str() }))
+            .collect();
+        Ok(json!({ "matched": !matches.is_empty(), "count": matches.len(), "matches": matches }))
+    }
+}
+
 pub fn register_all(router: &forge_exec::ToolRouter) -> ForgeResult<()> {
     router.register(Box::new(GrepTool::new()))?;
     router.register(Box::new(GlobTool::new()))?;
+    router.register(Box::new(RegexMatchTool::new()))?;
     Ok(())
 }
 
@@ -161,6 +207,14 @@ mod tests {
         let result = tool.invoke(json!({ "pattern": "*.rs", "path": dir.path().to_str().unwrap() })).await.unwrap();
         assert_eq!(result["file_count"], 1);
         assert!(result["files"][0].as_str().unwrap().ends_with("a.rs"));
+    }
+    #[tokio::test]
+    async fn test_regex_match() {
+        let tool = RegexMatchTool::new();
+        let result = tool.invoke(json!({ "pattern": "o+", "text": "foo doo" })).await.unwrap();
+        assert_eq!(result["matched"], true);
+        assert_eq!(result["count"], 2);
+        assert_eq!(result["matches"][0]["text"], "oo");
     }
 }
 

@@ -453,7 +453,149 @@ impl Tool for TextEmbedTool {
     }
 }
 
-/// 注册所有文本工具到 router（9 工具 = 4 纯 + 4 AI 壳 + 1 text_embed）。
+// ── sanitize：文本净化 ──
+
+pub struct SanitizeTool { descriptor: ToolDescriptor }
+
+impl Default for SanitizeTool {
+    fn default() -> Self { Self::new() }
+}
+
+impl SanitizeTool {
+    pub fn new() -> Self {
+        Self { descriptor: ToolDescriptor {
+            name: "sanitize".into(),
+            description: "净化文本：去除控制字符（保留换行/制表），可选 HTML 转义。输入 {text, mode?}，mode=control(默认)|html，返回 {ok, sanitized, removed_chars}。".into(),
+            input_schema: json!({
+                "type":"object",
+                "required":["text"],
+                "properties":{
+                    "text":{"type":"string"},
+                    "mode":{"type":"string","enum":["control","html"]}
+                }
+            }),
+            permission: PermissionLevel::ReadOnly,
+        }}
+    }
+}
+
+#[async_trait]
+impl Tool for SanitizeTool {
+    fn descriptor(&self) -> &ToolDescriptor { &self.descriptor }
+    async fn invoke(&self, input: serde_json::Value) -> ForgeResult<serde_json::Value> {
+        let text = input.get("text").and_then(|v| v.as_str())
+            .ok_or_else(|| err("text is required"))?;
+        let mode = input.get("mode").and_then(|v| v.as_str()).unwrap_or("control");
+        let cleaned: String = text.chars()
+            .filter(|c| !c.is_control() || *c == '\n' || *c == '\t')
+            .collect();
+        let removed = text.chars().count() - cleaned.chars().count();
+        let sanitized = if mode == "html" {
+            cleaned.replace('&', "&amp;").replace('<', "&lt;")
+                .replace('>', "&gt;").replace('"', "&quot;").replace('\'', "&#39;")
+        } else {
+            cleaned
+        };
+        Ok(json!({ "ok": true, "sanitized": sanitized, "removed_chars": removed }))
+    }
+}
+
+// ── session_report：会话报告 ──
+
+pub struct SessionReportTool { descriptor: ToolDescriptor }
+
+impl Default for SessionReportTool {
+    fn default() -> Self { Self::new() }
+}
+
+impl SessionReportTool {
+    pub fn new() -> Self {
+        Self { descriptor: ToolDescriptor {
+            name: "session_report".into(),
+            description: "根据会话事件列表生成统计报告。输入 {events:[{kind, seq?, at?}]}，返回 {ok, report:{total, by_kind, first_at, last_at, summary}}。".into(),
+            input_schema: json!({
+                "type":"object",
+                "required":["events"],
+                "properties":{
+                    "events":{"type":"array","items":{"type":"object"}}
+                }
+            }),
+            permission: PermissionLevel::ReadOnly,
+        }}
+    }
+}
+
+#[async_trait]
+impl Tool for SessionReportTool {
+    fn descriptor(&self) -> &ToolDescriptor { &self.descriptor }
+    async fn invoke(&self, input: serde_json::Value) -> ForgeResult<serde_json::Value> {
+        let events = input.get("events").and_then(|v| v.as_array())
+            .ok_or_else(|| err("events is required"))?;
+        let mut by_kind: std::collections::BTreeMap<String, usize> = std::collections::BTreeMap::new();
+        for e in events {
+            let kind = e.get("kind").and_then(|v| v.as_str()).unwrap_or("unknown");
+            *by_kind.entry(kind.to_string()).or_insert(0) += 1;
+        }
+        let first_at = events.first().and_then(|e| e.get("at")).cloned().unwrap_or(serde_json::Value::Null);
+        let last_at = events.last().and_then(|e| e.get("at")).cloned().unwrap_or(serde_json::Value::Null);
+        let summary = format!("{} events across {} kinds", events.len(), by_kind.len());
+        Ok(json!({ "ok": true, "report": {
+            "total": events.len(),
+            "by_kind": by_kind,
+            "first_at": first_at,
+            "last_at": last_at,
+            "summary": summary,
+        }}))
+    }
+}
+
+// ── skill_report：技能报告 ──
+
+pub struct SkillReportTool { descriptor: ToolDescriptor }
+
+impl Default for SkillReportTool {
+    fn default() -> Self { Self::new() }
+}
+
+impl SkillReportTool {
+    pub fn new() -> Self {
+        Self { descriptor: ToolDescriptor {
+            name: "skill_report".into(),
+            description: "根据技能清单生成报告。输入 {skills:[{name, capabilities?, version?}]}，返回 {ok, report:{total, names, capabilities_count, summary}}。".into(),
+            input_schema: json!({
+                "type":"object",
+                "required":["skills"],
+                "properties":{
+                    "skills":{"type":"array","items":{"type":"object"}}
+                }
+            }),
+            permission: PermissionLevel::ReadOnly,
+        }}
+    }
+}
+
+#[async_trait]
+impl Tool for SkillReportTool {
+    fn descriptor(&self) -> &ToolDescriptor { &self.descriptor }
+    async fn invoke(&self, input: serde_json::Value) -> ForgeResult<serde_json::Value> {
+        let skills = input.get("skills").and_then(|v| v.as_array())
+            .ok_or_else(|| err("skills is required"))?;
+        let names: Vec<&str> = skills.iter()
+            .filter_map(|s| s.get("name").and_then(|v| v.as_str())).collect();
+        let cap_count: usize = skills.iter()
+            .filter_map(|s| s.get("capabilities").and_then(|v| v.as_array()).map(|a| a.len()))
+            .sum();
+        let summary = format!("{} skills, {} capabilities", skills.len(), cap_count);
+        Ok(json!({ "ok": true, "report": {
+            "total": skills.len(),
+            "names": names,
+            "capabilities_count": cap_count,
+            "summary": summary,
+        }}))
+    }
+}
+
+/// 注册所有文本工具到 router（12 工具 = 9 既有 + sanitize + session_report + skill_report）。
 pub fn register_all(router: &forge_exec::ToolRouter) -> ForgeResult<()> {
     router.register(Box::new(MarkdownRenderTool::new()))?;
     router.register(Box::new(TextToonTool::new()))?;
@@ -464,6 +606,9 @@ pub fn register_all(router: &forge_exec::ToolRouter) -> ForgeResult<()> {
     router.register(Box::new(TextSummarizeTool::new()))?;
     router.register(Box::new(TextTranslateTool::new()))?;
     router.register(Box::new(TextEmbedTool::new()))?;
+    router.register(Box::new(SanitizeTool::new()))?;
+    router.register(Box::new(SessionReportTool::new()))?;
+    router.register(Box::new(SkillReportTool::new()))?;
     Ok(())
 }
 
@@ -529,11 +674,11 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_register_all_9_tools() {
+    async fn test_register_all_12_tools() {
         let router = forge_exec::ToolRouter::new();
         register_all(&router).unwrap();
         let tools = router.list();
-        assert_eq!(tools.len(), 9, "register_all 应注册 9 个工具");
+        assert_eq!(tools.len(), 12, "register_all 应注册 12 个工具");
         let names: Vec<String> = tools.iter().map(|t| t.name.clone()).collect();
         assert!(names.contains(&"markdown_render".to_string()));
         assert!(names.contains(&"text_toon".to_string()));
@@ -544,5 +689,50 @@ mod tests {
         assert!(names.contains(&"text_summarize".to_string()));
         assert!(names.contains(&"text_translate".to_string()));
         assert!(names.contains(&"text_embed".to_string()));
+        assert!(names.contains(&"sanitize".to_string()));
+        assert!(names.contains(&"session_report".to_string()));
+        assert!(names.contains(&"skill_report".to_string()));
+    }
+
+    #[tokio::test]
+    async fn test_sanitize_removes_control() {
+        let tool = SanitizeTool::new();
+        let result = tool.invoke(json!({"text": "a\u{0001}b\nc"})).await.unwrap();
+        assert_eq!(result["ok"], true);
+        assert_eq!(result["sanitized"], "ab\nc");
+        assert_eq!(result["removed_chars"], 1);
+    }
+    #[tokio::test]
+    async fn test_sanitize_html_mode() {
+        let tool = SanitizeTool::new();
+        let result = tool.invoke(json!({"text": "<a> & \"b\"", "mode": "html"})).await.unwrap();
+        assert_eq!(result["sanitized"], "&lt;a&gt; &amp; &quot;b&quot;");
+    }
+    #[tokio::test]
+    async fn test_session_report() {
+        let tool = SessionReportTool::new();
+        let result = tool.invoke(json!({
+            "events": [
+                {"kind": "PlanCreated", "seq": 1, "at": "t1"},
+                {"kind": "ActionDispatched", "seq": 2, "at": "t2"},
+                {"kind": "Completed", "seq": 3, "at": "t3"}
+            ]
+        })).await.unwrap();
+        assert_eq!(result["report"]["total"], 3);
+        assert_eq!(result["report"]["by_kind"]["Completed"], 1);
+        assert_eq!(result["report"]["first_at"], "t1");
+        assert_eq!(result["report"]["last_at"], "t3");
+    }
+    #[tokio::test]
+    async fn test_skill_report() {
+        let tool = SkillReportTool::new();
+        let result = tool.invoke(json!({
+            "skills": [
+                {"name": "code", "capabilities": ["write", "edit"]},
+                {"name": "search", "capabilities": ["grep"]}
+            ]
+        })).await.unwrap();
+        assert_eq!(result["report"]["total"], 2);
+        assert_eq!(result["report"]["capabilities_count"], 3);
     }
 }

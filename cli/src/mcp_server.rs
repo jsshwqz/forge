@@ -295,7 +295,7 @@ mod tests {
         ] {
             assert!(names.contains(&zl), "{zl} missing: {names:?}");
         }
-        assert_eq!(all.len(), 34, "expected 34 tools, got {names:?}");
+        assert_eq!(all.len(), 38, "expected 38 tools, got {names:?}");
     }
 
     #[test]
@@ -317,7 +317,7 @@ mod tests {
         let frame = handle_tools_list(&id, &router).unwrap();
         let v: Value = serde_json::from_str(&frame).unwrap();
         let arr = v["result"]["tools"].as_array().unwrap();
-        assert_eq!(arr.len(), 34);
+        assert_eq!(arr.len(), 38);
         let names: Vec<&str> = arr.iter().map(|t| t["name"].as_str().unwrap()).collect();
         assert!(names.contains(&"echo"));
         assert!(names.contains(&"worklog_status"));
