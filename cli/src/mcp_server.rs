@@ -285,15 +285,15 @@ mod tests {
         assert!(names.contains(&"text_classify"), "text_classify missing: {names:?}");
         assert!(names.contains(&"text_embed"), "text_embed missing: {names:?}");
         for zl in [
+            "strategic_plan",
+            "task_dialectic",
+            "contradiction_analyze",
+            "compile_contract",
             "check_sufficiency",
             "verify_result",
-            "compile_contract",
             "detect_drift",
-            "contradiction_analyze",
+            "dialectical_retry",
             "prompt_audit",
-            "verify_contract",
-            "strategic_plan",
-            "evolver_governance",
         ] {
             assert!(names.contains(&zl), "{zl} missing: {names:?}");
         }
