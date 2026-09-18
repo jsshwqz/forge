@@ -1301,3 +1301,9 @@ sandbox_verify.rs 追加 container_run_args(冻结 run args 形态)/container_en
 
 ---
 
+## [R1-089] ✅ 成功 · 2026-09-18 · 蓝军审查(内部reviewer)整改: 2高危4中危4低危全修复
+
+委派 reviewer 子代理独立审查 V8 先行批+ZL 移植改动, 对照 build_v80a 契约。发现并修复: H1 PG分支进度流失效(忽略包BusProgressStore); H2 workspace_task_id越权(缺归属校验+create_for前缀误匹配); M3 非法续作id不404; M4 符号链接逃逸(canonicalize校验); M5 容器验收无超时(挂起); L7-L10 边界(32KB预算/WriteFileTool重复resolve/edit空find重叠/read bytes lossy)。全部修复后 workspace 测试 0 failed / clippy 0 告警。方法论价值: 蓝军攻击抓到自测遗漏的4类真实缺陷
+
+---
+
