@@ -1134,5 +1134,13 @@
     "task_id": null,
     "title": "蓝军审查(内部reviewer)整改: 2高危4中危4低危全修复",
     "body": "委派 reviewer 子代理独立审查 V8 先行批+ZL 移植改动, 对照 build_v80a 契约。发现并修复: H1 PG分支进度流失效(忽略包BusProgressStore); H2 workspace_task_id越权(缺归属校验+create_for前缀误匹配); M3 非法续作id不404; M4 符号链接逃逸(canonicalize校验); M5 容器验收无超时(挂起); L7-L10 边界(32KB预算/WriteFileTool重复resolve/edit空find重叠/read bytes lossy)。全部修复后 workspace 测试 0 failed / clippy 0 告警。方法论价值: 蓝军攻击抓到自测遗漏的4类真实缺陷"
+  },
+  {
+    "id": "R6-032",
+    "kind": "R6Decision",
+    "date": "2026-09-18",
+    "task_id": null,
+    "title": "D11/D12 决策: GIT-001 commit粒度 + NOTIFY-001 载荷/重试",
+    "body": "D11(拍板): GIT-001 每任务一个 commit——步骤级噪音大, 任务边界清晰; 任务工作区 git init 后独立 repo, 任务结束 git add -A + 单 commit, 补丁导出供人工审阅(复用 KNW-101 红线不触主干). D12(拍板): NOTIFY-001 载荷冻结 {task_id, final_status, at, summary}(只投终态不含敏感), 失败重试有界 3 次指数退避 1s/2s/4s. 两包默认 env 门控关闭(FORGE_GIT_TASK=1 / FORGE_NOTIFY_URL 未设即关), 无 build_v80a 冻结契约, 规格由 executor 精简设计经本次 R6 拍板"
   }
 ]

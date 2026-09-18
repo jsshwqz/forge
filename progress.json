@@ -814,5 +814,21 @@
     "owner": "executor",
     "last_record": null,
     "commit": "75f5992"
+  },
+  {
+    "task_id": "GIT-001",
+    "name": "任务工作区Git集成(git init+每任务单commit+补丁导出,默认关)",
+    "status": "Wip",
+    "owner": "executor",
+    "last_record": null,
+    "commit": null
+  },
+  {
+    "task_id": "NOTIFY-001",
+    "name": "任务终态Webhook通知(载荷冻结+3次指数退避,默认关)",
+    "status": "Wip",
+    "owner": "executor",
+    "last_record": null,
+    "commit": null
   }
 ]

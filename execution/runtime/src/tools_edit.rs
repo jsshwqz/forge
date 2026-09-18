@@ -256,7 +256,7 @@ mod tests {
             );
         }
     }
-}
+
 #[cfg(unix)]
 #[tokio::test]
 async fn edit_patch_symlink_escape_rejected() {
@@ -293,4 +293,5 @@ async fn edit_patch_empty_find_rejected() {
         .await
         .unwrap_err();
     assert!(err.to_string().contains("empty find"), "got {err}");
+}
 }

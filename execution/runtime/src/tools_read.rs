@@ -243,7 +243,7 @@ mod tests {
         assert_eq!(entries[2]["type"], "dir");
         assert_eq!(out.get("truncated"), None);
     }
-}
+
 #[cfg(unix)]
 #[tokio::test]
 async fn read_file_symlink_escape_rejected() {
@@ -260,4 +260,5 @@ async fn read_file_symlink_escape_rejected() {
         matches!(err, ForgeError::PermissionDenied(_)),
         "符号链接逃逸必须 PermissionDenied，got {err:?}"
     );
+}
 }
