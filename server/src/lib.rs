@@ -205,6 +205,14 @@ impl From<ForgeError> for ApiError {
 
 impl IntoResponse for ApiError {
     fn into_response(self) -> Response {
+        // 已在 From<ForgeError> 预构造的错误体（storage_unavailable 503 /
+        // quota 429 的冻结错误体 {"error":{"code":...}}）直接透传，避免二次包装。
+        // 普通 ForgeError 的 payload 是描述文本，走统一 {status,message} 包装。
+        if let Ok(v) = serde_json::from_str::<serde_json::Value>(&self.1) {
+            if v.get("error").is_some() {
+                return (self.0, axum::Json(v)).into_response();
+            }
+        }
         let body = serde_json::json!({
             "error": {
                 "status": self.0.as_u16(),

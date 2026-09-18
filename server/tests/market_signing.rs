@@ -14,10 +14,10 @@ use forge_storage::connect_and_migrate;
 use http_body_util::BodyExt;
 use tower::ServiceExt;
 
-async fn app() -> (axum::Router, sqlx::PgPool) {
+async fn app() -> Option<(axum::Router, sqlx::PgPool)> {
     let Ok(url) = std::env::var("FORGE_PG_URL") else {
         eprintln!("[skip] FORGE_PG_URL 未设置——本测试需真实 PostgreSQL");
-        return (app_with_state(AppState::in_memory()), connect_stub().await);
+        return None;
     };
     let pool = connect_and_migrate(&url).await.unwrap();
     // 测试隔离：清空 release/publisher 残留
@@ -25,12 +25,7 @@ async fn app() -> (axum::Router, sqlx::PgPool) {
     sqlx::query("DELETE FROM publisher_keys").execute(&pool).await.unwrap();
     let mut st = AppState::in_memory();
     st.pool = Some(pool.clone());
-    (app_with_state(st), pool)
-}
-
-/// 无 PG 时的占位池（不会用到——用例在取 pool 前已早退）。
-async fn connect_stub() -> sqlx::PgPool {
-    panic!("FORGE_PG_URL 未设置")
+    Some((app_with_state(st), pool))
 }
 
 async fn send(
@@ -55,7 +50,7 @@ fn post_json(uri: &str, body: serde_json::Value, publisher: Option<&str>) -> Req
 /// 冻结测试：未登记 publisher 发布 → 403。
 #[tokio::test]
 async fn unknown_publisher_rejected() {
-    let (app, _pool) = app().await;
+    let Some((app, _pool)) = app().await else { return; };
     let (status, body) = send(
         app,
         post_json(
@@ -75,7 +70,7 @@ async fn unknown_publisher_rejected() {
 /// + 非法迁移全拒（409）。
 #[tokio::test]
 async fn review_state_machine_transitions() {
-    let (app, pool) = app().await;
+    let Some((app, pool)) = app().await else { return; };
 
     // 登记发布者并发布两条 release（合法签名）
     let (sk, pk) = signing::generate_keypair();
@@ -151,7 +146,7 @@ async fn review_state_machine_transitions() {
 /// 冻结测试：无签名/错签名 release 走 install → 403。
 #[tokio::test]
 async fn install_requires_valid_signature() {
-    let (app, pool) = app().await;
+    let Some((app, pool)) = app().await else { return; };
 
     // 注册者 + 一条签名与内容不符的 release（绕过入站验签，直插 DB 模拟历史脏数据）
     let (_, pk) = signing::generate_keypair();
