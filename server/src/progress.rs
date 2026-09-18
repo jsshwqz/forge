@@ -96,6 +96,10 @@ mod tests {
         let bus: Arc<dyn EventBus> = Arc::new(forge_event::InMemoryEventBus::with_buffer(16));
         let store: Arc<dyn SessionStore> = Arc::new(BusProgressStore::new(raw, bus.clone()));
 
+        // 先订阅、后触发 append——EventBus 契约"订阅前发布的事件不回放"
+        //（tokio broadcast 语义），顺序颠倒会永久等不到而挂起（已修，并加超时护栏）。
+        let mut stream = bus.subscribe(Topic::Session).await.unwrap();
+
         let task = TaskId::from("T-1".to_string());
         let session = store.create(task).await.unwrap();
         store
@@ -107,9 +111,11 @@ mod tests {
             .await
             .unwrap();
 
-        // 订阅 spy 应收到载荷，字段冻结。
-        let mut stream = bus.subscribe(Topic::Session).await.unwrap();
-        let evt = stream.recv().await.unwrap();
+        // 订阅 spy 应收到载荷，字段冻结；超时护栏防止回归以"挂起"形态出现。
+        let evt = tokio::time::timeout(std::time::Duration::from_secs(5), stream.recv())
+            .await
+            .expect("timeout waiting for progress event — 订阅/发布时序回归")
+            .expect("progress event stream closed");
         let p = evt.payload;
         assert_eq!(p["session_id"], session.id.to_string());
         assert_eq!(p["kind"], "ActionDispatched");
