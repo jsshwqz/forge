@@ -247,6 +247,9 @@ pub struct OrchestrateRequest {
     /// V7 ORCH-101a：规划模式（缺省 auto = 完全兼容既有行为）。
     #[serde(default)]
     pub plan_mode: Option<PlanMode>,
+    /// V8 CTX-001：续作既有任务工作区（增量开发入口）。None = 新建本任务工作区。
+    #[serde(default)]
+    pub workspace_task_id: Option<String>,
 }
 fn default_timeout() -> u64 { 30 }
 fn default_codegen_flag() -> bool { true }
@@ -332,14 +335,26 @@ async fn execute_orchestration(
     timeout_secs: u64,
     plan_mode: PlanMode,
     tenant: &str,
+    workspace_task_id: Option<&str>,
 ) -> Result<forge_sdk::OrchestratorReport, ApiError> {
     // 工具集：echo(基线) + write_file("写软件"落盘能力，根=任务工作目录)
     let router = ToolRouter::new();
     router.register(Box::new(EchoTool::new())).map_err(ApiError::from)?;
-    let workdir = st.workspaces.create_for(task.id.as_ref()).map_err(ApiError::from)?;
+    // V8 CTX-001 R3：workspace_task_id 续作既有工作区（create_for 幂等）；缺省新建本任务。
+    let workdir = match workspace_task_id {
+        Some(prev) => st.workspaces.create_for(prev).map_err(ApiError::from)?,
+        None => st.workspaces.create_for(task.id.as_ref()).map_err(ApiError::from)?,
+    };
     let workdir_for_scan = workdir.clone();
     router
         .register(Box::new(forge_exec::WriteFileTool::new(workdir)))
+        .map_err(ApiError::from)?;
+    // V8 CTX-001：工作区感知工具（read_file / list_dir，root=续作工作区）。
+    router
+        .register(Box::new(forge_exec::ReadFileTool::new(workdir_for_scan.clone())))
+        .map_err(ApiError::from)?;
+    router
+        .register(Box::new(forge_exec::ListDirTool::new(workdir_for_scan.clone())))
         .map_err(ApiError::from)?;
 
     // ORCH-101c：MCP 工具源（未配置零开销；失败仅 warn 不阻断编排）
@@ -378,7 +393,11 @@ async fn execute_orchestration(
             }
             PlanMode::MultiStep => {
                 if llm_ready {
-                    match build_multistep_planner(&llm_cfg, meter.clone()) {
+                    match build_multistep_planner(
+                        &llm_cfg,
+                        meter.clone(),
+                        Some(build_workspace_context(&workdir_for_scan)),
+                    ) {
                         Ok((p, rp)) => (p, rp),
                         Err(e) => {
                             eprintln!("orchestrate: multistep planner unavailable ({e}), falling back to sequential");
@@ -414,6 +433,7 @@ async fn execute_orchestration(
         replanner,
         max_replans: 1,
         planner,
+        workspace_task: workspace_task_id.map(|s| s.to_string()),
     };
     let orch = Orchestrator { capability: "echo".into(), timeout: Duration::from_secs(timeout_secs) };
     let report = match st.sdk.run_end_to_end(&task.id, &deps, &orch).await {
@@ -536,6 +556,7 @@ async fn orchestrate(
                 // R1：经 serde 序列化（snake_case 冻结）；Debug+lowercase 曾产生
                 // "multistep" 与解析端 "multi_step" 失配——真实 E2E 撞出（V7 报告）
                 "plan_mode": plan_mode,
+                "workspace_task_id": req.workspace_task_id,
             });
             queue::enqueue_orchestration(&pool, task.id.as_ref(), &tenant, payload)
                 .await
@@ -566,7 +587,9 @@ async fn orchestrate(
         }
     }
 
-    let report = execute_orchestration(&st, &task, req.timeout_secs, plan_mode, &tenant).await?;
+    let report = execute_orchestration(
+        &st, &task, req.timeout_secs, plan_mode, &tenant, req.workspace_task_id.as_deref(),
+    ).await?;
     Ok(report_response(&report))
 }
 
@@ -583,7 +606,8 @@ async fn execute_queued(st: &AppState, qt: &queue::QueuedTask, tenant: &str) -> 
         .get("plan_mode")
         .and_then(|v| serde_json::from_value(v.clone()).ok())
         .unwrap_or_else(|| resolve_plan_mode(None, qt.payload["codegen_flag"].as_bool().unwrap_or(true)));
-    execute_orchestration(st, &task, timeout_secs, plan_mode, tenant).await
+    let workspace_task_id = qt.payload["workspace_task_id"].as_str();
+    execute_orchestration(st, &task, timeout_secs, plan_mode, tenant, workspace_task_id).await
 }
 
 /// 降级响应：任务被其它副本 worker 认领，轮询本库任务状态至终态。
@@ -1055,13 +1079,70 @@ fn build_codegen_planner(
     Arc::new(planner)
 }
 
+/// V8 CTX-001 R2：组装工作区上下文注入块（清单行 + ≤32KB 小文件内容，≤8KB/个）。
+/// 冻结格式：完整注入块含首行 "=== Workspace context ==="，由 LlmPlanner 直接追加。
+pub const CONTEXT_MAX_BYTES: usize = 32 * 1024;
+pub const SMALL_FILE_MAX_BYTES: usize = 8 * 1024;
+
+pub fn build_workspace_context(root: &std::path::Path) -> String {
+    let mut out = String::from("=== Workspace context ===\n");
+    // 清单行：单层列举，按名排序（目录加 '/' 后缀）。
+    let mut entries: Vec<String> = Vec::new();
+    if let Ok(rd) = std::fs::read_dir(root) {
+        let mut items: Vec<_> = rd.filter_map(|e| e.ok()).collect();
+        items.sort_by_key(|e| e.file_name());
+        for e in items {
+            let name = e.file_name().to_string_lossy().to_string();
+            entries.push(if e.path().is_dir() { format!("{name}/") } else { name });
+        }
+    }
+    for name in &entries {
+        out.push_str(name);
+        out.push('\n');
+    }
+    // 小文件内容：≤8KB/个、总量 ≤32KB，超限截断标 (truncated)。
+    if let Ok(rd) = std::fs::read_dir(root) {
+        let mut items: Vec<_> = rd.filter_map(|e| e.ok()).collect();
+        items.sort_by_key(|e| e.file_name());
+        for e in items {
+            if e.path().is_dir() {
+                continue;
+            }
+            if let Ok(meta) = e.metadata() {
+                if meta.len() > SMALL_FILE_MAX_BYTES as u64 {
+                    continue;
+                }
+            }
+            if let Ok(content) = std::fs::read_to_string(e.path()) {
+                if out.len() + content.len() + 1 > CONTEXT_MAX_BYTES {
+                    out.push_str("(truncated)");
+                    break;
+                }
+                out.push_str("\n--- ");
+                out.push_str(&e.file_name().to_string_lossy());
+                out.push_str(" ---\n");
+                out.push_str(&content);
+            }
+        }
+    }
+    out
+}
+
 /// V7 ORCH-101a：MultiStep 多步规划器 + 重规划器（共享 backend；tools 白名单冻结）。
 fn build_multistep_planner(
     cfg: &routes::llm::LlmRuntimeConfig,
     meter: Option<Arc<dyn forge_plan_llm::usage::LlmMeter>>,
+    context: Option<String>,
 ) -> Result<(PlannerOpt, ReplannerOpt), String> {
     let backend = build_llm_backend(cfg);
-    let tools = vec!["echo".to_string(), "write_file".to_string()];
+    // V8 CTX-001 R4：白名单扩为 5 工具（edit_patch 由 EDIT-001 启用）。
+    let tools = vec![
+        "echo".to_string(),
+        "write_file".to_string(),
+        "read_file".to_string(),
+        "list_dir".to_string(),
+        "edit_patch".to_string(),
+    ];
     let planner = forge_plan_llm::LlmPlanner {
         backend: backend.clone(),
         model: llm_model(cfg),
@@ -1070,6 +1151,7 @@ fn build_multistep_planner(
         ledger: None,
         meter: meter.clone(), // BILL-003：plan 用途入账
         brief_mode: false,
+        context: context.clone(),
     };
     let replanner = forge_plan_llm::LlmReplanner {
         backend,

@@ -82,6 +82,7 @@ fn deps_with(
         replanner,
         max_replans: 1,
         planner,
+        workspace_task: None,
     }
 }
 
@@ -121,6 +122,7 @@ async fn multistep_plan_executes_waves() {
         ledger: None,
         meter: None,
         brief_mode: false,
+        context: None,
     };
     let deps = deps_with(ws.path(), Some(Arc::new(planner)), None);
     let orch = Orchestrator { capability: "echo".into(), timeout: Duration::from_secs(15) };
@@ -162,6 +164,7 @@ async fn replanner_invoked_on_step_failure() {
         ledger: None,
         meter: None,
         brief_mode: false,
+        context: None,
     };
     let replanner = LlmReplanner {
         backend: mock as Arc<dyn LlmPlanBackend>,
@@ -234,6 +237,7 @@ fn multistep_deps(
         ledger: None,
         meter: None,
         brief_mode: false,
+        context: None,
     };
     let router = ToolRouter::new();
     router.register(Box::new(EchoTool::new())).unwrap();
@@ -251,6 +255,7 @@ fn multistep_deps(
         replanner: None,
         max_replans: 1,
         planner: Some(Arc::new(planner)),
+        workspace_task: None,
     }
 }
 

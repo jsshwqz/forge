@@ -59,6 +59,7 @@ fn deps(register_echo: bool) -> (
         replanner: None,
         max_replans: 1,
         planner: None,
+        workspace_task: None,
     };
     (deps, evidence, ws, tmp)
 }

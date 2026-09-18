@@ -10,6 +10,7 @@ pub mod policy;
 pub mod router;
 pub mod tools_file;
 pub mod tools_path;
+pub mod tools_read;
 
 pub use dispatcher::EngineDispatcher;
 pub use engine::{ExecutionEngine, ExecutionRequest, ExecutionResult, ExecutionStatus};
@@ -18,3 +19,4 @@ pub use policy::{PermissionPolicy, PolicyContext};
 pub use router::{EchoTool, Tool, ToolDescriptor, ToolRouter};
 pub use tools_file::WriteFileTool;
 pub use tools_path::resolve_in_root;
+pub use tools_read::{ListDirTool, ReadFileTool, FORGE_READ_MAX_BYTES_DEFAULT};

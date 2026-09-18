@@ -136,6 +136,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         replanner: None,
         max_replans: 1,
         planner: None,
+        workspace_task: None,
     };
 
     // 编排器 capability = "write_file"，即计划中的步骤会调用此工具

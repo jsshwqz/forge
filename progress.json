@@ -1,762 +1,778 @@
 [
- {
-  "task_id": "AF-CORE-001",
-  "name": "Workspace 与基础库",
-  "status": "Completed",
-  "owner": "builder-a",
-  "last_record": "R1-001",
-  "commit": "5b71095"
- },
- {
-  "task_id": "AF-CORE-002",
-  "name": "Session 模型",
-  "status": "Completed",
-  "owner": "builder-a",
-  "last_record": "R1-001",
-  "commit": "4ff32e9"
- },
- {
-  "task_id": "AF-CORE-003",
-  "name": "事件总线",
-  "status": "Completed",
-  "owner": "builder-a",
-  "last_record": "R1-001",
-  "commit": "784ca40"
- },
- {
-  "task_id": "AF-CORE-004",
-  "name": "Artifact 模型",
-  "status": "Completed",
-  "owner": "builder-a",
-  "last_record": "R1-001",
-  "commit": "304a31d"
- },
- {
-  "task_id": "AF-CORE-005",
-  "name": "Session 回放",
-  "status": "Completed",
-  "owner": "builder-a",
-  "last_record": "R1-001",
-  "commit": "83f7692"
- },
- {
-  "task_id": "AF-AGENT-001",
-  "name": "Agent 接口",
-  "status": "Completed",
-  "owner": "builder-a",
-  "last_record": "R1-001",
-  "commit": "1a6421b"
- },
- {
-  "task_id": "AF-AGENT-002",
-  "name": "回合引擎",
-  "status": "Completed",
-  "owner": "builder-a",
-  "last_record": "R1-001",
-  "commit": "6a3fed9"
- },
- {
-  "task_id": "AF-TASK-001",
-  "name": "Task 模型",
-  "status": "Completed",
-  "owner": "builder-a",
-  "last_record": "R1-001",
-  "commit": "f832f0b"
- },
- {
-  "task_id": "AF-PLAN-001",
-  "name": "Planner 接口与顺序规划器",
-  "status": "Completed",
-  "owner": "builder-a",
-  "last_record": "R1-001",
-  "commit": "990acee"
- },
- {
-  "task_id": "AF-PLAN-002",
-  "name": "DAG 规划器",
-  "status": "Completed",
-  "owner": "builder-a",
-  "last_record": "R1-001",
-  "commit": "c6d412c"
- },
- {
-  "task_id": "AF-EXEC-001",
-  "name": "工具路由与权限分级",
-  "status": "Completed",
-  "owner": "builder-a",
-  "last_record": "R1-001",
-  "commit": "5123e8f"
- },
- {
-  "task_id": "AF-EXEC-002",
-  "name": "执行运行时",
-  "status": "Completed",
-  "owner": "builder-a",
-  "last_record": "R1-001",
-  "commit": "6be6b53"
- },
- {
-  "task_id": "AF-EXEC-003",
-  "name": "权限策略引擎",
-  "status": "Completed",
-  "owner": "builder-a",
-  "last_record": "R1-001",
-  "commit": "27bd638"
- },
- {
-  "task_id": "AF-VERIFY-001",
-  "name": "Verifier 接口与内置验证器",
-  "status": "Completed",
-  "owner": "builder-a",
-  "last_record": "R1-001",
-  "commit": null
- },
- {
-  "task_id": "AF-VERIFY-002",
-  "name": "证据链存储",
-  "status": "Completed",
-  "owner": "builder-a",
-  "last_record": "R1-001",
-  "commit": null
- },
- {
-  "task_id": "AF-VERIFY-003",
-  "name": "质量门禁 Gate",
-  "status": "Completed",
-  "owner": "builder-a",
-  "last_record": "R1-001",
-  "commit": null
- },
- {
-  "task_id": "AF-RECOVERY-001",
-  "name": "失败分类器",
-  "status": "Completed",
-  "owner": "builder-a",
-  "last_record": "R1-001",
-  "commit": null
- },
- {
-  "task_id": "AF-RECOVERY-002",
-  "name": "恢复引擎",
-  "status": "Completed",
-  "owner": "builder-a",
-  "last_record": "R1-001",
-  "commit": null
- },
- {
-  "task_id": "AF-CAP-001",
-  "name": "能力注册表",
-  "status": "Completed",
-  "owner": "builder-a",
-  "last_record": "R1-001",
-  "commit": null
- },
- {
-  "task_id": "AF-CAP-002",
-  "name": "Skill 加载器",
-  "status": "Completed",
-  "owner": "builder-a",
-  "last_record": "R1-001",
-  "commit": null
- },
- {
-  "task_id": "AF-CAP-003",
-  "name": "MCP 适配器骨架",
-  "status": "Completed",
-  "owner": "builder-a",
-  "last_record": "R1-001",
-  "commit": null
- },
- {
-  "task_id": "AF-PRODUCT-001",
-  "name": "ProductManifest",
-  "status": "Completed",
-  "owner": "builder-a",
-  "last_record": "R1-001",
-  "commit": null
- },
- {
-  "task_id": "AF-PRODUCT-002",
-  "name": "产品模板实例化",
-  "status": "Completed",
-  "owner": "builder-a",
-  "last_record": "R1-001",
-  "commit": null
- },
- {
-  "task_id": "AF-PRODUCT-003",
-  "name": "产品装配器",
-  "status": "Completed",
-  "owner": "builder-a",
-  "last_record": "R1-001",
-  "commit": null
- },
- {
-  "task_id": "COMP-001",
-  "name": "CLI 接入 clap",
-  "status": "Completed",
-  "owner": "builder-a",
-  "last_record": "R1-004",
-  "commit": "6396107"
- },
- {
-  "task_id": "COMP-002",
-  "name": "集成 tracing 可观测",
-  "status": "Completed",
-  "owner": "builder-a",
-  "last_record": "R1-006",
-  "commit": "ea0109f"
- },
- {
-  "task_id": "COMP-003",
-  "name": "Rust 版工作记录工具",
-  "status": "Completed",
-  "owner": "builder-a",
-  "last_record": "R1-003",
-  "commit": "b5b9c90"
- },
- {
-  "task_id": "DATA-001",
-  "name": "Markdown 数据迁移到 JSON 事实源",
-  "status": "Completed",
-  "owner": "builder-a",
-  "last_record": "R1-005",
-  "commit": null
- },
- {
-  "task_id": "PH2-001",
-  "name": "持久化：PostgreSQL(sqlx) 三store",
-  "status": "Completed",
-  "owner": "builder-a",
-  "last_record": "R1-009",
-  "commit": "f649fce"
- },
- {
-  "task_id": "PH2-002",
-  "name": "axum HTTP server",
-  "status": "Completed",
-  "owner": null,
-  "last_record": "R1-007",
-  "commit": "42325de"
- },
- {
-  "task_id": "PH2-003",
-  "name": "MCP 完整协议",
-  "status": "Completed",
-  "owner": "builder-a",
-  "last_record": "R1-008",
-  "commit": "20b8f4d"
- },
- {
-  "task_id": "PH2-004",
-  "name": "真实模型接入",
-  "status": "Completed",
-  "owner": "builder-a",
-  "last_record": "R1-023",
-  "commit": "2e9eea5"
- },
- {
-  "task_id": "PH2-005",
-  "name": "Skill 签名/完整性校验",
-  "status": "Completed",
-  "owner": "builder-a",
-  "last_record": "R1-015",
-  "commit": "7253112"
- },
- {
-  "task_id": "PH2-001b",
-  "name": "MinIO(S3) 对象存储接入",
-  "status": "Completed",
-  "owner": "builder-a",
-  "last_record": "R1-010",
-  "commit": "b9cf677"
- },
- {
-  "task_id": "Q-001",
-  "name": "测试卫生+持久化回放兼容验证",
-  "status": "Completed",
-  "owner": null,
-  "last_record": "R1-011",
-  "commit": "3b8b5c9"
- },
- {
-  "task_id": "INT-001",
-  "name": "server 接入 PG 持久化",
-  "status": "Completed",
-  "owner": "builder-a",
-  "last_record": "R1-012",
-  "commit": "ffd86a8"
- },
- {
-  "task_id": "CLEAN-001",
-  "name": "旧 forge 目录 PATH 清理",
-  "status": "Completed",
-  "owner": "builder-a",
-  "last_record": "R1-013",
-  "commit": "n/a"
- },
- {
-  "task_id": "Q-002",
-  "name": "SenseNova 配额恢复后复验 live 测试",
-  "status": "Completed",
-  "owner": "builder-a",
-  "last_record": "R1-016",
-  "commit": "83ae7ae"
- },
- {
-  "task_id": "DOC-001",
-  "name": "README+架构文档",
-  "status": "Completed",
-  "owner": "builder-a",
-  "last_record": "R1-017",
-  "commit": "f16822b"
- },
- {
-  "task_id": "SRV-002",
-  "name": "forge serve + 全链路e2e",
-  "status": "Completed",
-  "owner": "builder-a",
-  "last_record": "R1-018",
-  "commit": "12259f9"
- },
- {
-  "task_id": "SDK-001",
-  "name": "SDK 门面 crate",
-  "status": "Completed",
-  "owner": "builder-a",
-  "last_record": "R1-021",
-  "commit": "409636c"
- },
- {
-  "task_id": "OBS-001",
-  "name": "二进制 tracing-subscriber 安装",
-  "status": "Completed",
-  "owner": "builder-a",
-  "last_record": "R1-022",
-  "commit": "409636c"
- },
- {
-  "task_id": "SCHED-001",
-  "name": "波次调度器",
-  "status": "Completed",
-  "owner": "builder-a",
-  "last_record": "R1-019",
-  "commit": "3de8b74"
- },
- {
-  "task_id": "WKSP-001",
-  "name": "托管工作目录管理器",
-  "status": "Completed",
-  "owner": "builder-a",
-  "last_record": "R1-020",
-  "commit": "c7c2924"
- },
- {
-  "task_id": "LIVE-E2E",
-  "name": "真实模型×Agent trait 验证",
-  "status": "Completed",
-  "owner": "builder-a",
-  "last_record": "R1-024",
-  "commit": "c2be261"
- },
- {
-  "task_id": "SDK-002",
-  "name": "SDK 调度链路集成测试(planner→dag→scheduler)",
-  "status": "Completed",
-  "owner": "builder-a",
-  "last_record": "R1-027",
-  "commit": "5b4ddf5"
- },
- {
-  "task_id": "DOC-002",
-  "name": "README crate 表补全(4行)",
-  "status": "Completed",
-  "owner": "builder-a",
-  "last_record": "R1-028",
-  "commit": "5b4ddf5"
- },
- {
-  "task_id": "COMP-003b",
-  "name": "forge-worklog 并发加固(原子写/文件锁/读时自愈)",
-  "status": "Completed",
-  "owner": "integrator",
-  "last_record": null,
-  "commit": "5b4ddf5"
- },
- {
-  "task_id": "ORCH-001",
-  "name": "goal注入编排落地(R7-004解决)",
-  "status": "Completed",
-  "owner": "builder-a",
-  "last_record": "R1-027",
-  "commit": "70d7737"
- },
- {
-  "task_id": "ORCH-002",
-  "name": "端到端编排器(CPEVR闭环)",
-  "status": "Completed",
-  "owner": "builder-a",
-  "last_record": "R1-029",
-  "commit": null
- },
- {
-  "task_id": "SRV-003",
-  "name": "server orchestrate endpoint",
-  "status": "Completed",
-  "owner": "builder-a",
-  "last_record": null,
-  "commit": "f394fdf"
- },
- {
-  "task_id": "DEMO-001",
-  "name": "runnable full delivery example",
-  "status": "Completed",
-  "owner": "builder-a",
-  "last_record": null,
-  "commit": "19606a2"
- },
- {
-  "task_id": "SRV-004",
-  "name": "GET /tasks list",
-  "status": "Completed",
-  "owner": null,
-  "last_record": null,
-  "commit": "19606a2"
- },
- {
-  "task_id": "SRV-FIX-001",
-  "name": "server 测试覆盖整改(R7-005)",
-  "status": "Completed",
-  "owner": "builder-a",
-  "last_record": null,
-  "commit": "662ac23"
- },
- {
-  "task_id": "API-002",
-  "name": "Bearer auth middleware",
-  "status": "Completed",
-  "owner": null,
-  "last_record": null,
-  "commit": "ae360be"
- },
- {
-  "task_id": "API-003",
-  "name": "SSE事件流",
-  "status": "Completed",
-  "owner": null,
-  "last_record": null,
-  "commit": "54523d0"
- },
- {
-  "task_id": "API-004",
-  "name": "CORS层",
-  "status": "Completed",
-  "owner": null,
-  "last_record": null,
-  "commit": "54523d0"
- },
- {
-  "task_id": "PLAN-L-001",
-  "name": "PlanSchema校验器(validator,6测试)",
-  "status": "Completed",
-  "owner": null,
-  "last_record": null,
-  "commit": "c20b5dc"
- },
- {
-  "task_id": "PLAN-L-002",
-  "name": "LLM规划器(llm_planner+LlmPlanBackend,4测试)",
-  "status": "Completed",
-  "owner": null,
-  "last_record": null,
-  "commit": "c20b5dc"
- },
- {
-  "task_id": "PLAN-R-001",
-  "name": "LLM重规划器(replanner,复用validator+backend)",
-  "status": "Completed",
-  "owner": null,
-  "last_record": null,
-  "commit": "c20b5dc"
- },
- {
-  "task_id": "SRV-FIX-002",
-  "name": "SSE事件流never-loop缺陷修复+server导入/测试卫生",
-  "status": "Completed",
-  "owner": null,
-  "last_record": null,
-  "commit": "c20b5dc"
- },
- {
-  "task_id": "ORCH-003",
-  "name": "编排器接入重规划",
-  "status": "Completed",
-  "owner": null,
-  "last_record": null,
-  "commit": "ad0abd2"
- },
- {
-  "task_id": "AGENT-P-001",
-  "name": "角色档案RoleProfile",
-  "status": "Completed",
-  "owner": "builder-a",
-  "last_record": null,
-  "commit": "f4b6343"
- },
- {
-  "task_id": "AGENT-P-002",
-  "name": "分层路由TierRouter",
-  "status": "Completed",
-  "owner": "builder-a",
-  "last_record": null,
-  "commit": "f4b6343"
- },
- {
-  "task_id": "AGENT-T-001",
-  "name": "Reviewer Agent",
-  "status": "Completed",
-  "owner": "builder-a",
-  "last_record": null,
-  "commit": "f4b6343"
- },
- {
-  "task_id": "AGENT-O-001",
-  "name": "四角色流水线编排",
-  "status": "Completed",
-  "owner": "builder-a",
-  "last_record": null,
-  "commit": "f4b6343"
- },
- {
-  "task_id": "PROD-001",
-  "name": "产品实例生命周期",
-  "status": "Completed",
-  "owner": "builder-a",
-  "last_record": null,
-  "commit": "effe996"
- },
- {
-  "task_id": "PROD-002",
-  "name": "模板库管理",
-  "status": "Completed",
-  "owner": "builder-a",
-  "last_record": null,
-  "commit": "effe996"
- },
- {
-  "task_id": "OBS-002",
-  "name": "Prometheus指标",
-  "status": "Completed",
-  "owner": "builder-a",
-  "last_record": null,
-  "commit": "effe996"
- },
- {
-  "task_id": "UI-001",
-  "name": "Web控制台MVP",
-  "status": "Completed",
-  "owner": "builder-a",
-  "last_record": null,
-  "commit": "effe996"
- },
- {
-  "task_id": "PKG-001",
-  "name": "部署打包Dockerfile+compose",
-  "status": "Completed",
-  "owner": "builder-a",
-  "last_record": null,
-  "commit": "f16822b"
- },
- {
-  "task_id": "SEC-001",
-  "name": "生产安全基线",
-  "status": "Completed",
-  "owner": "builder-a",
-  "last_record": null,
-  "commit": "f16822b"
- },
- {
-  "task_id": "KNW-001",
-  "name": "Knowledge层MVP",
-  "status": "Completed",
-  "owner": "builder-a",
-  "last_record": null,
-  "commit": "f16822b"
- },
- {
-  "task_id": "E2E-GA",
-  "name": "终验剧本",
-  "status": "Completed",
-  "owner": "builder-a",
-  "last_record": null,
-  "commit": "f16822b"
- },
- {
-  "task_id": "API-001",
-  "name": "资源只读端点/evidence API",
-  "status": "Completed",
-  "owner": null,
-  "last_record": null,
-  "commit": "2e90586"
- },
- {
-  "task_id": "TEN-001",
-  "name": "租户模型贯穿",
-  "status": "Completed",
-  "owner": null,
-  "last_record": "R1-053",
-  "commit": "3eec0f7"
- },
- {
-  "task_id": "MKT-001",
-  "name": "能力市场目录",
-  "status": "Completed",
-  "owner": null,
-  "last_record": null,
-  "commit": "09a9fa2"
- },
- {
-  "task_id": "MKT-002",
-  "name": "安装即注册",
-  "status": "Completed",
-  "owner": null,
-  "last_record": null,
-  "commit": "09a9fa2"
- },
- {
-  "task_id": "PERF-001",
-  "name": "微基准测试",
-  "status": "Completed",
-  "owner": null,
-  "last_record": null,
-  "commit": "09a9fa2"
- },
- {
-  "task_id": "TEN-002",
-  "name": "多租户鉴权",
-  "status": "Completed",
-  "owner": null,
-  "last_record": null,
-  "commit": "c693486"
- },
- {
-  "task_id": "TEN-003",
-  "name": "租户配额",
-  "status": "Completed",
-  "owner": null,
-  "last_record": null,
-  "commit": "c693486"
- },
- {
-  "task_id": "KNW-002",
-  "name": "知识建议",
-  "status": "Completed",
-  "owner": null,
-  "last_record": null,
-  "commit": "3eec0f7"
- },
- {
-  "task_id": "DEP-001",
-  "name": "扩展评估",
-  "status": "Completed",
-  "owner": null,
-  "last_record": null,
-  "commit": "c693486"
- },
- {
-  "task_id": "FED-001",
-  "name": "多副本任务队列认领与PG事件总线",
-  "status": "Completed",
-  "owner": "executor",
-  "last_record": "R1-056",
-  "commit": "75d2d66"
- },
- {
-  "task_id": "FED-002",
-  "name": "跨副本SSE事件广播",
-  "status": "Completed",
-  "owner": "executor",
-  "last_record": "R1-057",
-  "commit": "3ed148d"
- },
- {
-  "task_id": "MKT-101",
-  "name": "发布者签名生态与审核状态机",
-  "status": "Completed",
-  "owner": "executor",
-  "last_record": "R1-058",
-  "commit": "7eaae91"
- },
- {
-  "task_id": "MKT-102",
-  "name": "版本治理与semver解析",
-  "status": "Completed",
-  "owner": "executor",
-  "last_record": "R1-059",
-  "commit": "620fc12"
- },
- {
-  "task_id": "BILL-001",
-  "name": "计量流水三维度落库与聚合查询",
-  "status": "Completed",
-  "owner": "executor",
-  "last_record": "R1-060",
-  "commit": "0d2c8e6"
- },
- {
-  "task_id": "BILL-002",
-  "name": "费率表+幂等账单生成与JSON/CSV导出",
-  "status": "Completed",
-  "owner": "executor",
-  "last_record": "R1-060",
-  "commit": "e52bca3"
- },
- {
-  "task_id": "KNW-101",
-  "name": "全环自进化——沙箱复现验证与本地分支补丁生成",
-  "status": "Completed",
-  "owner": "executor",
-  "last_record": "R1-064",
-  "commit": "0fcb99f"
- },
- {
-  "task_id": "DR-001",
-  "name": "PG流复制部署编排与容灾演练剧本",
-  "status": "Completed",
-  "owner": "executor",
-  "last_record": "R1-065",
-  "commit": "15757b0"
- },
- {
-  "task_id": "ORCH-101",
-  "name": "从echo到真实工作(多步规划+多文件沙箱验收+MCP接入)",
-  "status": "Completed",
-  "owner": "executor",
-  "last_record": "R1-073",
-  "commit": "ab8821c"
- },
- {
-  "task_id": "TEN-004",
-  "name": "租户密钥与配额PG持久化及503降级语义",
-  "status": "Completed",
-  "owner": "executor",
-  "last_record": "R1-074",
-  "commit": "4bca3a4"
- },
- {
-  "task_id": "BILL-003",
-  "name": "编排LLM计量全覆盖(plan/replan/review入账)",
-  "status": "Completed",
-  "owner": "executor",
-  "last_record": "R1-075",
-  "commit": "67b82ff"
- },
- {
-  "task_id": "LOCAL-001",
-  "name": "本地实用化套件(DeepSeek接入+一键启动+工作台UI+桌面四件套)+真实E2E三缺陷修复",
-  "status": "Completed",
-  "owner": "executor",
-  "last_record": "R1-077",
-  "commit": "b295923"
- }
+  {
+    "task_id": "AF-CORE-001",
+    "name": "Workspace 与基础库",
+    "status": "Completed",
+    "owner": "builder-a",
+    "last_record": "R1-001",
+    "commit": "5b71095"
+  },
+  {
+    "task_id": "AF-CORE-002",
+    "name": "Session 模型",
+    "status": "Completed",
+    "owner": "builder-a",
+    "last_record": "R1-001",
+    "commit": "4ff32e9"
+  },
+  {
+    "task_id": "AF-CORE-003",
+    "name": "事件总线",
+    "status": "Completed",
+    "owner": "builder-a",
+    "last_record": "R1-001",
+    "commit": "784ca40"
+  },
+  {
+    "task_id": "AF-CORE-004",
+    "name": "Artifact 模型",
+    "status": "Completed",
+    "owner": "builder-a",
+    "last_record": "R1-001",
+    "commit": "304a31d"
+  },
+  {
+    "task_id": "AF-CORE-005",
+    "name": "Session 回放",
+    "status": "Completed",
+    "owner": "builder-a",
+    "last_record": "R1-001",
+    "commit": "83f7692"
+  },
+  {
+    "task_id": "AF-AGENT-001",
+    "name": "Agent 接口",
+    "status": "Completed",
+    "owner": "builder-a",
+    "last_record": "R1-001",
+    "commit": "1a6421b"
+  },
+  {
+    "task_id": "AF-AGENT-002",
+    "name": "回合引擎",
+    "status": "Completed",
+    "owner": "builder-a",
+    "last_record": "R1-001",
+    "commit": "6a3fed9"
+  },
+  {
+    "task_id": "AF-TASK-001",
+    "name": "Task 模型",
+    "status": "Completed",
+    "owner": "builder-a",
+    "last_record": "R1-001",
+    "commit": "f832f0b"
+  },
+  {
+    "task_id": "AF-PLAN-001",
+    "name": "Planner 接口与顺序规划器",
+    "status": "Completed",
+    "owner": "builder-a",
+    "last_record": "R1-001",
+    "commit": "990acee"
+  },
+  {
+    "task_id": "AF-PLAN-002",
+    "name": "DAG 规划器",
+    "status": "Completed",
+    "owner": "builder-a",
+    "last_record": "R1-001",
+    "commit": "c6d412c"
+  },
+  {
+    "task_id": "AF-EXEC-001",
+    "name": "工具路由与权限分级",
+    "status": "Completed",
+    "owner": "builder-a",
+    "last_record": "R1-001",
+    "commit": "5123e8f"
+  },
+  {
+    "task_id": "AF-EXEC-002",
+    "name": "执行运行时",
+    "status": "Completed",
+    "owner": "builder-a",
+    "last_record": "R1-001",
+    "commit": "6be6b53"
+  },
+  {
+    "task_id": "AF-EXEC-003",
+    "name": "权限策略引擎",
+    "status": "Completed",
+    "owner": "builder-a",
+    "last_record": "R1-001",
+    "commit": "27bd638"
+  },
+  {
+    "task_id": "AF-VERIFY-001",
+    "name": "Verifier 接口与内置验证器",
+    "status": "Completed",
+    "owner": "builder-a",
+    "last_record": "R1-001",
+    "commit": null
+  },
+  {
+    "task_id": "AF-VERIFY-002",
+    "name": "证据链存储",
+    "status": "Completed",
+    "owner": "builder-a",
+    "last_record": "R1-001",
+    "commit": null
+  },
+  {
+    "task_id": "AF-VERIFY-003",
+    "name": "质量门禁 Gate",
+    "status": "Completed",
+    "owner": "builder-a",
+    "last_record": "R1-001",
+    "commit": null
+  },
+  {
+    "task_id": "AF-RECOVERY-001",
+    "name": "失败分类器",
+    "status": "Completed",
+    "owner": "builder-a",
+    "last_record": "R1-001",
+    "commit": null
+  },
+  {
+    "task_id": "AF-RECOVERY-002",
+    "name": "恢复引擎",
+    "status": "Completed",
+    "owner": "builder-a",
+    "last_record": "R1-001",
+    "commit": null
+  },
+  {
+    "task_id": "AF-CAP-001",
+    "name": "能力注册表",
+    "status": "Completed",
+    "owner": "builder-a",
+    "last_record": "R1-001",
+    "commit": null
+  },
+  {
+    "task_id": "AF-CAP-002",
+    "name": "Skill 加载器",
+    "status": "Completed",
+    "owner": "builder-a",
+    "last_record": "R1-001",
+    "commit": null
+  },
+  {
+    "task_id": "AF-CAP-003",
+    "name": "MCP 适配器骨架",
+    "status": "Completed",
+    "owner": "builder-a",
+    "last_record": "R1-001",
+    "commit": null
+  },
+  {
+    "task_id": "AF-PRODUCT-001",
+    "name": "ProductManifest",
+    "status": "Completed",
+    "owner": "builder-a",
+    "last_record": "R1-001",
+    "commit": null
+  },
+  {
+    "task_id": "AF-PRODUCT-002",
+    "name": "产品模板实例化",
+    "status": "Completed",
+    "owner": "builder-a",
+    "last_record": "R1-001",
+    "commit": null
+  },
+  {
+    "task_id": "AF-PRODUCT-003",
+    "name": "产品装配器",
+    "status": "Completed",
+    "owner": "builder-a",
+    "last_record": "R1-001",
+    "commit": null
+  },
+  {
+    "task_id": "COMP-001",
+    "name": "CLI 接入 clap",
+    "status": "Completed",
+    "owner": "builder-a",
+    "last_record": "R1-004",
+    "commit": "6396107"
+  },
+  {
+    "task_id": "COMP-002",
+    "name": "集成 tracing 可观测",
+    "status": "Completed",
+    "owner": "builder-a",
+    "last_record": "R1-006",
+    "commit": "ea0109f"
+  },
+  {
+    "task_id": "COMP-003",
+    "name": "Rust 版工作记录工具",
+    "status": "Completed",
+    "owner": "builder-a",
+    "last_record": "R1-003",
+    "commit": "b5b9c90"
+  },
+  {
+    "task_id": "DATA-001",
+    "name": "Markdown 数据迁移到 JSON 事实源",
+    "status": "Completed",
+    "owner": "builder-a",
+    "last_record": "R1-005",
+    "commit": null
+  },
+  {
+    "task_id": "PH2-001",
+    "name": "持久化：PostgreSQL(sqlx) 三store",
+    "status": "Completed",
+    "owner": "builder-a",
+    "last_record": "R1-009",
+    "commit": "f649fce"
+  },
+  {
+    "task_id": "PH2-002",
+    "name": "axum HTTP server",
+    "status": "Completed",
+    "owner": null,
+    "last_record": "R1-007",
+    "commit": "42325de"
+  },
+  {
+    "task_id": "PH2-003",
+    "name": "MCP 完整协议",
+    "status": "Completed",
+    "owner": "builder-a",
+    "last_record": "R1-008",
+    "commit": "20b8f4d"
+  },
+  {
+    "task_id": "PH2-004",
+    "name": "真实模型接入",
+    "status": "Completed",
+    "owner": "builder-a",
+    "last_record": "R1-023",
+    "commit": "2e9eea5"
+  },
+  {
+    "task_id": "PH2-005",
+    "name": "Skill 签名/完整性校验",
+    "status": "Completed",
+    "owner": "builder-a",
+    "last_record": "R1-015",
+    "commit": "7253112"
+  },
+  {
+    "task_id": "PH2-001b",
+    "name": "MinIO(S3) 对象存储接入",
+    "status": "Completed",
+    "owner": "builder-a",
+    "last_record": "R1-010",
+    "commit": "b9cf677"
+  },
+  {
+    "task_id": "Q-001",
+    "name": "测试卫生+持久化回放兼容验证",
+    "status": "Completed",
+    "owner": null,
+    "last_record": "R1-011",
+    "commit": "3b8b5c9"
+  },
+  {
+    "task_id": "INT-001",
+    "name": "server 接入 PG 持久化",
+    "status": "Completed",
+    "owner": "builder-a",
+    "last_record": "R1-012",
+    "commit": "ffd86a8"
+  },
+  {
+    "task_id": "CLEAN-001",
+    "name": "旧 forge 目录 PATH 清理",
+    "status": "Completed",
+    "owner": "builder-a",
+    "last_record": "R1-013",
+    "commit": "n/a"
+  },
+  {
+    "task_id": "Q-002",
+    "name": "SenseNova 配额恢复后复验 live 测试",
+    "status": "Completed",
+    "owner": "builder-a",
+    "last_record": "R1-016",
+    "commit": "83ae7ae"
+  },
+  {
+    "task_id": "DOC-001",
+    "name": "README+架构文档",
+    "status": "Completed",
+    "owner": "builder-a",
+    "last_record": "R1-017",
+    "commit": "f16822b"
+  },
+  {
+    "task_id": "SRV-002",
+    "name": "forge serve + 全链路e2e",
+    "status": "Completed",
+    "owner": "builder-a",
+    "last_record": "R1-018",
+    "commit": "12259f9"
+  },
+  {
+    "task_id": "SDK-001",
+    "name": "SDK 门面 crate",
+    "status": "Completed",
+    "owner": "builder-a",
+    "last_record": "R1-021",
+    "commit": "409636c"
+  },
+  {
+    "task_id": "OBS-001",
+    "name": "二进制 tracing-subscriber 安装",
+    "status": "Completed",
+    "owner": "builder-a",
+    "last_record": "R1-022",
+    "commit": "409636c"
+  },
+  {
+    "task_id": "SCHED-001",
+    "name": "波次调度器",
+    "status": "Completed",
+    "owner": "builder-a",
+    "last_record": "R1-019",
+    "commit": "3de8b74"
+  },
+  {
+    "task_id": "WKSP-001",
+    "name": "托管工作目录管理器",
+    "status": "Completed",
+    "owner": "builder-a",
+    "last_record": "R1-020",
+    "commit": "c7c2924"
+  },
+  {
+    "task_id": "LIVE-E2E",
+    "name": "真实模型×Agent trait 验证",
+    "status": "Completed",
+    "owner": "builder-a",
+    "last_record": "R1-024",
+    "commit": "c2be261"
+  },
+  {
+    "task_id": "SDK-002",
+    "name": "SDK 调度链路集成测试(planner→dag→scheduler)",
+    "status": "Completed",
+    "owner": "builder-a",
+    "last_record": "R1-027",
+    "commit": "5b4ddf5"
+  },
+  {
+    "task_id": "DOC-002",
+    "name": "README crate 表补全(4行)",
+    "status": "Completed",
+    "owner": "builder-a",
+    "last_record": "R1-028",
+    "commit": "5b4ddf5"
+  },
+  {
+    "task_id": "COMP-003b",
+    "name": "forge-worklog 并发加固(原子写/文件锁/读时自愈)",
+    "status": "Completed",
+    "owner": "integrator",
+    "last_record": null,
+    "commit": "5b4ddf5"
+  },
+  {
+    "task_id": "ORCH-001",
+    "name": "goal注入编排落地(R7-004解决)",
+    "status": "Completed",
+    "owner": "builder-a",
+    "last_record": "R1-027",
+    "commit": "70d7737"
+  },
+  {
+    "task_id": "ORCH-002",
+    "name": "端到端编排器(CPEVR闭环)",
+    "status": "Completed",
+    "owner": "builder-a",
+    "last_record": "R1-029",
+    "commit": null
+  },
+  {
+    "task_id": "SRV-003",
+    "name": "server orchestrate endpoint",
+    "status": "Completed",
+    "owner": "builder-a",
+    "last_record": null,
+    "commit": "f394fdf"
+  },
+  {
+    "task_id": "DEMO-001",
+    "name": "runnable full delivery example",
+    "status": "Completed",
+    "owner": "builder-a",
+    "last_record": null,
+    "commit": "19606a2"
+  },
+  {
+    "task_id": "SRV-004",
+    "name": "GET /tasks list",
+    "status": "Completed",
+    "owner": null,
+    "last_record": null,
+    "commit": "19606a2"
+  },
+  {
+    "task_id": "SRV-FIX-001",
+    "name": "server 测试覆盖整改(R7-005)",
+    "status": "Completed",
+    "owner": "builder-a",
+    "last_record": null,
+    "commit": "662ac23"
+  },
+  {
+    "task_id": "API-002",
+    "name": "Bearer auth middleware",
+    "status": "Completed",
+    "owner": null,
+    "last_record": null,
+    "commit": "ae360be"
+  },
+  {
+    "task_id": "API-003",
+    "name": "SSE事件流",
+    "status": "Completed",
+    "owner": null,
+    "last_record": null,
+    "commit": "54523d0"
+  },
+  {
+    "task_id": "API-004",
+    "name": "CORS层",
+    "status": "Completed",
+    "owner": null,
+    "last_record": null,
+    "commit": "54523d0"
+  },
+  {
+    "task_id": "PLAN-L-001",
+    "name": "PlanSchema校验器(validator,6测试)",
+    "status": "Completed",
+    "owner": null,
+    "last_record": null,
+    "commit": "c20b5dc"
+  },
+  {
+    "task_id": "PLAN-L-002",
+    "name": "LLM规划器(llm_planner+LlmPlanBackend,4测试)",
+    "status": "Completed",
+    "owner": null,
+    "last_record": null,
+    "commit": "c20b5dc"
+  },
+  {
+    "task_id": "PLAN-R-001",
+    "name": "LLM重规划器(replanner,复用validator+backend)",
+    "status": "Completed",
+    "owner": null,
+    "last_record": null,
+    "commit": "c20b5dc"
+  },
+  {
+    "task_id": "SRV-FIX-002",
+    "name": "SSE事件流never-loop缺陷修复+server导入/测试卫生",
+    "status": "Completed",
+    "owner": null,
+    "last_record": null,
+    "commit": "c20b5dc"
+  },
+  {
+    "task_id": "ORCH-003",
+    "name": "编排器接入重规划",
+    "status": "Completed",
+    "owner": null,
+    "last_record": null,
+    "commit": "ad0abd2"
+  },
+  {
+    "task_id": "AGENT-P-001",
+    "name": "角色档案RoleProfile",
+    "status": "Completed",
+    "owner": "builder-a",
+    "last_record": null,
+    "commit": "f4b6343"
+  },
+  {
+    "task_id": "AGENT-P-002",
+    "name": "分层路由TierRouter",
+    "status": "Completed",
+    "owner": "builder-a",
+    "last_record": null,
+    "commit": "f4b6343"
+  },
+  {
+    "task_id": "AGENT-T-001",
+    "name": "Reviewer Agent",
+    "status": "Completed",
+    "owner": "builder-a",
+    "last_record": null,
+    "commit": "f4b6343"
+  },
+  {
+    "task_id": "AGENT-O-001",
+    "name": "四角色流水线编排",
+    "status": "Completed",
+    "owner": "builder-a",
+    "last_record": null,
+    "commit": "f4b6343"
+  },
+  {
+    "task_id": "PROD-001",
+    "name": "产品实例生命周期",
+    "status": "Completed",
+    "owner": "builder-a",
+    "last_record": null,
+    "commit": "effe996"
+  },
+  {
+    "task_id": "PROD-002",
+    "name": "模板库管理",
+    "status": "Completed",
+    "owner": "builder-a",
+    "last_record": null,
+    "commit": "effe996"
+  },
+  {
+    "task_id": "OBS-002",
+    "name": "Prometheus指标",
+    "status": "Completed",
+    "owner": "builder-a",
+    "last_record": null,
+    "commit": "effe996"
+  },
+  {
+    "task_id": "UI-001",
+    "name": "Web控制台MVP",
+    "status": "Completed",
+    "owner": "builder-a",
+    "last_record": null,
+    "commit": "effe996"
+  },
+  {
+    "task_id": "PKG-001",
+    "name": "部署打包Dockerfile+compose",
+    "status": "Completed",
+    "owner": "builder-a",
+    "last_record": null,
+    "commit": "f16822b"
+  },
+  {
+    "task_id": "SEC-001",
+    "name": "生产安全基线",
+    "status": "Completed",
+    "owner": "builder-a",
+    "last_record": null,
+    "commit": "f16822b"
+  },
+  {
+    "task_id": "KNW-001",
+    "name": "Knowledge层MVP",
+    "status": "Completed",
+    "owner": "builder-a",
+    "last_record": null,
+    "commit": "f16822b"
+  },
+  {
+    "task_id": "E2E-GA",
+    "name": "终验剧本",
+    "status": "Completed",
+    "owner": "builder-a",
+    "last_record": null,
+    "commit": "f16822b"
+  },
+  {
+    "task_id": "API-001",
+    "name": "资源只读端点/evidence API",
+    "status": "Completed",
+    "owner": null,
+    "last_record": null,
+    "commit": "2e90586"
+  },
+  {
+    "task_id": "TEN-001",
+    "name": "租户模型贯穿",
+    "status": "Completed",
+    "owner": null,
+    "last_record": "R1-053",
+    "commit": "3eec0f7"
+  },
+  {
+    "task_id": "MKT-001",
+    "name": "能力市场目录",
+    "status": "Completed",
+    "owner": null,
+    "last_record": null,
+    "commit": "09a9fa2"
+  },
+  {
+    "task_id": "MKT-002",
+    "name": "安装即注册",
+    "status": "Completed",
+    "owner": null,
+    "last_record": null,
+    "commit": "09a9fa2"
+  },
+  {
+    "task_id": "PERF-001",
+    "name": "微基准测试",
+    "status": "Completed",
+    "owner": null,
+    "last_record": null,
+    "commit": "09a9fa2"
+  },
+  {
+    "task_id": "TEN-002",
+    "name": "多租户鉴权",
+    "status": "Completed",
+    "owner": null,
+    "last_record": null,
+    "commit": "c693486"
+  },
+  {
+    "task_id": "TEN-003",
+    "name": "租户配额",
+    "status": "Completed",
+    "owner": null,
+    "last_record": null,
+    "commit": "c693486"
+  },
+  {
+    "task_id": "KNW-002",
+    "name": "知识建议",
+    "status": "Completed",
+    "owner": null,
+    "last_record": null,
+    "commit": "3eec0f7"
+  },
+  {
+    "task_id": "DEP-001",
+    "name": "扩展评估",
+    "status": "Completed",
+    "owner": null,
+    "last_record": null,
+    "commit": "c693486"
+  },
+  {
+    "task_id": "FED-001",
+    "name": "多副本任务队列认领与PG事件总线",
+    "status": "Completed",
+    "owner": "executor",
+    "last_record": "R1-056",
+    "commit": "75d2d66"
+  },
+  {
+    "task_id": "FED-002",
+    "name": "跨副本SSE事件广播",
+    "status": "Completed",
+    "owner": "executor",
+    "last_record": "R1-057",
+    "commit": "3ed148d"
+  },
+  {
+    "task_id": "MKT-101",
+    "name": "发布者签名生态与审核状态机",
+    "status": "Completed",
+    "owner": "executor",
+    "last_record": "R1-058",
+    "commit": "7eaae91"
+  },
+  {
+    "task_id": "MKT-102",
+    "name": "版本治理与semver解析",
+    "status": "Completed",
+    "owner": "executor",
+    "last_record": "R1-059",
+    "commit": "620fc12"
+  },
+  {
+    "task_id": "BILL-001",
+    "name": "计量流水三维度落库与聚合查询",
+    "status": "Completed",
+    "owner": "executor",
+    "last_record": "R1-060",
+    "commit": "0d2c8e6"
+  },
+  {
+    "task_id": "BILL-002",
+    "name": "费率表+幂等账单生成与JSON/CSV导出",
+    "status": "Completed",
+    "owner": "executor",
+    "last_record": "R1-060",
+    "commit": "e52bca3"
+  },
+  {
+    "task_id": "KNW-101",
+    "name": "全环自进化——沙箱复现验证与本地分支补丁生成",
+    "status": "Completed",
+    "owner": "executor",
+    "last_record": "R1-064",
+    "commit": "0fcb99f"
+  },
+  {
+    "task_id": "DR-001",
+    "name": "PG流复制部署编排与容灾演练剧本",
+    "status": "Completed",
+    "owner": "executor",
+    "last_record": "R1-065",
+    "commit": "15757b0"
+  },
+  {
+    "task_id": "ORCH-101",
+    "name": "从echo到真实工作(多步规划+多文件沙箱验收+MCP接入)",
+    "status": "Completed",
+    "owner": "executor",
+    "last_record": "R1-073",
+    "commit": "ab8821c"
+  },
+  {
+    "task_id": "TEN-004",
+    "name": "租户密钥与配额PG持久化及503降级语义",
+    "status": "Completed",
+    "owner": "executor",
+    "last_record": "R1-074",
+    "commit": "4bca3a4"
+  },
+  {
+    "task_id": "BILL-003",
+    "name": "编排LLM计量全覆盖(plan/replan/review入账)",
+    "status": "Completed",
+    "owner": "executor",
+    "last_record": "R1-075",
+    "commit": "67b82ff"
+  },
+  {
+    "task_id": "LOCAL-001",
+    "name": "本地实用化套件(DeepSeek接入+一键启动+工作台UI+桌面四件套)+真实E2E三缺陷修复",
+    "status": "Completed",
+    "owner": "executor",
+    "last_record": "R1-077",
+    "commit": "b295923"
+  },
+  {
+    "task_id": "FIX-001",
+    "name": "market_signing无PG panic跳过逻辑修复(阻塞项清理)",
+    "status": "Completed",
+    "owner": "executor",
+    "last_record": null,
+    "commit": "516423d"
+  },
+  {
+    "task_id": "CTX-001",
+    "name": "V8先行批:工作区感知(ListDirTool+规划器注入+workspace_task_id续作)",
+    "status": "Wip",
+    "owner": "executor",
+    "last_record": null,
+    "commit": null
+  }
 ]

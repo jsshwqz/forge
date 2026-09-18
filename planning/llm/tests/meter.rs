@@ -74,6 +74,7 @@ async fn llm_planner_usage_reaches_meter() {
         ledger: None,
         meter: Some(Arc::new(meter.clone())),
         brief_mode: false,
+        context: None,
     };
     let task = forge_task::Task::new(forge_core::TaskId::new_task_id(), "goal".into(), vec![], vec![]);
     planner.plan(&task).await.unwrap();
@@ -135,6 +136,7 @@ async fn meter_none_is_noop() {
         ledger: None,
         meter: None,
         brief_mode: false,
+        context: None,
     };
     let task = forge_task::Task::new(forge_core::TaskId::new_task_id(), "goal".into(), vec![], vec![]);
     let plan = planner.plan(&task).await.unwrap();

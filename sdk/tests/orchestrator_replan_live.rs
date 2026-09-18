@@ -75,6 +75,7 @@ fn make_deps(
             replanner,
             max_replans: 1,
             planner,
+            workspace_task: None,
         },
         evidence,
         tmp,
@@ -129,7 +130,8 @@ async fn live_llm_plan_runs_to_completed() {
         ledger: None,
             meter: None,
     
-        brief_mode: false
+        brief_mode: false,
+        context: None
     });
     let replanner = Arc::new(LlmReplanner {
         backend: client.clone(),

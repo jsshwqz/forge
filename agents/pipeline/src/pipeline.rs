@@ -161,7 +161,8 @@ pub async fn run_pipeline(
         tools: vec![deps.capability.clone()],
         ledger: Some(deps.ledger.clone()),
         meter: deps.meter.clone(),
-        brief_mode: false
+        brief_mode: false,
+        context: None
     };
     let plan: Plan = architect.plan(&task).await?;
     let _ = deps

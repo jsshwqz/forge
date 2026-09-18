@@ -1,6 +1,6 @@
 {
-  "updated_at": "2026-09-07 21:14",
-  "current_status": "完成全项目真实度二次审计(AF-AUDIT-002)",
+  "updated_at": "2026-09-18 17:14",
+  "current_status": "FIX-001完成(workspace 0 failed)，CTX-001工作区感知开工中",
   "blockers": [
     "market_signing.rs在无PG时panic导致全仓测试退出码1"
   ],
@@ -22,5 +22,5 @@
     "progress.json": "任务状态事实源",
     "worklog.json": "工作日志事实源"
   },
-  "advice": "优先修复market_signing.rs跳过逻辑与orch101未用导入警告, 补齐ORCH-101登账, 后续推进TEN-004"
+  "advice": "按 build_v80a.md 串行施工: CTX-001→EDIT-001→STREAM-001→SANDBOX-002，契约原样照抄"
 }

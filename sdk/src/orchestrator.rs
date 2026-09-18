@@ -124,6 +124,9 @@ pub struct OrchestratorDeps {
     /// 可选规划器注入（G-V3.1 live 轨 / V3.2 流水线用 LlmPlanner）。
     /// None ⇒ SequentialPlanner 按 capability 机械展开。
     pub planner: Option<Arc<dyn Planner>>,
+    /// V8 CTX-001：续作目标任务 ID。None = 用本任务工作区；Some = 复用既有任务工作区
+    /// （工具 root 与验收 workdir 一致指向续作工作区）。
+    pub workspace_task: Option<String>,
 }
 
 impl ForgeSdk {
@@ -142,7 +145,10 @@ impl ForgeSdk {
         // ---- 准备 ----
         let mut task = self.tasks.get(task_id).await?;
         let session = self.sessions.create(task.id.clone()).await?;
-        let workdir = deps.workspace.create_for(task.id.as_ref())?;
+        let workdir = match &deps.workspace_task {
+            Some(prev) => deps.workspace.create_for(prev.as_str())?,
+            None => deps.workspace.create_for(task.id.as_ref())?,
+        };
 
         task.transition(TaskStatus::Planned)?;
         self.tasks.update_status(&task.id, TaskStatus::Planned).await?;
@@ -507,6 +513,7 @@ mod replan_tests {
                 replanner,
                 max_replans,
                 planner: None,
+                workspace_task: None,
             },
             tmp,
         )

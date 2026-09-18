@@ -83,6 +83,9 @@ pub struct LlmPlanner<B: LlmPlanBackend + ?Sized> {
     /// （文件意图），不内嵌完整 content——由调用方二次代码生成填充，
     /// 规避小上限模型在长 JSON 转义上的截断问题。
     pub brief_mode: bool,
+    /// V8 CTX-001：工作区上下文注入（已组装的"清单+小文件内容"文本，≤32KB），
+    /// 追加到 user 消息尾部，让模型"看得见"既有工作区。
+    pub context: Option<String>,
 }
 
 impl<B: LlmPlanBackend + ?Sized> LlmPlanner<B> {
@@ -95,6 +98,7 @@ impl<B: LlmPlanBackend + ?Sized> LlmPlanner<B> {
             ledger: None,
             meter: None,
             brief_mode: false,
+            context: None,
         }
     }
 
@@ -147,6 +151,11 @@ Step ids must be unique; depends_on must reference existing step ids only. \
             for a in &task.acceptance {
                 user.push_str(&format!("- {}: {}\n", a.id, a.description));
             }
+        }
+        // V8 CTX-001：工作区上下文注入（冻结格式，追加 user 尾部）。
+        if let Some(ctx) = &self.context {
+            user.push_str("\n=== Workspace context ===\n");
+            user.push_str(ctx);
         }
 
         vec![ChatMessage::system(system), ChatMessage::user(user)]
