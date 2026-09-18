@@ -99,12 +99,12 @@
 | TEN-004 | 租户密钥与配额PG持久化及503降级语义 | ✅ 完成 | executor | R1-074 | 4bca3a4 |
 | BILL-003 | 编排LLM计量全覆盖(plan/replan/review入账) | ✅ 完成 | executor | R1-075 | 67b82ff |
 | LOCAL-001 | 本地实用化套件(DeepSeek接入+一键启动+工作台UI+桌面四件套)+真实E2E三缺陷修复 | ✅ 完成 | executor | R1-077 | b295923 |
-| FIX-001 | market_signing无PG panic跳过逻辑修复(阻塞项清理) | ✅ 完成 | executor | - | 516423d |
-| CTX-001 | V8先行批:工作区感知(ListDirTool+规划器注入+workspace_task_id续作) | ✅ 完成 | executor | - | 7fcda5f |
-| ZL-001 | 9个zl工具移植到新forge + build_router 25→34 | ✅ 完成 | - | - | 2ee1bcb |
-| ZL-002 | 按原版aion-router规格对齐9个zl工具(字段名+降级语义) | ✅ 完成 | - | - | 636a3af |
-| EDIT-001 | V8先行批:增量编辑(EditPatchTool精确串替换) | ✅ 完成 | executor | - | 21db6fb |
-| STREAM-001 | V8先行批:执行进度流(BusProgressStore+工作台实时流) | ✅ 完成 | executor | - | 0937587 |
-| SANDBOX-002 | V8先行批:容器级验收隔离(默认关) | ✅ 完成 | executor | - | 75f5992 |
-| GIT-001 | 任务工作区Git集成(git init+每任务单commit+补丁导出,默认关) | ✅ 完成 | executor | - | 1dba196 |
-| NOTIFY-001 | 任务终态Webhook通知(载荷冻结+3次指数退避,默认关) | ✅ 完成 | executor | - | 1dba196 |
+| FIX-001 | market_signing无PG panic跳过逻辑修复(阻塞项清理) | ✅ 完成 | executor | - | e15588a |
+| CTX-001 | V8先行批:工作区感知(ListDirTool+规划器注入+workspace_task_id续作) | ✅ 完成 | executor | - | 2e9906a |
+| ZL-001 | 9个zl工具移植到新forge + build_router 25→34 | ✅ 完成 | - | - | 59265bb |
+| ZL-002 | 按原版aion-router规格对齐9个zl工具(字段名+降级语义) | ✅ 完成 | - | - | 268d339 |
+| EDIT-001 | V8先行批:增量编辑(EditPatchTool精确串替换) | ✅ 完成 | executor | - | 5d57f6a |
+| STREAM-001 | V8先行批:执行进度流(BusProgressStore+工作台实时流) | ✅ 完成 | executor | - | e7312e9 |
+| SANDBOX-002 | V8先行批:容器级验收隔离(默认关) | ✅ 完成 | executor | - | f461d71 |
+| GIT-001 | 任务工作区Git集成(git init+每任务单commit+补丁导出,默认关) | ✅ 完成 | executor | - | 17207b5 |
+| NOTIFY-001 | 任务终态Webhook通知(载荷冻结+3次指数退避,默认关) | ✅ 完成 | executor | - | 17207b5 |
