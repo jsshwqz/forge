@@ -1,0 +1,5 @@
+{
+  "subject": "[B-01 第1轮·续·主审决策] 4个AI工具降级 + auto_wrap_tool架构定案",
+  "owner": "9f5c303a",
+  "description": "主审对两个决策点的最终拍板, 照此执行: 【决策1-4个AI工具(text_classify/text_extract/text_summarize/text_translate)】本轮做机械壳+明确降级, 不进25纯计算计数. 每个封装为: descriptor+inputSchema+PermissionLevel=ReadOnly, invoke返回structured降级响应 {\"status\":\"pending_engine\",\"message\":\"AI engine channel not wired in round 1; tool is a mechanical shell\",\"tool\":\"<tool_name>\"} (不是崩溃不是静默). 这4个壳不计入25, build_router总数=10+25真纯计算+4壳=39. 第3轮接OmniRoute Runner后把壳的invoke从pending改真调引擎(壳复用逻辑换芯). 【决策2-auto_wrap_tool架构】放新crate tools/metatool. 输入{tool_name,source_path,target_crate}; 行为: 必须用新forge的grep/read_file读旧forge源码(再验已有能力) -> 生成target_crate/src/<tool>.rs(Tool trait封装)+追加build_router注册+生成roundtrip单测; 输出: 不直接提交build_router改动, 生成待审查patch+生成代码, 由审查席核(编译过+单测过)才合入; auto_wrap_tool自身PermissionLevel=WorkspaceWrite(要写文件); 用它实际生成1个未封装工具text_embed(纯计算无引擎依赖)证明自进化闭环, 审查席验证生成物编译+单测过. 验收口径更新: 交付5样里build_router断言从35改为39(含4壳), mcp_call抽测加一项text_classify确认返回pending_engine而非报错. 其余照round1_continue.json. 硬约束: 不碰main.rs; fs+search 10工具不动; 只新增; 编译前cargo clean防磁盘满; auto_wrap_tool生成物必经审查门禁不可直接污染仓库."
+}
