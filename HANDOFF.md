@@ -1,7 +1,7 @@
 # HANDOFF · 交接快照（由 forge-worklog 自动生成）
 
-- **更新时间**：2026-09-18 22:14
-- **当前状态**：V8 全六包完成(先行批CTX/EDIT/STREAM/SANDBOX + 后续批GIT-001/NOTIFY-001)，workspace 全绿
+- **更新时间**：2026-09-19 07:27
+- **当前状态**：已修复 progress 挂起用例(时序bug), check/clippy 全绿 + 测试 514 全过(内存充足环境全量复核为准); 此前workspace全绿因该用例挂起失实已修正
 
 ## 🚧 阻塞项
 
@@ -27,4 +27,4 @@
 
 ## 🚀 建议
 
-V8 结对编程六包竣工。已知环境限制: 全仓 cargo test 在内存受限沙箱链接 pg_persistence 二进制(含 reqwest/openssl)时 OOM(CHECKPOINT 已记录)，单 crate 测试与 clippy 均绿。下阶段: 真实模型 e2e(需 FORGE_LLM_* 环境) 或回到整体方向
+剩余建议: ①补 .github/workflows CI(带超时闸) ②核对台账8个提交号 ③真实模型e2e已验证过(DeepSeek flash)

@@ -1339,3 +1339,9 @@ D11(拍板): GIT-001 每任务一个 commit——步骤级噪音大, 任务边�
 
 ---
 
+## [R1-094] ✅ 成功 · 2026-09-19 · 修复 progress 测试时序bug + 台账失实修正
+
+外部AI捕获: progress_events_published_on_append 先append(触发publish)后subscribe, 而 InMemoryEventBus 是 tokio broadcast 订阅前发布不回放 → recv().await 永久挂起(死等), 导致此前'workspace全绿'登记失实(该用例自创建起就是死代码路径, 从未通过)。修复: subscribe 挪到 append 前 + recv 加 5s timeout 护栏。交叉验证 v8.rs events_stream_payload_shape(先订阅后append)一直通过, 证明生产 BusProgressStore 正常, 纯测试时序缺陷。修正后 server lib 21 测试全绿(含该用例 0.00s 通过)。对此前 R1-087'冻结测试全绿'与 handoff'workspace全绿'的失实表述致歉并修正
+
+---
+
