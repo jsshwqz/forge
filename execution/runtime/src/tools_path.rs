@@ -9,6 +9,26 @@
 use forge_core::{ForgeError, ForgeResult};
 use std::path::{Path, PathBuf};
 
+/// 防符号链接逃逸：canonicalize `full` 并校验其结果仍位于 `root`（canonicalize 后）之内。
+/// 词法三规则之外的第二道闸（V8 M4 修复）：工作区内指向 root 外的软链在读/写前被拦截。
+///
+/// `full` 必须已存在（调用方保证）。逃逸 → PermissionDenied。
+pub fn ensure_within_root(root: &Path, full: &Path, tool: &str) -> ForgeResult<PathBuf> {
+    let canon_root = std::fs::canonicalize(root)
+        .map_err(|e| ForgeError::InvalidState(format!("{tool}: canonicalize root: {e}")))?;
+    let canon_full = std::fs::canonicalize(full)
+        .map_err(|e| ForgeError::InvalidState(format!("{tool}: canonicalize path: {e}")))?;
+    if canon_full.starts_with(&canon_root) {
+        Ok(canon_full)
+    } else {
+        Err(ForgeError::PermissionDenied(format!(
+            "{tool}: symlink escape denied: {} not under {}",
+            canon_full.display(),
+            canon_root.display()
+        )))
+    }
+}
+
 /// 把工作区相对路径解析为绝对路径；违反防逃逸规则时返回 [`ForgeError::InvalidState`]。
 ///
 /// `tool` 为调用工具名，仅用于错误文案（排障时可直接定位是哪个工具拒绝了路径）。

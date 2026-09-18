@@ -77,6 +77,13 @@ impl Tool for EditPatchTool {
 
         let full = crate::tools_path::resolve_in_root(&self.root, rel, "edit_patch")?;
 
+        // V8 M4：符号链接逃逸校验（存在时 canonicalize 后仍在 root 内）。
+        let full = if full.exists() {
+            crate::tools_path::ensure_within_root(&self.root, &full, "edit_patch")?
+        } else {
+            full
+        };
+
         // 读入现有内容；缺文件时按 create_if_missing 决定空起或 NotFound。
         let mut content = if full.exists() {
             tokio::fs::read_to_string(&full)
@@ -104,10 +111,16 @@ impl Tool for EditPatchTool {
                 .and_then(|v| v.as_bool())
                 .unwrap_or(false);
 
+            if find.is_empty() {
+                return Err(ForgeError::InvalidState(
+                    "edit: empty find is not allowed".into(),
+                ));
+            }
             if !content.contains(find) {
                 return Err(ForgeError::InvalidState("edit: find not found".into()));
             }
-            let occurrences = content.matches(find).count();
+            // 重叠命中计数（match_indices），确保 "aa" in "aaa" 正确识别为多处。
+            let occurrences = content.match_indices(find).count();
             if occurrences > 1 && !replace_all {
                 return Err(ForgeError::InvalidState(
                     "edit: find not unique, use replace_all".into(),

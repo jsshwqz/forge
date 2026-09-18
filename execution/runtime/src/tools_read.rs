@@ -72,6 +72,8 @@ impl Tool for ReadFileTool {
         let meta = tokio::fs::metadata(&full)
             .await
             .map_err(|e| ForgeError::NotFound(format!("read_file: {rel}: {e}")))?;
+        // V8 M4：符号链接逃逸校验（canonicalize 后仍在 root 内）。
+        let full = crate::tools_path::ensure_within_root(&self.root, &full, "read_file")?;
         if !meta.is_file() {
             return Err(ForgeError::NotFound(format!(
                 "read_file: {rel}: not a regular file"
@@ -92,8 +94,9 @@ impl Tool for ReadFileTool {
                 "read exceeds FORGE_READ_MAX_BYTES".into(),
             ));
         }
+        let real_bytes = bytes.len();
         let content = String::from_utf8_lossy(&bytes).to_string();
-        Ok(serde_json::json!({ "path": rel, "content": content, "bytes": bytes.len() }))
+        Ok(serde_json::json!({ "path": rel, "content": content, "bytes": real_bytes }))
     }
 }
 

@@ -114,6 +114,15 @@ pub fn container_runtime() -> String {
     std::env::var("FORGE_SANDBOX_RUNTIME").unwrap_or_else(|_| "docker".to_string())
 }
 
+/// 容器执行超时（秒）：env FORGE_SANDBOX_TIMEOUT_SECS 可调，默认 30。
+pub fn container_timeout_secs() -> u64 {
+    std::env::var("FORGE_SANDBOX_TIMEOUT_SECS")
+        .ok()
+        .and_then(|s| s.trim().parse::<u64>().ok())
+        .filter(|n| *n > 0)
+        .unwrap_or(30)
+}
+
 /// 容器验收器：黑名单（策略链）为第一道闸，容器执行为第二道（纵深防御）。
 /// 仅 `container_enabled()` 时由 [`select_command_verifier`] 选用；缺省关闭走本地。    
 pub struct ContainerCommandVerifier {
@@ -151,39 +160,88 @@ impl Verifier for ContainerCommandVerifier {
             });
         }
 
-        // R3：容器执行失败/非零退出 → Fail（reason 带 container: 前缀）。
+        // R3：容器执行失败/超时 → Fail（reason 带 container: 前缀）。
+        use tokio::io::AsyncReadExt;
         let runtime = container_runtime();
         let image = container_image();
         let args = container_run_args(&image, &req.workdir, &cmd_str);
-        let output = tokio::task::spawn_blocking(move || {
-            std::process::Command::new(&runtime).args(&args).output()
-        })
-        .await
-        .map_err(|e| forge_core::ForgeError::InvalidState(format!("container join: {e}")))?;
+        let timeout_secs = container_timeout_secs();
 
-        match output {
-            Ok(out) if out.status.success() => Ok(VerificationOutcome {
+        let mut child = tokio::process::Command::new(&runtime)
+            .args(&args)
+            .stdout(std::process::Stdio::piped())
+            .stderr(std::process::Stdio::piped())
+            .spawn()
+            .map_err(|e| forge_core::ForgeError::InvalidState(format!("container spawn: {e}")))?;
+
+        // 并行读 stdout/stderr（避免管道写满死锁），保留 child 所有权以便超时 kill。
+        let stdout_task = child.stdout.take().map(|mut s| {
+            tokio::spawn(async move {
+                let mut buf = Vec::new();
+                let _ = s.read_to_end(&mut buf).await;
+                buf
+            })
+        });
+        let stderr_task = child.stderr.take().map(|mut s| {
+            tokio::spawn(async move {
+                let mut buf = Vec::new();
+                let _ = s.read_to_end(&mut buf).await;
+                buf
+            })
+        });
+
+        let status = match tokio::time::timeout(
+            std::time::Duration::from_secs(timeout_secs),
+            child.wait(),
+        )
+        .await
+        {
+            Err(_elapsed) => {
+                let _ = child.kill().await;
+                let _ = child.wait().await;
+                return Ok(VerificationOutcome {
+                    criterion_id: req.criterion.id.clone(),
+                    verdict: Verdict::Fail,
+                    reason: format!("container: timeout after {timeout_secs}s"),
+                });
+            }
+            Ok(Ok(status)) => status,
+            Ok(Err(e)) => {
+                return Ok(VerificationOutcome {
+                    criterion_id: req.criterion.id.clone(),
+                    verdict: Verdict::Fail,
+                    reason: format!("container: failed to execute: {e}"),
+                });
+            }
+        };
+
+        let stdout = match stdout_task {
+            Some(t) => t.await.unwrap_or_default(),
+            None => Vec::new(),
+        };
+        let stderr = match stderr_task {
+            Some(t) => t.await.unwrap_or_default(),
+            None => Vec::new(),
+        };
+        let combined = format!(
+            "{}{}",
+            String::from_utf8_lossy(&stdout),
+            String::from_utf8_lossy(&stderr)
+        );
+        let truncated: String = combined.chars().take(4096).collect();
+
+        if status.success() {
+            Ok(VerificationOutcome {
                 criterion_id: req.criterion.id.clone(),
                 verdict: Verdict::Pass,
-                reason: format!(
-                    "container: command succeeded: {}",
-                    String::from_utf8_lossy(&out.stdout).trim()
-                ),
-            }),
-            Ok(out) => Ok(VerificationOutcome {
+                reason: format!("container: command succeeded: {}", truncated.trim()),
+            })
+        } else {
+            Ok(VerificationOutcome {
                 criterion_id: req.criterion.id.clone(),
                 verdict: Verdict::Fail,
-                reason: format!(
-                    "container: exit code {:?}: {}",
-                    out.status.code(),
-                    String::from_utf8_lossy(&out.stderr).trim()
-                ),
-            }),
-            Err(e) => Ok(VerificationOutcome {
-                criterion_id: req.criterion.id.clone(),
-                verdict: Verdict::Fail,
-                reason: format!("container: failed to execute: {e}"),
-            }),
+                reason: format!("container: exit code {:?}: {}", status.code(), truncated.trim()),
+            })
         }
     }
 }

@@ -1130,13 +1130,13 @@ pub fn build_workspace_context(root: &std::path::Path) -> String {
                 }
             }
             if let Ok(content) = std::fs::read_to_string(e.path()) {
-                if out.len() + content.len() + 1 > CONTEXT_MAX_BYTES {
+                let header = format!("\n--- {} ---\n", e.file_name().to_string_lossy());
+                // V8 L7：预算计入 header + content，保证总量严格 ≤ 32KB。
+                if out.len() + header.len() + content.len() > CONTEXT_MAX_BYTES {
                     out.push_str("(truncated)");
                     break;
                 }
-                out.push_str("\n--- ");
-                out.push_str(&e.file_name().to_string_lossy());
-                out.push_str(" ---\n");
+                out.push_str(&header);
                 out.push_str(&content);
             }
         }
@@ -1331,13 +1331,17 @@ pub async fn run_from_env() -> Result<(), Box<dyn std::error::Error>> {
                 println!("storage: PostgreSQL ({url})");
                 // FED-001：显式建池（含 DEP-001 env 参数化），AppState 持有以支撑队列路径
                 let pool = forge_storage::connect_and_migrate(&url).await?;
+                // V8 STREAM-001 R2：PG 分支同样 event_bus 先建 → sessions 包 BusProgressStore。
+                let event_bus = Arc::new(InMemoryEventBus::with_buffer(sse_buffer()));
                 // FED-002：会话事件追加后转发到跨副本总线（失败不阻断写入）
-                let sessions: Arc<dyn SessionStore> = Arc::new(
-                    sse_relay::RelaySessionStore::new(
+                // 进度流：RelaySessionStore 再包 BusProgressStore，本地进度事件入总线。
+                let sessions: Arc<dyn SessionStore> = Arc::new(progress::BusProgressStore::new(
+                    Arc::new(sse_relay::RelaySessionStore::new(
                         Arc::new(forge_storage::PgSessionStore::new(pool.clone())),
                         Arc::new(sse_relay::PgRelay::new(pool.clone())),
-                    ),
-                );
+                    )),
+                    event_bus.clone(),
+                ));
                 AppState {
                     sdk: ForgeSdk::from_stores(
                         Arc::new(forge_storage::PgTaskStore::new(pool.clone())),
@@ -1345,7 +1349,7 @@ pub async fn run_from_env() -> Result<(), Box<dyn std::error::Error>> {
                     ),
                     evidence: Arc::new(InMemoryEvidenceStore::default()),
                     workspaces: Arc::new(WorkspaceManager::new(std::env::temp_dir().join("forge-ws")).unwrap()),
-                    event_bus: Arc::new(InMemoryEventBus::with_buffer(sse_buffer())),
+                    event_bus,
                     instances: Arc::new(Default::default()),
                     templates: Arc::new(Default::default()),
                     metrics: Arc::new(Metrics::default()),

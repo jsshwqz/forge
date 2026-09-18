@@ -6,7 +6,7 @@
 use crate::router::{Tool, ToolDescriptor};
 use async_trait::async_trait;
 use forge_core::{ForgeError, ForgeResult};
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
 /// 单次写入上限默认值：1MB（V5.1 WRT-001，env `FORGE_WRITE_MAX_BYTES` 可调）。
 pub const FORGE_WRITE_MAX_BYTES_DEFAULT: usize = 1_048_576;
@@ -49,20 +49,9 @@ impl WriteFileTool {
         }
     }
 
-    /// 解析并校验相对路径（拒绝绝对路径 / `..` / 盘符）。
+    /// 解析并校验相对路径（四工具共用同一防逃逸语义，V8 L8 收敛）。
     fn resolve(&self, rel: &str) -> ForgeResult<PathBuf> {
-        let p = Path::new(rel);
-        if p.is_absolute()
-            || rel.contains("..")
-            || rel.starts_with('/')
-            || rel.starts_with('\\')
-            || rel.contains(':')
-        {
-            return Err(ForgeError::InvalidState(format!(
-                "write_file: path must be relative inside workspace, got '{rel}'"
-            )));
-        }
-        Ok(self.root.join(p))
+        crate::tools_path::resolve_in_root(&self.root, rel, "write_file")
     }
 }
 

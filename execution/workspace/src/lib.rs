@@ -1,7 +1,7 @@
 //! forge-workspace：托管工作目录管理器（冻结目录槽位 execution/workspace/）。
 //!
 //! 为执行/验证提供受管 workdir（`VerificationRequest.workdir` 的来源）：
-//! - `create_for(task)`：根目录下创建 `ws-{task}-{短uuid}` 子目录
+//! - `create_for(task)`：根目录下创建 `ws-{task}` 精确子目录（同任务幂等，跨任务隔离）
 //! - `cleanup(path)`：删除子目录；路径逃逸防护——canonicalize 后必须仍位于
 //!   规范化根目录内，否则拒绝（防 `..` / 符号链接逃逸）；拒绝删除根本身
 //! - `list()`：列举现存工作目录（按名排序）
@@ -64,26 +64,11 @@ impl WorkspaceManager {
         // V7 ORCH-101b 修订（R6-031）：同一任务 get-or-create 幂等——
         // 编排器内部（验证 workdir）与 handler（工具 root）各调一次 create_for，
         // 必须落到同一目录，否则 write_file 与验收分居两处（真实 E2E 撞出的
-        // split-brain，见 V7.0 先行批报告）。跨任务仍唯一（ws-{task}- 前缀隔离）。
-        let prefix = format!("ws-{}-", safe);
-        if let Ok(entries) = std::fs::read_dir(&self.canon_root) {
-            let mut existing: Vec<PathBuf> = entries
-                .filter_map(|e| e.ok().map(|e| e.path()))
-                .filter(|p| {
-                    p.is_dir()
-                        && p.file_name()
-                            .and_then(|n| n.to_str())
-                            .map(|n| n.starts_with(&prefix))
-                            .unwrap_or(false)
-                })
-                .collect();
-            if !existing.is_empty() {
-                existing.sort();
-                return Ok(existing.remove(0));
-            }
-        }
-        let suffix = uuid::Uuid::new_v4().simple();
-        let dir = self.canon_root.join(format!("ws-{}-{}", safe, suffix));
+        // split-brain，见 V7.0 先行批报告）。
+        // V8 H2 修复：目录名精确编码 task_id（ws-{safe}），彻底规避前缀误匹配
+        // （旧 "T" 会误命中 "T-1" 的目录）；create_dir_all 幂等保证同任务同目录，
+        // 不同 task_id（safe 不同）自动隔离。
+        let dir = self.canon_root.join(format!("ws-{safe}"));
         std::fs::create_dir_all(&dir).map_err(|e| io_err("workspace create", e))?;
         Ok(dir)
     }
@@ -176,19 +161,20 @@ mod tests {
         assert_eq!(mgr.list().unwrap().len(), 1, "同任务 50 次调用只应有 1 个目录");
         assert!(dirs.iter().all(|d| *d == dirs[0]));
         assert!(dirs[0].starts_with(mgr.root()));
-        assert!(dirs[0].file_name().unwrap().to_str().unwrap().starts_with("ws-SAME-TASK-"));
+        assert_eq!(dirs[0].file_name().unwrap().to_str().unwrap(), "ws-SAME-TASK");
     }
 
-    /// 清理后新建的目录不复用被删路径。
+    /// 清理后重建得到干净空目录（精确目录名：同路径，但旧产物不残留）。
     #[test]
-    fn create_after_cleanup_does_not_reuse_path() {
+    fn create_after_cleanup_yields_fresh_dir() {
         let root = tempfile::tempdir().unwrap();
         let mgr = WorkspaceManager::new(root.path()).unwrap();
         let a = mgr.create_for("T").unwrap();
+        std::fs::write(a.join("artifact.txt"), b"x").unwrap();
         mgr.cleanup(&a).unwrap();
         let b = mgr.create_for("T").unwrap();
-        assert_ne!(a, b);
         assert!(b.exists());
+        assert!(!b.join("artifact.txt").exists(), "清理后重建必须干净");
     }
 
     #[test]

@@ -6,7 +6,6 @@ license.workspace = true
 
 [dependencies]
 forge-core = { path = "../../core/runtime" }
-uuid = { version = "1", features = ["v4"] }
 
 [dev-dependencies]
 tokio = { version = "1", features = ["macros", "rt-multi-thread"] }

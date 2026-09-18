@@ -1367,7 +1367,6 @@ dependencies = [
  "forge-core",
  "tempfile",
  "tokio",
- "uuid",
 ]
 
 [[package]]
