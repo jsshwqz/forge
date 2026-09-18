@@ -103,3 +103,4 @@
 | CTX-001 | V8先行批:工作区感知(ListDirTool+规划器注入+workspace_task_id续作) | ✅ 完成 | executor | - | 7fcda5f |
 | ZL-001 | 9个zl工具移植到新forge + build_router 25→34 | ✅ 完成 | - | - | 2ee1bcb |
 | ZL-002 | 按原版aion-router规格对齐9个zl工具(字段名+降级语义) | ✅ 完成 | - | - | 636a3af |
+| EDIT-001 | V8先行批:增量编辑(EditPatchTool精确串替换) | ✅ 完成 | executor | - | 21db6fb |

@@ -1,7 +1,7 @@
 # HANDOFF · 交接快照（由 forge-worklog 自动生成）
 
-- **更新时间**：2026-09-18 17:48
-- **当前状态**：CTX-001工作区感知完成(workspace 0 failed)，EDIT-001增量编辑待施工
+- **更新时间**：2026-09-18 17:56
+- **当前状态**：EDIT-001增量编辑完成(workspace 0 failed)，STREAM-001执行进度流待施工
 
 ## 🚧 阻塞项
 
@@ -27,4 +27,4 @@
 
 ## 🚀 建议
 
-按 build_v80a.md 串行: EDIT-001→STREAM-001→SANDBOX-002→GIT-001/NOTIFY-001(后续批)。ZL-001/002已补录事实源
+按 build_v80a.md 串行: STREAM-001→SANDBOX-002→GIT-001/NOTIFY-001(后续批)

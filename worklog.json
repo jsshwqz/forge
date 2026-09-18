@@ -1102,5 +1102,13 @@
     "task_id": "ZL-002",
     "title": "补录: zl工具对齐原版aion-router规格(输出字段+降级语义)",
     "body": "补录(会话前期未登记, 现按规范补): 工具集改为原版 zl.rs 8工具+prompt_audit: strategic_plan/task_dialectic/contradiction_analyze/compile_contract/check_sufficiency/verify_result/detect_drift/dialectical_retry/prompt_audit; 输出字段100%照抄原版JSON结构, AI判断降级为纯规则; 移除非原版verify_contract/evolver_governance。commit 636a3af"
+  },
+  {
+    "id": "R1-086",
+    "kind": "R1Completed",
+    "date": "2026-09-18",
+    "task_id": "EDIT-001",
+    "title": "增量编辑落地: EditPatchTool精确串替换+提示词规则",
+    "body": "新建 tools_edit.rs(EditPatchTool 逐条顺序应用/find不存在报错/多处命中需replace_all/缺文件create_if_missing或NotFound/防逃逸+大小上限复用write_max_bytes); LlmPlanner 增 edit_rule(edit_patch input形状冻结提示词), tools白名单已含edit_patch(CTX-001 R4); server编排router注册edit_patch工具(root=续作工作区); 顺手修CTX-001隐患(context注入双重前缀)。冻结测试5+1全绿。验收: cargo test --workspace 0 failed / clippy 0 error。build_v80a.md EDIT-001契约原样照抄"
   }
 ]

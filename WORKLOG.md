@@ -1280,3 +1280,10 @@ $p.StandardInput.WriteLine() 方案首帧 -32700 parse error（leader 亲测证�
 
 ---
 
+## [R1-086] ✅ 成功 · 2026-09-18 · 增量编辑落地: EditPatchTool精确串替换+提示词规则
+
+- **任务 ID**：EDIT-001
+新建 tools_edit.rs(EditPatchTool 逐条顺序应用/find不存在报错/多处命中需replace_all/缺文件create_if_missing或NotFound/防逃逸+大小上限复用write_max_bytes); LlmPlanner 增 edit_rule(edit_patch input形状冻结提示词), tools白名单已含edit_patch(CTX-001 R4); server编排router注册edit_patch工具(root=续作工作区); 顺手修CTX-001隐患(context注入双重前缀)。冻结测试5+1全绿。验收: cargo test --workspace 0 failed / clippy 0 error。build_v80a.md EDIT-001契约原样照抄
+
+---
+

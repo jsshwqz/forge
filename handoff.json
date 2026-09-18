@@ -1,6 +1,6 @@
 {
-  "updated_at": "2026-09-18 17:48",
-  "current_status": "CTX-001工作区感知完成(workspace 0 failed)，EDIT-001增量编辑待施工",
+  "updated_at": "2026-09-18 17:56",
+  "current_status": "EDIT-001增量编辑完成(workspace 0 failed)，STREAM-001执行进度流待施工",
   "blockers": [
     "market_signing.rs在无PG时panic导致全仓测试退出码1"
   ],
@@ -22,5 +22,5 @@
     "progress.json": "任务状态事实源",
     "worklog.json": "工作日志事实源"
   },
-  "advice": "按 build_v80a.md 串行: EDIT-001→STREAM-001→SANDBOX-002→GIT-001/NOTIFY-001(后续批)。ZL-001/002已补录事实源"
+  "advice": "按 build_v80a.md 串行: STREAM-001→SANDBOX-002→GIT-001/NOTIFY-001(后续批)"
 }
