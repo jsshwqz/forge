@@ -112,6 +112,13 @@
     <table id="tbl"><thead><tr><th>任务 ID</th><th>状态</th><th>目标</th></tr></thead><tbody></tbody></table>
     <p id="count" class="dim"></p>
   </div>
+
+  <div class="card">
+    <h2 style="margin-top:0">📡 实时活动流</h2>
+    <div id="activity" style="max-height:260px;overflow:auto;border:1px solid #2a2f3a;border-radius:6px;padding:8px">
+      <p class="dim">等待事件...</p>
+    </div>
+  </div>
 </main>
 <script>
 const STATUS_LABEL = {Pending:'⬜ 待处理',Planned:'📋 已规划',Executing:'⚙️ 执行中',Verifying:'🔍 验证中',Completed:'✅ 完成',Failed:'❌ 失败'};
@@ -327,6 +334,39 @@ async function load(){
 // 初始化
 loadLlmConfig();
 load();
+initActivityStream();
+
+// V8 STREAM-001：实时活动流（EventSource → 最近 20 条倒序）。
+const ACTIVITY_MAX = 20;
+const activityItems = [];
+function actLabel(kind){
+  const m = {TaskReceived:'📥 接收', PlanCreated:'📋 规划', ActionDispatched:'⚙️ 分发', ActionResult:'✅ 结果', VerificationResult:'🔍 验证', Failed:'❌ 失败', Recovered:'🔁 恢复', Completed:'🏁 完成'};
+  return m[kind] || kind;
+}
+function renderActivity(){
+  const el = document.getElementById('activity');
+  if(!activityItems.length){ el.innerHTML = '<p class="dim">等待事件...</p>'; return; }
+  el.innerHTML = activityItems.map(x =>
+    '<div style="padding:4px 0;border-bottom:1px solid #1f242c">'
+    + '<span class="badge badge-green">' + actLabel(x.kind) + '</span> '
+    + '<span class="dim">' + (x.session_id||'').slice(0,8) + '</span> '
+    + (x.step ? '<span class="dim">#'+x.step+'</span> ' : '')
+    + '<span class="dim" style="float:right">'+x.at+'</span>'
+    + '</div>'
+  ).join('');
+}
+function initActivityStream(){
+  const es = new EventSource('/events/stream');
+  es.onmessage = (e) => {
+    try{
+      const p = JSON.parse(e.data);
+      activityItems.unshift(p);
+      if(activityItems.length > ACTIVITY_MAX) activityItems.pop();
+      renderActivity();
+    }catch(err){}
+  };
+  es.onerror = () => { /* 浏览器自动重连 */ };
+}
 </script>
 </body>
 </html>

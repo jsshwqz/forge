@@ -11,6 +11,7 @@ pub mod bus;
 pub mod queue;
 pub mod mcp_tools;
 pub mod sandbox_verify;
+pub mod progress;
 pub mod quota;
 pub mod routes;
 pub mod sse_relay;
@@ -124,11 +125,18 @@ pub struct AppState {
 
 impl AppState {
     pub fn in_memory() -> Self {
+        // V8 STREAM-001 R2：event_bus 先建 → sessions 包 BusProgressStore → sdk 组装。
+        let event_bus = Arc::new(InMemoryEventBus::with_buffer(sse_buffer()));
+        let tasks: Arc<dyn TaskStore> = Arc::new(forge_task::InMemoryTaskStore::default());
+        let sessions: Arc<dyn SessionStore> = Arc::new(progress::BusProgressStore::new(
+            Arc::new(forge_session::InMemorySessionStore::default()),
+            event_bus.clone(),
+        ));
         Self {
-            sdk: ForgeSdk::in_memory(),
+            sdk: ForgeSdk::from_stores(tasks, sessions),
             evidence: Arc::new(InMemoryEvidenceStore::default()),
             workspaces: Arc::new(WorkspaceManager::new(std::env::temp_dir().join("forge-ws")).unwrap()),
-            event_bus: Arc::new(InMemoryEventBus::with_buffer(sse_buffer())),
+            event_bus,
             instances: Arc::new(Default::default()),
             templates: Arc::new(Default::default()),
             metrics: Arc::new(Metrics::default()),
@@ -142,11 +150,15 @@ impl AppState {
         }
     }
     pub fn new(tasks: Arc<dyn TaskStore>, sessions: Arc<dyn SessionStore>) -> Self {
+        // V8 STREAM-001 R2：sessions 包 BusProgressStore。
+        let event_bus = Arc::new(InMemoryEventBus::with_buffer(sse_buffer()));
+        let sessions: Arc<dyn SessionStore> =
+            Arc::new(progress::BusProgressStore::new(sessions, event_bus.clone()));
         Self {
             sdk: ForgeSdk::from_stores(tasks, sessions),
             evidence: Arc::new(InMemoryEvidenceStore::default()),
             workspaces: Arc::new(WorkspaceManager::new(std::env::temp_dir().join("forge-ws")).unwrap()),
-            event_bus: Arc::new(InMemoryEventBus::with_buffer(sse_buffer())),
+            event_bus,
             instances: Arc::new(Default::default()),
             templates: Arc::new(Default::default()),
             metrics: Arc::new(Metrics::default()),
@@ -1182,9 +1194,8 @@ async fn events_stream(
     tokio::spawn(async move {
         let mut es = es;
         while let Ok(event) = es.recv().await {
-            let data = serde_json::to_string(
-                &serde_json::json!({"id": event.id, "at": event.at.to_rfc3339()}),
-            ).unwrap_or_default();
+            // V8 STREAM-001 R1：data 升级为完整进度载荷（session_id/kind/status/seq/at/step?）。
+            let data = serde_json::to_string(&event.payload).unwrap_or_default();
             let _ = lbtx.send(data);
         }
     });

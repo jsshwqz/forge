@@ -4,6 +4,7 @@
 
 use axum::body::Body;
 use axum::http::{Request, StatusCode};
+use forge_event::EventBus;
 use forge_server::{app_with_state, build_workspace_context, AppState};
 use http_body_util::BodyExt;
 use tower::ServiceExt;
@@ -92,4 +93,31 @@ async fn resume_workspace_reuses_dir() {
     .await;
     assert_eq!(status_b, StatusCode::OK, "任务 B 续作应成功: {body_b}");
     assert_eq!(body_b["gate_passed"], true, "续作工作区应能读到既有产物: {body_b}");
+}
+
+/// 冻结测试：AppState 装配 BusProgressStore 后，append 会向事件总线发布冻结进度载荷。
+#[tokio::test]
+async fn events_stream_payload_shape() {
+    let st = AppState::in_memory();
+    let mut sub = st.event_bus.subscribe(forge_event::Topic::Session).await.unwrap();
+
+    let task = st.sdk.create_task("stream check", vec![], vec![]).await.unwrap();
+    let session = st.sdk.create_session(task.id).await.unwrap();
+    st.sdk
+        .sessions()
+        .append(
+            &session.id,
+            forge_session::SessionEventKind::PlanCreated,
+            serde_json::json!({"plan_version": "v1"}),
+        )
+        .await
+        .unwrap();
+
+    let evt = sub.recv().await.unwrap();
+    let p = evt.payload;
+    assert_eq!(p["session_id"], session.id.to_string(), "载荷 session_id 冻结");
+    assert_eq!(p["kind"], "PlanCreated", "载荷 kind 冻结");
+    assert_eq!(p["status"], "planned", "载荷 status 冻结");
+    assert!(p["seq"].is_u64(), "载荷 seq 冻结");
+    assert!(p["at"].is_string(), "载荷 at 冻结");
 }
