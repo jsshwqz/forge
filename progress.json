@@ -770,9 +770,25 @@
   {
     "task_id": "CTX-001",
     "name": "V8先行批:工作区感知(ListDirTool+规划器注入+workspace_task_id续作)",
-    "status": "Wip",
+    "status": "Completed",
     "owner": "executor",
     "last_record": null,
-    "commit": null
+    "commit": "7fcda5f"
+  },
+  {
+    "task_id": "ZL-001",
+    "name": "9个zl工具移植到新forge + build_router 25→34",
+    "status": "Completed",
+    "owner": null,
+    "last_record": null,
+    "commit": "2ee1bcb"
+  },
+  {
+    "task_id": "ZL-002",
+    "name": "按原版aion-router规格对齐9个zl工具(字段名+降级语义)",
+    "status": "Completed",
+    "owner": null,
+    "last_record": null,
+    "commit": "636a3af"
   }
 ]

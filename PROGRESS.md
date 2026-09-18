@@ -100,4 +100,6 @@
 | BILL-003 | 编排LLM计量全覆盖(plan/replan/review入账) | ✅ 完成 | executor | R1-075 | 67b82ff |
 | LOCAL-001 | 本地实用化套件(DeepSeek接入+一键启动+工作台UI+桌面四件套)+真实E2E三缺陷修复 | ✅ 完成 | executor | R1-077 | b295923 |
 | FIX-001 | market_signing无PG panic跳过逻辑修复(阻塞项清理) | ✅ 完成 | executor | - | 516423d |
-| CTX-001 | V8先行批:工作区感知(ListDirTool+规划器注入+workspace_task_id续作) | 📌 WIP | executor | - | - |
+| CTX-001 | V8先行批:工作区感知(ListDirTool+规划器注入+workspace_task_id续作) | ✅ 完成 | executor | - | 7fcda5f |
+| ZL-001 | 9个zl工具移植到新forge + build_router 25→34 | ✅ 完成 | - | - | 2ee1bcb |
+| ZL-002 | 按原版aion-router规格对齐9个zl工具(字段名+降级语义) | ✅ 完成 | - | - | 636a3af |

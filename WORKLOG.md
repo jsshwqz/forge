@@ -1259,3 +1259,24 @@ $p.StandardInput.WriteLine() 方案首帧 -32700 parse error（leader 亲测证�
 
 ---
 
+## [R1-083] ✅ 成功 · 2026-09-18 · 工作区感知落地: read_file/list_dir+续作+规划器上下文注入
+
+- **任务 ID**：CTX-001
+新建 tools_read.rs(ReadFileTool 256KB上限+NotFound+防逃逸/ListDirTool 单层列举+排序+200截断, 共用resolve_in_root三规则); LlmPlanner 增 context 字段(注入user尾部)+tools白名单扩为5个(echo/write_file/read_file/list_dir/edit_patch); OrchestrateRequest 增 workspace_task_id, 工具root与验收workdir经 OrchestratorDeps.workspace_task 贯穿实现续作; build_workspace_context 冻结注入块(清单+≤32KB小文件≤8KB/个超限截断)。冻结测试 v8.rs: context_injection_truncates + resume_workspace_reuses_dir(HTTP面续作)。验收: cargo test --workspace 0 failed / clippy 0 error。build_v80a.md CTX-001 契约原样照抄
+
+---
+
+## [R1-084] ✅ 成功 · 2026-09-18 · 补录: 9个zl工具移植落地 build_router 25→34
+
+- **任务 ID**：ZL-001
+补录(会话前期未走forge-worklog流程, 现按规范登记): 新建 tools/zl/src/tool.rs 9工具+register_all; 接线根Cargo.toml workspaces/cli Cargo.toml/mcp_server.rs(register_zl+断言25→34); 照抄真实API模式(Tool trait/ForgeError/单字段descriptor/register_all); MCP tools/list 实测34工具。commit 2ee1bcb
+
+---
+
+## [R1-085] ✅ 成功 · 2026-09-18 · 补录: zl工具对齐原版aion-router规格(输出字段+降级语义)
+
+- **任务 ID**：ZL-002
+补录(会话前期未登记, 现按规范补): 工具集改为原版 zl.rs 8工具+prompt_audit: strategic_plan/task_dialectic/contradiction_analyze/compile_contract/check_sufficiency/verify_result/detect_drift/dialectical_retry/prompt_audit; 输出字段100%照抄原版JSON结构, AI判断降级为纯规则; 移除非原版verify_contract/evolver_governance。commit 636a3af
+
+---
+
