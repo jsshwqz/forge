@@ -25,6 +25,12 @@ pub struct AutoWrapTool {
     descriptor: ToolDescriptor,
 }
 
+impl Default for AutoWrapTool {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl AutoWrapTool {
     pub fn new() -> Self {
         Self {
@@ -212,7 +218,7 @@ impl Tool for AutoWrapTool {
             for entry in std::fs::read_dir(source_dir).map_err(|e| err(format!("Failed to read dir: {e}")))? {
                 let entry = entry.map_err(|e| err(format!("read_dir entry: {e}")))?;
                 let path = entry.path();
-                if path.is_file() && path.extension().map_or(false, |ext| ext == "rs") {
+                if path.is_file() && path.extension().is_some_and(|ext| ext == "rs") {
                     if let Ok(content) = std::fs::read_to_string(&path) {
                         found.push_str(&content);
                         found.push('\n');

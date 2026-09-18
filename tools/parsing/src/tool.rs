@@ -19,6 +19,12 @@ pub struct YamlParseTool {
     descriptor: ToolDescriptor,
 }
 
+impl Default for YamlParseTool {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl YamlParseTool {
     pub fn new() -> Self {
         Self {
@@ -119,6 +125,12 @@ pub struct JsonParseTool {
     descriptor: ToolDescriptor,
 }
 
+impl Default for JsonParseTool {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl JsonParseTool {
     pub fn new() -> Self {
         Self {
@@ -163,6 +175,12 @@ impl Tool for JsonParseTool {
 
 pub struct TomlParseTool {
     descriptor: ToolDescriptor,
+}
+
+impl Default for TomlParseTool {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl TomlParseTool {
@@ -211,6 +229,12 @@ impl Tool for TomlParseTool {
 
 pub struct CsvParseTool {
     descriptor: ToolDescriptor,
+}
+
+impl Default for CsvParseTool {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl CsvParseTool {
@@ -273,6 +297,12 @@ impl Tool for CsvParseTool {
 
 pub struct PdfParseTool {
     descriptor: ToolDescriptor,
+}
+
+impl Default for PdfParseTool {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl PdfParseTool {

@@ -27,6 +27,12 @@ pub struct MarkdownRenderTool {
     descriptor: ToolDescriptor,
 }
 
+impl Default for MarkdownRenderTool {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl MarkdownRenderTool {
     pub fn new() -> Self {
         Self {
@@ -57,7 +63,7 @@ impl Tool for MarkdownRenderTool {
             .get("markdown")
             .and_then(|v| v.as_str())
             .ok_or_else(|| err("markdown is required"))?;
-        let parser = pulldown_cmark::Parser::new(&markdown);
+        let parser = pulldown_cmark::Parser::new(markdown);
         let mut html = String::new();
         pulldown_cmark::html::push_html(&mut html, parser);
         Ok(json!({ "ok": true, "html": html }))
@@ -68,6 +74,12 @@ impl Tool for MarkdownRenderTool {
 
 pub struct TextToonTool {
     descriptor: ToolDescriptor,
+}
+
+impl Default for TextToonTool {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl TextToonTool {
@@ -121,6 +133,12 @@ impl Tool for TextToonTool {
 
 pub struct TextDiffTool {
     descriptor: ToolDescriptor,
+}
+
+impl Default for TextDiffTool {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl TextDiffTool {
@@ -179,6 +197,12 @@ pub struct TextWordcountTool {
     descriptor: ToolDescriptor,
 }
 
+impl Default for TextWordcountTool {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl TextWordcountTool {
     pub fn new() -> Self {
         Self {
@@ -211,7 +235,7 @@ impl Tool for TextWordcountTool {
             .ok_or_else(|| err("text is required"))?;
         let word_count = text.split_whitespace().count();
         let sentence_count = text
-            .split(|c| c == '.' || c == '!' || c == '?' || c == '。' || c == '！' || c == '？')
+            .split(['.', '!', '?', '。', '！', '？'])
             .filter(|s| !s.trim().is_empty())
             .count();
         let line_count = text.lines().count();
@@ -229,6 +253,12 @@ impl Tool for TextWordcountTool {
 
 pub struct TextClassifyTool {
     descriptor: ToolDescriptor,
+}
+
+impl Default for TextClassifyTool {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl TextClassifyTool {
@@ -265,6 +295,12 @@ pub struct TextExtractTool {
     descriptor: ToolDescriptor,
 }
 
+impl Default for TextExtractTool {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl TextExtractTool {
     pub fn new() -> Self {
         Self {
@@ -297,6 +333,12 @@ impl Tool for TextExtractTool {
 
 pub struct TextSummarizeTool {
     descriptor: ToolDescriptor,
+}
+
+impl Default for TextSummarizeTool {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl TextSummarizeTool {
@@ -333,6 +375,12 @@ pub struct TextTranslateTool {
     descriptor: ToolDescriptor,
 }
 
+impl Default for TextTranslateTool {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl TextTranslateTool {
     pub fn new() -> Self {
         Self {
@@ -367,6 +415,12 @@ impl Tool for TextTranslateTool {
 
 pub struct TextEmbedTool {
     descriptor: ToolDescriptor,
+}
+
+impl Default for TextEmbedTool {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl TextEmbedTool {

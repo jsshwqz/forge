@@ -8,6 +8,12 @@ fn err(msg: impl Into<String>) -> ForgeError { ForgeError::InvalidState(msg.into
 
 pub struct GrepTool { descriptor: ToolDescriptor }
 
+impl Default for GrepTool {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl GrepTool {
     pub fn new() -> Self {
         Self { descriptor: ToolDescriptor {
@@ -71,7 +77,7 @@ impl Tool for GrepTool {
         let case_insensitive = input.get("case_insensitive").and_then(|v| v.as_bool()).unwrap_or(false);
         let regex_str = if case_insensitive { format!("(?i){}", regex::escape(pattern)) } else { regex::escape(pattern) };
         let re = regex::Regex::new(&regex_str).map_err(|e| err(format!("Invalid regex pattern: {e}")))?;
-        let glob_filter = glob_pattern.map(|g| glob::Pattern::new(g)).transpose().map_err(|e| err(format!("Invalid glob pattern: {e}")))?;
+        let glob_filter = glob_pattern.map(glob::Pattern::new).transpose().map_err(|e| err(format!("Invalid glob pattern: {e}")))?;
         let mut results = Vec::new();
         let path = Path::new(path_str);
         if path.is_file() {
@@ -86,6 +92,12 @@ impl Tool for GrepTool {
 }
 
 pub struct GlobTool { descriptor: ToolDescriptor }
+
+impl Default for GlobTool {
+    fn default() -> Self {
+        Self::new()
+    }
+}
 
 impl GlobTool {
     pub fn new() -> Self {

@@ -10,6 +10,7 @@
 //!   - 独立"读线程"：逐行读 stdin，发 (req 帧) 给主线程
 //!   - 主线程：处理协议，发 (resp 帧) 给"写线程"
 //!   - 独立"写线程"：从队列取帧，`writeln! + flush` 立即落管道
+//!
 //! stdin EOF 时读线程关闭 req 通道，主线程处理完在途帧后退出，写线程收完
 //! 剩余帧后退出，进程自然结束。
 
@@ -102,10 +103,7 @@ pub fn run() {
             "notifications/initialized" => None, // notification：无响应
             "tools/list" => handle_tools_list(&id, &router),
             "tools/call" => handle_tools_call(&id, &params, &router),
-            "ping" => match &id {
-                Some(i) => Some(respond_frame(i, Value::Null)),
-                None => None,
-            },
+            "ping" => id.as_ref().map(|i| respond_frame(i, Value::Null)),
             other => match &id {
                 Some(i) => Some(error_frame(i, ERR_METHOD_NOT_FOUND, format!("method not found: {other}"))),
                 None => {
@@ -363,12 +361,10 @@ mod tests {
     #[test]
     fn test_unknown_notification_silent() {
         let id: Option<Value> = None;
-        let resp = match "frobnicate" {
-            other => match &id {
-                Some(i) => Some(error_frame(i, ERR_METHOD_NOT_FOUND, format!("method not found: {other}"))),
-                None => None,
-            },
-        };
+        let other = "frobnicate";
+        let resp = id
+            .as_ref()
+            .map(|i| error_frame(i, ERR_METHOD_NOT_FOUND, format!("method not found: {other}")));
         assert!(resp.is_none());
     }
 }

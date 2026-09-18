@@ -6,6 +6,12 @@ use serde_json::json;
 fn err(msg: impl Into<String>) -> ForgeError { ForgeError::InvalidState(msg.into()) }
 
 pub struct ReadFileTool { descriptor: ToolDescriptor }
+impl Default for ReadFileTool {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl ReadFileTool {
     pub fn new() -> Self {
         Self { descriptor: ToolDescriptor {
@@ -46,6 +52,12 @@ impl Tool for ReadFileTool {
 }
 
 pub struct WriteFileTool { descriptor: ToolDescriptor }
+impl Default for WriteFileTool {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl WriteFileTool {
     pub fn new() -> Self {
         Self { descriptor: ToolDescriptor {
@@ -79,6 +91,12 @@ impl Tool for WriteFileTool {
 }
 
 pub struct EditFileTool { descriptor: ToolDescriptor }
+impl Default for EditFileTool {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl EditFileTool {
     pub fn new() -> Self {
         Self { descriptor: ToolDescriptor {
@@ -118,6 +136,12 @@ impl Tool for EditFileTool {
 }
 
 pub struct ExecCommandTool { descriptor: ToolDescriptor }
+impl Default for ExecCommandTool {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl ExecCommandTool {
     pub fn new() -> Self {
         Self { descriptor: ToolDescriptor {
