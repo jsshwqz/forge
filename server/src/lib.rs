@@ -1117,12 +1117,19 @@ pub fn build_workspace_context(root: &std::path::Path) -> String {
         out.push('\n');
     }
     // 小文件内容：≤8KB/个、总量 ≤32KB，超限截断标 (truncated)。
+    let canon_root = std::fs::canonicalize(root).ok();
     if let Ok(rd) = std::fs::read_dir(root) {
         let mut items: Vec<_> = rd.filter_map(|e| e.ok()).collect();
         items.sort_by_key(|e| e.file_name());
         for e in items {
             if e.path().is_dir() {
                 continue;
+            }
+            // V8 M4：跳过符号链接指向 root 外的文件（防外部内容泄漏进 LLM 上下文）。
+            if let (Some(cr), Ok(cp)) = (&canon_root, std::fs::canonicalize(e.path())) {
+                if !cp.starts_with(cr) {
+                    continue;
+                }
             }
             if let Ok(meta) = e.metadata() {
                 if meta.len() > SMALL_FILE_MAX_BYTES as u64 {

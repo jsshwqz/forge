@@ -257,3 +257,40 @@ mod tests {
         }
     }
 }
+#[cfg(unix)]
+#[tokio::test]
+async fn edit_patch_symlink_escape_rejected() {
+    let tmp = tempfile::tempdir().unwrap();
+    let outside = tempfile::tempdir().unwrap();
+    std::fs::write(outside.path().join("victim.txt"), "hello").unwrap();
+    std::os::unix::fs::symlink(outside.path().join("victim.txt"), tmp.path().join("link.txt")).unwrap();
+    let tool = EditPatchTool::new(tmp.path());
+    let err = tool
+        .invoke(serde_json::json!({
+            "path": "link.txt",
+            "edits": [{"find": "hello", "replace": "pwned"}]
+        }))
+        .await
+        .unwrap_err();
+    assert!(
+        matches!(err, ForgeError::PermissionDenied(_)),
+        "符号链接逃逸必须 PermissionDenied，got {err:?}"
+    );
+    // 外部文件必须未被篡改。
+    assert_eq!(
+        std::fs::read_to_string(outside.path().join("victim.txt")).unwrap(),
+        "hello"
+    );
+}
+
+#[tokio::test]
+async fn edit_patch_empty_find_rejected() {
+    let tmp = tempfile::tempdir().unwrap();
+    std::fs::write(tmp.path().join("a.txt"), "hello").unwrap();
+    let tool = EditPatchTool::new(tmp.path());
+    let err = tool
+        .invoke(serde_json::json!({"path": "a.txt", "edits": [{"find": "", "replace": "x"}]}))
+        .await
+        .unwrap_err();
+    assert!(err.to_string().contains("empty find"), "got {err}");
+}

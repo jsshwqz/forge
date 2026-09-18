@@ -244,3 +244,20 @@ mod tests {
         assert_eq!(out.get("truncated"), None);
     }
 }
+#[cfg(unix)]
+#[tokio::test]
+async fn read_file_symlink_escape_rejected() {
+    let tmp = tempfile::tempdir().unwrap();
+    let outside = tempfile::tempdir().unwrap();
+    std::fs::write(outside.path().join("secret.txt"), "secret").unwrap();
+    std::os::unix::fs::symlink(outside.path().join("secret.txt"), tmp.path().join("link.txt")).unwrap();
+    let tool = ReadFileTool::new(tmp.path());
+    let err = tool
+        .invoke(serde_json::json!({"path": "link.txt"}))
+        .await
+        .unwrap_err();
+    assert!(
+        matches!(err, ForgeError::PermissionDenied(_)),
+        "符号链接逃逸必须 PermissionDenied，got {err:?}"
+    );
+}
