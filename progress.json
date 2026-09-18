@@ -790,5 +790,13 @@
     "owner": null,
     "last_record": null,
     "commit": "636a3af"
+  },
+  {
+    "task_id": "EDIT-001",
+    "name": "V8先行批:增量编辑(EditPatchTool精确串替换)",
+    "status": "Wip",
+    "owner": "executor",
+    "last_record": null,
+    "commit": null
   }
 ]

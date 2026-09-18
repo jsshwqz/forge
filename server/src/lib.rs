@@ -356,6 +356,10 @@ async fn execute_orchestration(
     router
         .register(Box::new(forge_exec::ListDirTool::new(workdir_for_scan.clone())))
         .map_err(ApiError::from)?;
+    // V8 EDIT-001：增量编辑工具（edit_patch，root=续作工作区）。
+    router
+        .register(Box::new(forge_exec::EditPatchTool::new(workdir_for_scan.clone())))
+        .map_err(ApiError::from)?;
 
     // ORCH-101c：MCP 工具源（未配置零开销；失败仅 warn 不阻断编排）
     let mcp_configs = mcp_tools::configs_from_env();

@@ -12,7 +12,7 @@ use std::path::{Path, PathBuf};
 pub const FORGE_WRITE_MAX_BYTES_DEFAULT: usize = 1_048_576;
 
 /// 读取写入上限：env `FORGE_WRITE_MAX_BYTES` 优先，非法/未设置回退默认值。
-fn write_max_bytes() -> usize {
+pub(crate) fn write_max_bytes() -> usize {
     std::env::var("FORGE_WRITE_MAX_BYTES")
         .ok()
         .and_then(|s| s.trim().parse::<usize>().ok())

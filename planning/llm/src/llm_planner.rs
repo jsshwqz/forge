@@ -129,6 +129,14 @@ impl<B: LlmPlanBackend + ?Sized> LlmPlanner<B> {
         } else {
             String::new()
         };
+        // V8 EDIT-001 R3：edit_patch input 形状冻结提示词规则。
+        let edit_rule = if self.tools.iter().any(|t| t == "edit_patch") {
+            "\nFor edit_patch steps use input {\"path\":\"<relative path>\",\
+             \"edits\":[{\"find\":\"<exact existing text>\",\"replace\":\"<new text>\"}]}."
+                .to_string()
+        } else {
+            String::new()
+        };
         let system = format!(
             "You are a planning assistant. Produce an execution plan for the task. \
 Respond with ONLY a JSON object (no prose, no code fences) matching this schema: \
@@ -136,7 +144,7 @@ Respond with ONLY a JSON object (no prose, no code fences) matching this schema:
 \"action\":{{\"type\":\"call\",\"capability\":\"echo\",\"input\":{{}}}}}}]}}. \
 Action type must be \"call\" or \"approval\". \
 Step ids must be unique; depends_on must reference existing step ids only. \
-{tool_rule}{write_rule}"
+{tool_rule}{write_rule}{edit_rule}"
         );
 
         let mut user = format!("Task goal:\n{}\n", task.goal);
@@ -152,9 +160,9 @@ Step ids must be unique; depends_on must reference existing step ids only. \
                 user.push_str(&format!("- {}: {}\n", a.id, a.description));
             }
         }
-        // V8 CTX-001：工作区上下文注入（冻结格式，追加 user 尾部）。
+        // V8 CTX-001：工作区上下文注入（context 已是完整注入块，直接追加 user 尾部）。
         if let Some(ctx) = &self.context {
-            user.push_str("\n=== Workspace context ===\n");
+            user.push('\n');
             user.push_str(ctx);
         }
 
