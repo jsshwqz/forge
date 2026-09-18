@@ -1333,3 +1333,9 @@ D11(拍板): GIT-001 每任务一个 commit——步骤级噪音大, 任务边�
 
 ---
 
+## [R1-093] ✅ 成功 · 2026-09-18 · 真实模型 e2e 验证通过(DeepSeek flash)
+
+用 DeepSeek(deepseek-flash, OpenAI兼容) 真模型跑通全链路: ①forge-api live 2/2(llm列出模型+chat roundtrip 0.85s) ②live_agent 2/2(真模型驱动Agent trait) ③完整编排 e2e: POST /orchestrate plan_mode=multi_step, DeepSeek 真规划 write_file 步骤(s1 Create greeting.txt)→write_file 执行Success→FileContains 验收Pass→gate_passed=true/final_status=Completed。G-ORCH101 门禁的 LLM 真实轨此前留待复验, 本次落牌。
+
+---
+

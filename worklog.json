@@ -1166,5 +1166,13 @@
     "task_id": null,
     "title": "B-01清单补齐: regex_match/sanitize/session_report/skill_report 四工具",
     "body": "对照 docs/handoff/round1_task.json 的 25 工具清单, 核对发现缺 4 个: regex_match(正则匹配→search, 复用regex依赖) / sanitize(去控制字符+可选HTML转义→text) / session_report(事件统计报告→text) / skill_report(技能清单报告→text)。均纯计算 ReadOnly, 照抄 parsing Tool trait 模式(单字段descriptor+new+register_all), 每工具roundtrip单测。build_router 34→38, MCP tools/list 实测38工具含4新工具。至此 B-01 25工具+4AI壳+auto_wrap 全部齐。验收 search3/text11测试绿/clippy 0"
+  },
+  {
+    "id": "R1-093",
+    "kind": "R1Completed",
+    "date": "2026-09-18",
+    "task_id": null,
+    "title": "真实模型 e2e 验证通过(DeepSeek flash)",
+    "body": "用 DeepSeek(deepseek-flash, OpenAI兼容) 真模型跑通全链路: ①forge-api live 2/2(llm列出模型+chat roundtrip 0.85s) ②live_agent 2/2(真模型驱动Agent trait) ③完整编排 e2e: POST /orchestrate plan_mode=multi_step, DeepSeek 真规划 write_file 步骤(s1 Create greeting.txt)→write_file 执行Success→FileContains 验收Pass→gate_passed=true/final_status=Completed。G-ORCH101 门禁的 LLM 真实轨此前留待复验, 本次落牌。"
   }
 ]
