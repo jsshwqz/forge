@@ -106,3 +106,5 @@
 | EDIT-001 | V8先行批:增量编辑(EditPatchTool精确串替换) | ✅ 完成 | executor | - | 21db6fb |
 | STREAM-001 | V8先行批:执行进度流(BusProgressStore+工作台实时流) | ✅ 完成 | executor | - | 0937587 |
 | SANDBOX-002 | V8先行批:容器级验收隔离(默认关) | ✅ 完成 | executor | - | 75f5992 |
+| GIT-001 | 任务工作区Git集成(git init+每任务单commit+补丁导出,默认关) | ✅ 完成 | executor | - | 1dba196 |
+| NOTIFY-001 | 任务终态Webhook通知(载荷冻结+3次指数退避,默认关) | ✅ 完成 | executor | - | 1dba196 |

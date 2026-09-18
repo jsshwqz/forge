@@ -1307,3 +1307,23 @@ sandbox_verify.rs 追加 container_run_args(冻结 run args 形态)/container_en
 
 ---
 
+## [R6-032] ⚖️ 决策 · 2026-09-18 · D11/D12 决策: GIT-001 commit粒度 + NOTIFY-001 载荷/重试
+
+D11(拍板): GIT-001 每任务一个 commit——步骤级噪音大, 任务边界清晰; 任务工作区 git init 后独立 repo, 任务结束 git add -A + 单 commit, 补丁导出供人工审阅(复用 KNW-101 红线不触主干). D12(拍板): NOTIFY-001 载荷冻结 {task_id, final_status, at, summary}(只投终态不含敏感), 失败重试有界 3 次指数退避 1s/2s/4s. 两包默认 env 门控关闭(FORGE_GIT_TASK=1 / FORGE_NOTIFY_URL 未设即关), 无 build_v80a 冻结契约, 规格由 executor 精简设计经本次 R6 拍板
+
+---
+
+## [R1-090] ✅ 成功 · 2026-09-18 · 任务Git集成落地: git init+每任务单commit+补丁导出(默认关)
+
+- **任务 ID**：GIT-001
+新建 task_git.rs(git_enabled FORGE_GIT_TASK=1 + commit_task_workdir: git init若未init+单commit D11+format-patch补丁导出, 红线不触主干人工合入); 装配 execute_orchestration 完成后 git 收尾(默认关失败仅warn)。测试 commit_task_workdir_produces_commit_and_patch(真实git) + git_disabled_by_default。验收 server lib 测试绿/clippy 0
+
+---
+
+## [R1-091] ✅ 成功 · 2026-09-18 · 任务终态Webhook通知落地: 载荷冻结+3次退避(默认关)
+
+- **任务 ID**：NOTIFY-001
+新建 notify.rs(notify_url FORGE_NOTIFY_URL + notify_payload 冻结{task_id,final_status,at,summary} + notify_task_end reqwest POST失败重试3次1s/2s/4s); 装配 orchestrate 终态投递(默认关)。测试 notify_payload_fields_frozen + notify_disabled_by_default。server 加 reqwest 依赖对齐 forge-api。验收 server lib 测试绿/clippy 0
+
+---
+
