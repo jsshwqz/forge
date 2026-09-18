@@ -1,6 +1,6 @@
 {
-  "updated_at": "2026-09-18 18:07",
-  "current_status": "STREAM-001执行进度流完成(workspace 0 failed)，SANDBOX-002容器隔离待施工",
+  "updated_at": "2026-09-18 18:43",
+  "current_status": "V8先行批四包(CTX-001/EDIT-001/STREAM-001/SANDBOX-002)全部完成，workspace 全绿",
   "blockers": [
     "market_signing.rs在无PG时panic导致全仓测试退出码1"
   ],
@@ -22,5 +22,5 @@
     "progress.json": "任务状态事实源",
     "worklog.json": "工作日志事实源"
   },
-  "advice": "按 build_v80a.md 最后一包: SANDBOX-002(默认关)→GIT-001/NOTIFY-001(后续批)"
+  "advice": "V8先行批竣工。后续批 GIT-001(任务Git集成)/NOTIFY-001(通知)列 roadmap_v8 后续批，依赖决策 D11/D12 拍板后施工"
 }

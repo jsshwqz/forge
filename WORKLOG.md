@@ -1294,3 +1294,10 @@ $p.StandardInput.WriteLine() 方案首帧 -32700 parse error（leader 亲测证�
 
 ---
 
+## [R1-088] ✅ 成功 · 2026-09-18 · 容器级验收隔离落地(默认关): container_run_args冻结+ContainerCommandVerifier
+
+- **任务 ID**：SANDBOX-002
+sandbox_verify.rs 追加 container_run_args(冻结 run args 形态)/container_enabled(FORGE_SANDBOX_CONTAINER=1显式开启缺省零变化)/container_image/container_runtime/ContainerCommandVerifier; 黑名单策略链仍第一道闸, 容器第二道(纵深防御), 失败/非零退出→Fail reason带container:前缀(R3); select_command_verifier集成(MultiStep+enabled→容器否则本地)。冻结测试 container_args_matrix+container_disabled_by_default。验收 v8 5/5绿+server clippy零告警。build_v80a.md SANDBOX-002契约原样照抄(容器实跑测试为env+镜像门控可选)
+
+---
+

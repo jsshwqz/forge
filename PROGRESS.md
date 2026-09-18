@@ -105,3 +105,4 @@
 | ZL-002 | 按原版aion-router规格对齐9个zl工具(字段名+降级语义) | ✅ 完成 | - | - | 636a3af |
 | EDIT-001 | V8先行批:增量编辑(EditPatchTool精确串替换) | ✅ 完成 | executor | - | 21db6fb |
 | STREAM-001 | V8先行批:执行进度流(BusProgressStore+工作台实时流) | ✅ 完成 | executor | - | 0937587 |
+| SANDBOX-002 | V8先行批:容器级验收隔离(默认关) | ✅ 完成 | executor | - | 75f5992 |
