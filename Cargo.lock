@@ -1134,6 +1134,7 @@ dependencies = [
  "futures",
  "http-body-util",
  "mime",
+ "reqwest",
  "semver",
  "serde",
  "serde_json",

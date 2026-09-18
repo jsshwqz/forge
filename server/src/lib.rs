@@ -12,6 +12,8 @@ pub mod queue;
 pub mod mcp_tools;
 pub mod sandbox_verify;
 pub mod progress;
+pub mod task_git;
+pub mod notify;
 pub mod quota;
 pub mod routes;
 pub mod sse_relay;
@@ -468,6 +470,23 @@ async fn execute_orchestration(
         let bytes = billing::workspace_bytes(&workdir_for_scan).await;
         billing::record_usage(&pool, tenant, "storage_bytes", bytes as i64,
             serde_json::json!({ "task_id": task.id.to_string() })).await;
+    }
+
+    // V8 GIT-001：任务工作区 Git 收尾（默认关，失败仅 warn 不阻断）。
+    if task_git::git_enabled() {
+        match task_git::commit_task_workdir(&workdir_for_scan, task.id.as_ref()) {
+            Ok(patch) => {
+                if let Some(p) = patch {
+                    eprintln!("orchestrate: task git patch exported: {}", p.display());
+                }
+            }
+            Err(e) => eprintln!("orchestrate: task git commit failed (non-blocking): {e}"),
+        }
+    }
+
+    // V8 NOTIFY-001：任务终态 Webhook 通知（默认关；内部失败重试 3 次退避）。
+    if let Some(url) = notify::notify_url() {
+        notify::notify_task_end(&url, &task.id, &report.final_status).await;
     }
 
     record_report(st, &report).await;
