@@ -806,5 +806,13 @@
     "owner": "executor",
     "last_record": null,
     "commit": "0937587"
+  },
+  {
+    "task_id": "SANDBOX-002",
+    "name": "V8先行批:容器级验收隔离(默认关)",
+    "status": "Wip",
+    "owner": "executor",
+    "last_record": null,
+    "commit": null
   }
 ]

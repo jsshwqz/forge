@@ -121,3 +121,31 @@ async fn events_stream_payload_shape() {
     assert!(p["seq"].is_u64(), "载荷 seq 冻结");
     assert!(p["at"].is_string(), "载荷 at 冻结");
 }
+
+/// 冻结测试：容器运行参数冻结形态（不含 runtime 前缀）。
+#[test]
+fn container_args_matrix() {
+    let args = forge_server::sandbox_verify::container_run_args(
+        "img:v1",
+        std::path::Path::new("/ws/task"),
+        "echo hi",
+    );
+    assert_eq!(
+        args,
+        vec![
+            "run", "--rm", "--network=none", "--memory=512m", "--pids-limit=100",
+            "--read-only", "--tmpfs", "/tmp",
+            "-v", "/ws/task:/work:rw", "-w", "/work",
+            "--entrypoint", "/bin/sh", "img:v1", "-lc", "echo hi",
+        ]
+    );
+}
+
+/// 冻结测试：未设 FORGE_SANDBOX_CONTAINER=1 时容器隔离关闭（走本地执行，零回归）。
+#[test]
+fn container_disabled_by_default() {
+    assert!(
+        !forge_server::sandbox_verify::container_enabled(),
+        "默认必须关闭容器隔离（FORGE_SANDBOX_CONTAINER 未设）"
+    );
+}
