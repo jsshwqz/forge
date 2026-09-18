@@ -802,9 +802,9 @@
   {
     "task_id": "STREAM-001",
     "name": "V8先行批:执行进度流(BusProgressStore+工作台实时流)",
-    "status": "Wip",
+    "status": "Completed",
     "owner": "executor",
     "last_record": null,
-    "commit": null
+    "commit": "0937587"
   }
 ]

@@ -1,7 +1,7 @@
 # HANDOFF · 交接快照（由 forge-worklog 自动生成）
 
-- **更新时间**：2026-09-18 17:56
-- **当前状态**：EDIT-001增量编辑完成(workspace 0 failed)，STREAM-001执行进度流待施工
+- **更新时间**：2026-09-18 18:07
+- **当前状态**：STREAM-001执行进度流完成(workspace 0 failed)，SANDBOX-002容器隔离待施工
 
 ## 🚧 阻塞项
 
@@ -27,4 +27,4 @@
 
 ## 🚀 建议
 
-按 build_v80a.md 串行: STREAM-001→SANDBOX-002→GIT-001/NOTIFY-001(后续批)
+按 build_v80a.md 最后一包: SANDBOX-002(默认关)→GIT-001/NOTIFY-001(后续批)

@@ -1287,3 +1287,10 @@ $p.StandardInput.WriteLine() 方案首帧 -32700 parse error（leader 亲测证�
 
 ---
 
+## [R1-087] ✅ 成功 · 2026-09-18 · 执行进度流落地: BusProgressStore+events_stream载荷+工作台活动流
+
+- **任务 ID**：STREAM-001
+新建 progress.rs(BusProgressStore 装饰 SessionStore, append后发布进度事件失败仅warn, 载荷冻结{session_id,kind,status,seq,at,step?}); AppState 装配 event_bus先建→sessions包BusProgressStore→sdk组装(内存/PG两分支); events_stream data 从{id,at}升级为完整进度载荷; 工作台index.html活动流面板(EventSource→最近20条倒序)。冻结测试 progress_events_published_on_append + events_stream_payload_shape。验收 cargo test --workspace 0 failed / clippy 0 error。build_v80a.md STREAM-001契约原样照抄
+
+---
+

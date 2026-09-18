@@ -104,3 +104,4 @@
 | ZL-001 | 9个zl工具移植到新forge + build_router 25→34 | ✅ 完成 | - | - | 2ee1bcb |
 | ZL-002 | 按原版aion-router规格对齐9个zl工具(字段名+降级语义) | ✅ 完成 | - | - | 636a3af |
 | EDIT-001 | V8先行批:增量编辑(EditPatchTool精确串替换) | ✅ 完成 | executor | - | 21db6fb |
+| STREAM-001 | V8先行批:执行进度流(BusProgressStore+工作台实时流) | ✅ 完成 | executor | - | 0937587 |
