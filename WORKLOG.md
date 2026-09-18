@@ -1327,3 +1327,9 @@ D11(拍板): GIT-001 每任务一个 commit——步骤级噪音大, 任务边�
 
 ---
 
+## [R1-092] ✅ 成功 · 2026-09-18 · B-01清单补齐: regex_match/sanitize/session_report/skill_report 四工具
+
+对照 docs/handoff/round1_task.json 的 25 工具清单, 核对发现缺 4 个: regex_match(正则匹配→search, 复用regex依赖) / sanitize(去控制字符+可选HTML转义→text) / session_report(事件统计报告→text) / skill_report(技能清单报告→text)。均纯计算 ReadOnly, 照抄 parsing Tool trait 模式(单字段descriptor+new+register_all), 每工具roundtrip单测。build_router 34→38, MCP tools/list 实测38工具含4新工具。至此 B-01 25工具+4AI壳+auto_wrap 全部齐。验收 search3/text11测试绿/clippy 0
+
+---
+
