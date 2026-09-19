@@ -150,3 +150,291 @@ fn is_shell_tool_matches_bridged_name() {
         "mcp_pdf_parse without server should NOT be shell tool"
     );
 }
+
+// ═══════════════════════════════════════════════════════════════════════
+// B-REAL-001B 测试矩阵（测试名冻结）#7–#12
+// ═══════════════════════════════════════════════════════════════════════
+
+use forge_exec::{EditPatchTool, ListDirTool, PermissionLevel, ReadFileTool, Tool, ToolDescriptor, WriteFileTool};
+use forge_plan_llm::{ChatMessage, LlmPlanBackend, LlmPlanner};
+use forge_server::planner_view::{
+    build_tool_schema_hint, planner_tool_names, SCHEMA_HINT_MAX_BYTES,
+};
+
+use async_trait::async_trait;
+use serde_json::{json, Value};
+use std::sync::{Arc, Mutex};
+
+// 辅助：完整 5 基线 router（与 #1 同模式）
+fn router_with_full_base() -> ToolRouter {
+    let tmp = tempfile::tempdir().unwrap();
+    let workdir = tmp.path().to_path_buf();
+    let router = ToolRouter::new();
+    router.register(Box::new(EchoTool::new())).unwrap();
+    router.register(Box::new(WriteFileTool::new(workdir.clone()))).unwrap();
+    router.register(Box::new(ReadFileTool::new(workdir.clone()))).unwrap();
+    router.register(Box::new(ListDirTool::new(workdir.clone()))).unwrap();
+    router.register(Box::new(EditPatchTool::new(workdir.clone()))).unwrap();
+    router
+}
+
+// 辅助：假桥接工具（mcp_<server>_<tool> 名）
+struct FakeBridgedTool {
+    descriptor: ToolDescriptor,
+}
+impl FakeBridgedTool {
+    fn new(name: &str) -> Self {
+        Self {
+            descriptor: ToolDescriptor {
+                name: name.into(),
+                description: "fake bridged".into(),
+                input_schema: json!({"type":"object","properties":{"x":{"type":"string"}}}),
+                permission: PermissionLevel::ReadOnly,
+            },
+        }
+    }
+}
+#[async_trait]
+impl Tool for FakeBridgedTool {
+    fn descriptor(&self) -> &ToolDescriptor {
+        &self.descriptor
+    }
+    async fn invoke(&self, _: Value) -> ForgeResult<Value> {
+        Ok(json!({}))
+    }
+}
+use forge_core::ForgeResult;
+
+// 辅助：长描述假工具（用于 #11 预算测试）
+struct LongSchemaTool {
+    descriptor: ToolDescriptor,
+}
+impl LongSchemaTool {
+    fn new(idx: usize) -> Self {
+        let pad = "x".repeat(200);
+        Self {
+            descriptor: ToolDescriptor {
+                name: format!("long_tool_{idx}"),
+                description: pad.clone(),
+                input_schema: json!({
+                    "type": "object",
+                    "properties": {
+                        "data": {"type": "string", "description": pad}
+                    },
+                    "required": ["data"]
+                }),
+                permission: PermissionLevel::ReadOnly,
+            },
+        }
+    }
+}
+#[async_trait]
+impl Tool for LongSchemaTool {
+    fn descriptor(&self) -> &ToolDescriptor {
+        &self.descriptor
+    }
+    async fn invoke(&self, _: Value) -> ForgeResult<Value> {
+        Ok(json!({}))
+    }
+}
+
+// 辅助：消息捕获 mock（#12 用）
+struct CapturingMock {
+    responses: Mutex<Vec<String>>,
+    captured: Mutex<Vec<Vec<ChatMessage>>>,
+}
+#[async_trait]
+impl LlmPlanBackend for CapturingMock {
+    async fn complete(&self, _model: &str, messages: &[ChatMessage]) -> ForgeResult<String> {
+        self.captured.lock().unwrap().push(messages.to_vec());
+        let mut g = self.responses.lock().unwrap();
+        if g.is_empty() {
+            Err(forge_core::ForgeError::InvalidState("mock: exhausted".into()))
+        } else {
+            Ok(g.remove(0))
+        }
+    }
+}
+
+// ── #7 ──
+#[test]
+fn planner_tool_names_defaults_to_base_tools() {
+    let router = router_with_full_base();
+    let names = planner_tool_names(&router);
+
+    assert_eq!(names.len(), 5, "should have exactly 5 tools");
+    // 集合相等（BASE_TOOLS = echo/write_file/read_file/list_dir/edit_patch）
+    let mut sorted = names.clone();
+    sorted.sort();
+    let mut expected = vec![
+        "echo".to_string(),
+        "write_file".to_string(),
+        "read_file".to_string(),
+        "list_dir".to_string(),
+        "edit_patch".to_string(),
+    ];
+    expected.sort();
+    assert_eq!(sorted, expected, "tool set must equal BASE_TOOLS");
+}
+
+// ── #8 ──
+#[test]
+fn planner_tool_names_includes_registered_and_bridged() {
+    let router = router_with_full_base();
+    // 注入一个真逻辑工具 + 一个假桥接名
+    router
+        .register(Box::new(FakeBridgedTool::new("mcp_x_y")))
+        .unwrap();
+    // csv_parse 需要从 parsing crate 注册
+    use forge_tools_parsing::CsvParseTool;
+    router.register(Box::new(CsvParseTool::new())).unwrap();
+
+    let names = planner_tool_names(&router);
+
+    assert!(names.contains(&"csv_parse".to_string()), "csv_parse must be in list");
+    assert!(names.contains(&"mcp_x_y".to_string()), "mcp_x_y must be in list");
+    // 整体升序
+    let mut sorted = names.clone();
+    sorted.sort();
+    assert_eq!(names, sorted, "names must be sorted ascending");
+}
+
+// ── #9 ──
+#[test]
+fn planner_tool_names_excludes_shells() {
+    let router = router_with_full_base();
+    // 注册壳名（通过假工具模拟——真实场景中 is_shell_tool 会拦截）
+    router
+        .register(Box::new(FakeBridgedTool::new("text_summarize")))
+        .unwrap();
+    router
+        .register(Box::new(FakeBridgedTool::new("mcp_x_pdf_parse")))
+        .unwrap();
+
+    let names = planner_tool_names(&router);
+
+    assert!(
+        !names.contains(&"text_summarize".to_string()),
+        "text_summarize (shell) must be excluded"
+    );
+    assert!(
+        !names.contains(&"mcp_x_pdf_parse".to_string()),
+        "mcp_x_pdf_parse (bridged shell) must be excluded"
+    );
+}
+
+// ── #10 ──
+#[test]
+fn schema_hint_contains_input_schema() {
+    let router = router_with_full_base();
+    use forge_tools_parsing::CsvParseTool;
+    router.register(Box::new(CsvParseTool::new())).unwrap();
+
+    let names = planner_tool_names(&router);
+    let hint = build_tool_schema_hint(&router, &names);
+
+    assert!(
+        hint.starts_with("=== Tool input schemas ==="),
+        "hint must start with frozen header"
+    );
+    // csv_parse 的 required 键 "text" 必须出现
+    assert!(
+        hint.contains("\"text\""),
+        "hint must contain csv_parse's required key 'text'"
+    );
+    assert!(
+        hint.contains("csv_parse:"),
+        "hint must contain csv_parse entry"
+    );
+}
+
+// ── #11 ──
+#[test]
+fn schema_hint_budget_cap() {
+    let router = ToolRouter::new();
+    // 注册 60 个长描述工具
+    for i in 0..60 {
+        router
+            .register(Box::new(LongSchemaTool::new(i)))
+            .unwrap();
+    }
+    let names = planner_tool_names(&router);
+    assert_eq!(names.len(), 60 + 5, "60 long + 5 base (BASE_TOOLS 恒在)");
+
+    let hint = build_tool_schema_hint(&router, &names);
+
+    assert!(
+        hint.len() <= SCHEMA_HINT_MAX_BYTES + 32,
+        "hint len {} must be <= {} + 32",
+        hint.len(),
+        SCHEMA_HINT_MAX_BYTES
+    );
+    assert!(
+        hint.contains("(truncated)"),
+        "hint must contain (truncated) marker"
+    );
+}
+
+// ── #12 ──
+#[tokio::test]
+async fn multistep_prompt_sees_real_tools() {
+    let router = router_with_full_base();
+    use forge_tools_parsing::CsvParseTool;
+    router.register(Box::new(CsvParseTool::new())).unwrap();
+
+    let tools = planner_tool_names(&router);
+    let schema_hint = build_tool_schema_hint(&router, &tools);
+
+    // 用捕获 mock 组 LlmPlanner
+    let valid_plan = r#"{"steps":[
+        {"id":"s1","title":"parse","depends_on":[],"action":{"type":"call","capability":"csv_parse","input":{"text":"a,b\n1,2"}}}
+    ]}"#;
+    let mock = Arc::new(CapturingMock {
+        responses: Mutex::new(vec![valid_plan.to_string()]),
+        captured: Mutex::new(vec![]),
+    });
+
+    let planner = LlmPlanner {
+        backend: mock.clone(),
+        model: "test".into(),
+        schema_max_attempts: 3,
+        tools: tools.clone(),
+        ledger: None,
+        meter: None,
+        brief_mode: false,
+        context: Some(schema_hint),
+    };
+
+    use forge_planner::Planner;
+    use forge_task::Task;
+    let task = Task::new(forge_core::TaskId("t1".to_string()), "parse csv".into(), vec![], vec![]);
+    let _ = planner.plan(&task).await;
+
+    let captured = mock.captured.lock().unwrap();
+    assert!(!captured.is_empty(), "at least one complete call");
+    let msgs = &captured[0];
+
+    // system 消息含 "Available capabilities"
+    let system_msg = msgs
+        .iter()
+        .find(|m| m.role == "system")
+        .expect("system message must exist");
+    assert!(
+        system_msg.content.contains("Available capabilities"),
+        "system must contain 'Available capabilities'"
+    );
+    assert!(
+        system_msg.content.contains("csv_parse"),
+        "system must list csv_parse in capabilities"
+    );
+
+    // user 消息含 "csv_parse"（来自 schema hint）
+    let user_msg = msgs
+        .iter()
+        .find(|m| m.role == "user")
+        .expect("user message must exist");
+    assert!(
+        user_msg.content.contains("csv_parse"),
+        "user message must contain csv_parse (from schema hint)"
+    );
+}

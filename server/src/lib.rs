@@ -11,6 +11,7 @@ pub mod bus;
 pub mod queue;
 pub mod mcp_tools;
 pub mod builtin_tools;
+pub mod planner_view;
 pub mod sandbox_verify;
 pub mod progress;
 pub mod task_git;
@@ -425,10 +426,20 @@ async fn execute_orchestration(
             }
             PlanMode::MultiStep => {
                 if llm_ready {
+                    // B-REAL-001B：规划白名单由 router 派生 + input schema 注入
+                    let planner_tools = planner_view::planner_tool_names(&router);
+                    let schema_hint = planner_view::build_tool_schema_hint(&router, &planner_tools);
+                    let ws_ctx = build_workspace_context(&workdir_for_scan);
+                    let full_ctx = if schema_hint.is_empty() {
+                        ws_ctx
+                    } else {
+                        format!("{ws_ctx}\n{schema_hint}")
+                    };
                     match build_multistep_planner(
                         &llm_cfg,
                         meter.clone(),
-                        Some(build_workspace_context(&workdir_for_scan)),
+                        Some(full_ctx),
+                        planner_tools,
                     ) {
                         Ok((p, rp)) => (p, rp),
                         Err(e) => {
@@ -1189,16 +1200,9 @@ fn build_multistep_planner(
     cfg: &routes::llm::LlmRuntimeConfig,
     meter: Option<Arc<dyn forge_plan_llm::usage::LlmMeter>>,
     context: Option<String>,
+    tools: Vec<String>,
 ) -> Result<(PlannerOpt, ReplannerOpt), String> {
     let backend = build_llm_backend(cfg);
-    // V8 CTX-001 R4：白名单扩为 5 工具（edit_patch 由 EDIT-001 启用）。
-    let tools = vec![
-        "echo".to_string(),
-        "write_file".to_string(),
-        "read_file".to_string(),
-        "list_dir".to_string(),
-        "edit_patch".to_string(),
-    ];
     let planner = forge_plan_llm::LlmPlanner {
         backend: backend.clone(),
         model: llm_model(cfg),
