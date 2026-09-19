@@ -1230,5 +1230,13 @@
     "task_id": "AF-BP-BREAL-001B",
     "title": "B-REAL-001B: 规划白名单由 router 派生并注入 input schema(壳剔除, 缺省零回归)",
     "body": "新建 server/src/planner_view.rs: planner_tool_names(router) = BASE_TOOLS ∪ (router注册名 \\ SHELL_TOOLS) 按名升序; build_tool_schema_hint(router, names) 生成 input schema 注入块(首行=== Tool input schemas ===, 超 8KB 截断+(truncated), 空名返回空串). 改造 build_multistep_planner 签名加 tools: Vec<String> 参数, 删除硬编码 5 工具 vec; 调用点在 router 构建后计算 planner_tool_names + schema_hint, 组合 workspace_context + schema_hint 注入 LlmPlanner.context(R3 零跨 crate). 12/12 breal 测试通过(#7-#12 新增), orch101 12/12 + v8 5/5 + v8_e2e 1/1 回归全绿, clippy 零警告."
+  },
+  {
+    "id": "R1-098",
+    "kind": "R1Completed",
+    "date": "2026-09-19",
+    "task_id": "AF-BP-BREAL-001C",
+    "title": "B-REAL-001C: 步骤输出引用 $sN.output[.path][|json](缺省零回归)",
+    "body": "sdk/src/orchestrator.rs: EngineStepExecutor 增 done: Mutex<BTreeMap<String,Value>> 字段, execute 前调 resolve_refs 解析 $ 引用, 成功后入 done 表; replan 时清空 done 表防旧版本歧义(R6). resolve_refs 递归遍历 Object/Array 深度上限8, 仅 $ 开头串解析, 含 $ 非开头串报错(R4 不做内插). 路径语法: $step.output / $step.output.key / $step.output.arr[n].key / |json 序列化. 悬空引用/缺键/越界均报 InvalidState 含完整引用串(R3). 7/7 breal_refs 测试通过, sdk lib 6/6 + orch101 12/12 回归全绿, clippy 零警告."
   }
 ]

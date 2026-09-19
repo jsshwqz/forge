@@ -886,5 +886,13 @@
     "owner": "builder-a",
     "last_record": "R1-097",
     "commit": "468c5a9"
+  },
+  {
+    "task_id": "AF-BP-BREAL-001C",
+    "name": "B-REAL-001C 数据面: 步骤输出引用 $sN.output[.path][|json]",
+    "status": "Completed",
+    "owner": "builder-a",
+    "last_record": "R1-098",
+    "commit": "14dffcb"
   }
 ]
