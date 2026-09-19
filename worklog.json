@@ -1262,5 +1262,13 @@
     "task_id": "B-REAL-G6",
     "title": "B-REAL G6 真模型签核 PASS, B阶段真实干活首次实证关账",
     "body": "SenseNova(sensenova-6.8-flash-lite) 真模型 POST /orchestrate plan_mode=multi_step: final_status=Completed gate_passed=true steps=5 replans=0, AC-1 FileContains report.html:alice Pass. FORGE_TOOLS_BUILTIN=5(csv_parse+markdown_render入router). 判据A/B/C全PASS: C证非write_file成功步=s2read/s3csv_parse/s4markdown_render(>=3)且引用运行期解析(csv_parse输入为read_file产物). 签核人=项目所有人(非执行方GLM), 证据 artifacts/breal_e2e_20260919.json. AF-BP-BREAL-001 四单元+五门禁G1-G6全闭合."
+  },
+  {
+    "id": "R6-035",
+    "kind": "R6Decision",
+    "date": "2026-09-20",
+    "task_id": "AF-BP-KNOW-001",
+    "title": "KNOW批 P8 批准: R7-015 缺省 serve 知识库持久化断链补全立项",
+    "body": "项目所有人 2026-09-20 批示: 批准 AF-BP-KNOW-001(KNOW-001A/B 全包). D15 采纳默认(缺省单机 serve 翻转文件持久, 逃生阀 FORGE_KNOWLEDGE_PERSIST=0), D16 维持 Out of scope. 前提: G6 真模型签核已 @a2c785c 关账. 下发单 docs/handoff/know_001a_kickoff.json 已翻牌为可开工. 纪律: 执行方≠复核方."
   }
 ]

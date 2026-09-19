@@ -1413,3 +1413,10 @@ SenseNova(sensenova-6.8-flash-lite) 真模型 POST /orchestrate plan_mode=multi_
 
 ---
 
+## [R6-035] ⚖️ 决策 · 2026-09-20 · KNOW批 P8 批准: R7-015 缺省 serve 知识库持久化断链补全立项
+
+- **任务 ID**：AF-BP-KNOW-001
+项目所有人 2026-09-20 批示: 批准 AF-BP-KNOW-001(KNOW-001A/B 全包). D15 采纳默认(缺省单机 serve 翻转文件持久, 逃生阀 FORGE_KNOWLEDGE_PERSIST=0), D16 维持 Out of scope. 前提: G6 真模型签核已 @a2c785c 关账. 下发单 docs/handoff/know_001a_kickoff.json 已翻牌为可开工. 纪律: 执行方≠复核方.
+
+---
+
