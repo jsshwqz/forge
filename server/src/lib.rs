@@ -296,7 +296,16 @@ pub fn resolve_plan_mode(plan_mode: Option<PlanMode>, codegen_flag: bool) -> Pla
 
 pub struct DemoAllowAll;
 impl PermissionPolicy for DemoAllowAll {
-    fn check(&self, _: forge_exec::PermissionLevel, _: &forge_exec::PolicyContext) -> ForgeResult<()> { Ok(()) }
+    // 评审第12条：工具侧不再全放行——拒绝 Irreversible，其余放行（与验收侧黑名单口径一致）。
+    fn check(&self, level: forge_exec::PermissionLevel, _: &forge_exec::PolicyContext) -> ForgeResult<()> {
+        if matches!(level, forge_exec::PermissionLevel::Irreversible) {
+            Err(ForgeError::PermissionDenied(
+                "orchestrate: Irreversible tool level is never allowed".into(),
+            ))
+        } else {
+            Ok(())
+        }
+    }
 }
 
 // ==================== Handlers ====================

@@ -267,6 +267,12 @@ pub fn select_command_verifier(
                 )
             }
         }
-        _ => (inner, false),
+        // V9 安全修复（评审第10条）：基线 Codegen/Sequential 模式同样过黑名单，
+        // 防止 Irreversible 命令（format/rm -rf 等）在默认路径直跑宿主机。
+        // D10 红线：Irreversible 永久禁止，与 plan_mode 无关。
+        _ => (
+            Arc::new(SandboxCommandVerifier::new(inner, sandbox_policy())),
+            true,
+        ),
     }
 }
