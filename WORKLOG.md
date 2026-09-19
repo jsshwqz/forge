@@ -1392,3 +1392,17 @@ sdk/src/orchestrator.rs: EngineStepExecutor 增 done: Mutex<BTreeMap<String,Valu
 
 ---
 
+## [R1-099] ✅ 成功 · 2026-09-19 · B-REAL-001D: 真实干活e2e(写→读→解析→渲染→落盘) + 台账整改
+
+- **任务 ID**：AF-BP-BREAL-001D
+server/tests/breal_e2e.rs: breal_csv_to_report_e2e 离线 mock e2e 测试. 5 步计划(write_file→read_file→csv_parse→markdown_render→write_file) 使用 $sN.output 引用链传递数据. 断言: final_status==Completed, gate.passed==true, completed.len()==5, s2/s3/s4 非 write_file 步骤在列, report.html 含 alice. 台账整改: progress.json B-REAL-001A/B/C/D 全建档, A-TOOL-001/002/A-HYGIENE-001 已存在, N3 六 hash 可 grep 命中, handoff.json blockers 已清空.
+
+---
+
+## [R6-034] ⚖️ 决策 · 2026-09-19 · R6-033 修订 build_v70a 沙箱装配契约(da7341a 冻结契约变更)
+
+- **任务 ID**：A-HYGIENE-001
+da7341a 提交将所有 plan_mode 的 Irreversible 黑名单统一通过(此前仅 multistep 覆盖), 属冻结契约变更. DemoAllowAll 策略改为拒绝 Irreversible 操作. 此变更已由 orch101.rs codegen_irreversible_command_denied_e2e 测试覆盖(AF-AUDIT-003 N2). 本条 R6 注明契约变更经审计确认无回归.
+
+---
+
