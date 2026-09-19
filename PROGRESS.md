@@ -115,3 +115,4 @@
 | A-TOOL-002 | B-01补齐: regex_match/sanitize/session_report/skill_report | ✅ 完成 | executor | - | 190260a |
 | AF-BP-BREAL-001A | B-REAL-001A 装配面: 内置工具按白名单接入编排 router | ✅ 完成 | builder-a | R1-096 | a620c9e |
 | AF-BP-BREAL-001B | B-REAL-001B 决策面: 规划白名单由 router 派生 + input schema 注入 | ✅ 完成 | builder-a | R1-097 | 468c5a9 |
+| AF-BP-BREAL-001C | B-REAL-001C 数据面: 步骤输出引用 $sN.output[.path][|json] | ✅ 完成 | builder-a | R1-098 | 14dffcb |

@@ -1385,3 +1385,10 @@ AF-AUDIT-003 N3 要求补登 f5f56b9..1a479af 六笔整改的台账。其中 da7
 
 ---
 
+## [R1-098] ✅ 成功 · 2026-09-19 · B-REAL-001C: 步骤输出引用 $sN.output[.path][|json](缺省零回归)
+
+- **任务 ID**：AF-BP-BREAL-001C
+sdk/src/orchestrator.rs: EngineStepExecutor 增 done: Mutex<BTreeMap<String,Value>> 字段, execute 前调 resolve_refs 解析 $ 引用, 成功后入 done 表; replan 时清空 done 表防旧版本歧义(R6). resolve_refs 递归遍历 Object/Array 深度上限8, 仅 $ 开头串解析, 含 $ 非开头串报错(R4 不做内插). 路径语法: $step.output / $step.output.key / $step.output.arr[n].key / |json 序列化. 悬空引用/缺键/越界均报 InvalidState 含完整引用串(R3). 7/7 breal_refs 测试通过, sdk lib 6/6 + orch101 12/12 回归全绿, clippy 零警告.
+
+---
+
