@@ -26,6 +26,7 @@ use forge_scheduler::{run_plan, RunSummary};
 use forge_session::SessionEventKind;
 use forge_task::TaskStatus;
 use forge_verify::{VerificationOutcome, Verifier, VerificationRequest};
+use std::collections::BTreeMap;
 use std::path::PathBuf;
 use std::sync::Arc;
 use std::time::Duration;
@@ -69,6 +70,8 @@ struct EngineStepExecutor {
     engine: Arc<ExecutionEngine>,
     session_id: forge_core::SessionId,
     step_counter: std::sync::atomic::AtomicU64,
+    /// B-REAL-001C：已完成步骤输出表（step_id → output），供后续步骤引用。
+    done: std::sync::Mutex<BTreeMap<String, serde_json::Value>>,
 }
 
 #[async_trait::async_trait]
@@ -80,6 +83,11 @@ impl forge_scheduler::StepExecutor for EngineStepExecutor {
     ) -> ForgeResult<serde_json::Value> {
         match action {
             StepAction::CallCapability { capability, input } => {
+                // B-REAL-001C：解析 $sN.output 引用
+                let resolved = {
+                    let done = self.done.lock().unwrap();
+                    resolve_refs(input, &done)?
+                };
                 let n =
                     self.step_counter.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
                 let req = ExecutionRequest {
@@ -87,7 +95,7 @@ impl forge_scheduler::StepExecutor for EngineStepExecutor {
                     session_id: self.session_id.clone(),
                     step_id: format!("{step_id}#{n}"),
                     tool: capability.clone(),
-                    input: input.clone(),
+                    input: resolved,
                 };
                 let result = self.engine.execute(req).await?;
                 if result.status != forge_exec::ExecutionStatus::Success {
@@ -96,6 +104,11 @@ impl forge_scheduler::StepExecutor for EngineStepExecutor {
                         result.status
                     )));
                 }
+                // B-REAL-001C R5：成功后才入 done 表
+                self.done
+                    .lock()
+                    .unwrap()
+                    .insert(step_id.to_string(), result.output.clone());
                 Ok(result.output)
             }
             StepAction::HumanApproval(msg) => Err(ForgeError::InvalidState(format!(
@@ -172,6 +185,7 @@ impl ForgeSdk {
             engine,
             session_id: session.id.clone(),
             step_counter: std::sync::atomic::AtomicU64::new(0),
+            done: std::sync::Mutex::new(BTreeMap::new()),
         };
 
         // 计划版本链：v1 = 初始计划；其后为每次 replan 产物。Session 全程留痕。
@@ -241,6 +255,12 @@ impl ForgeSdk {
                                     }),
                                 )
                                 .await;
+                            // B-REAL-001C R6：新计划版本 → 清空 done 表（防旧版本 step 歧义）
+                            step_exec.done.lock().unwrap().clear();
+                            eprintln!(
+                                "orchestrator: replan v{}, cleared done table",
+                                plans.len()
+                            );
                             plans.push(next);
                             continue;
                         }
@@ -383,6 +403,163 @@ fn classify_step_failure(step_id: &str, reason: &str) -> FailureRecord {
     classify_failure(&eid, status, &format!("step {step_id}: {reason}"))
         .expect("classify cannot fail for non-Success status")
 }
+
+
+// ═══════════════════════════════════════════════════════════════════════
+// B-REAL-001C：步骤输出引用解析（$sN.output[.path][|json]）
+// ═══════════════════════════════════════════════════════════════════════
+
+/// 递归深度上限（R2：防恶意/畸形计划）。
+const REF_MAX_DEPTH: u8 = 8;
+
+/// 解析 input 中的 `$<step_id>.output[.path][|json]` 引用。
+///
+/// 仅当字符串值以 `$` 开头才解析；不以 `$` 开头但含 `$` 的串视为内插尝试 → 报错（R4）。
+/// 其余类型（数字、布尔、null、对象键名）原样透传。
+pub fn resolve_refs(
+    input: &serde_json::Value,
+    done: &BTreeMap<String, serde_json::Value>,
+) -> ForgeResult<serde_json::Value> {
+    resolve_refs_inner(input, done, 0)
+}
+
+fn resolve_refs_inner(
+    input: &serde_json::Value,
+    done: &BTreeMap<String, serde_json::Value>,
+    depth: u8,
+) -> ForgeResult<serde_json::Value> {
+    if depth > REF_MAX_DEPTH {
+        return Err(ForgeError::InvalidState("input nesting too deep".into()));
+    }
+    match input {
+        serde_json::Value::String(s) => {
+            if s.starts_with('$') {
+                resolve_ref_string(s, done)
+            } else if s.contains('$') {
+                // R4：不做字符串内插
+                Err(ForgeError::InvalidState(format!(
+                    "string interpolation not supported: {s}"
+                )))
+            } else {
+                Ok(input.clone())
+            }
+        }
+        serde_json::Value::Object(map) => {
+            let mut result = serde_json::Map::new();
+            for (k, v) in map {
+                result.insert(k.clone(), resolve_refs_inner(v, done, depth + 1)?);
+            }
+            Ok(serde_json::Value::Object(result))
+        }
+        serde_json::Value::Array(arr) => {
+            let mut result = Vec::with_capacity(arr.len());
+            for v in arr {
+                result.push(resolve_refs_inner(v, done, depth + 1)?);
+            }
+            Ok(serde_json::Value::Array(result))
+        }
+        _ => Ok(input.clone()),
+    }
+}
+
+/// 解析单个引用串 `$<step_id>.output[.path][|json]`。
+fn resolve_ref_string(
+    ref_str: &str,
+    done: &BTreeMap<String, serde_json::Value>,
+) -> ForgeResult<serde_json::Value> {
+    let body = &ref_str[1..]; // 去掉前导 '$'
+
+    // 分割 step_id 与剩余路径（首个 '.' 之前 = step_id）
+    let (step_id, rest) = match body.find('.') {
+        Some(pos) => (&body[..pos], &body[pos..]),
+        None => (body, ""),
+    };
+
+    // rest 必须以 ".output" 开头
+    if !rest.starts_with(".output") {
+        return Err(ForgeError::InvalidState(format!(
+            "unresolved reference: {ref_str}"
+        )));
+    }
+
+    let path = &rest[".output".len()..];
+
+    // 检查 |json 后缀
+    let (path, json_suffix) = match path.rfind("|json") {
+        Some(pos) if pos + 5 == path.len() => (&path[..pos], true),
+        _ => (path, false),
+    };
+
+    // 取 step 输出
+    let mut current = done
+        .get(step_id)
+        .ok_or_else(|| {
+            ForgeError::InvalidState(format!("unresolved reference: {ref_str}"))
+        })?
+        .clone();
+
+    // 逐段导航路径（手动 peek 避免_take_while 消费停止符的陷阱）
+    let mut chars = path.chars().peekable();
+    while let Some(&c) = chars.peek() {
+        if c == '.' {
+            chars.next(); // 消费 '.'
+            let mut key = String::new();
+            while let Some(&ch) = chars.peek() {
+                if ch == '.' || ch == '[' {
+                    break;
+                }
+                key.push(ch);
+                chars.next();
+            }
+            if key.is_empty() {
+                return Err(ForgeError::InvalidState(format!(
+                    "unresolved reference: {ref_str}"
+                )));
+            }
+            current = current
+                .get(&key)
+                .ok_or_else(|| {
+                    ForgeError::InvalidState(format!("unresolved reference: {ref_str}"))
+                })?
+                .clone();
+        } else if c == '[' {
+            chars.next(); // 消费 '['
+            let mut idx_str = String::new();
+            while let Some(&ch) = chars.peek() {
+                if ch == ']' {
+                    break;
+                }
+                idx_str.push(ch);
+                chars.next();
+            }
+            let _ = chars.next(); // 消费 ']'
+            let idx: usize = idx_str.parse().map_err(|_| {
+                ForgeError::InvalidState(format!("unresolved reference: {ref_str}"))
+            })?;
+            current = current
+                .get(idx)
+                .ok_or_else(|| {
+                    ForgeError::InvalidState(format!("unresolved reference: {ref_str}"))
+                })?
+                .clone();
+        } else {
+            return Err(ForgeError::InvalidState(format!(
+                "unresolved reference: {ref_str}"
+            )));
+        }
+    }
+
+    if json_suffix {
+        Ok(serde_json::Value::String(
+            serde_json::to_string(&current).map_err(|_| {
+                ForgeError::InvalidState(format!("unresolved reference: {ref_str}"))
+            })?,
+        ))
+    } else {
+        Ok(current)
+    }
+}
+
 
 #[cfg(test)]
 mod replan_tests {
