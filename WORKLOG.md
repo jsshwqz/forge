@@ -1378,3 +1378,10 @@ AF-AUDIT-003 N3 要求补登 f5f56b9..1a479af 六笔整改的台账。其中 da7
 
 ---
 
+## [R1-097] ✅ 成功 · 2026-09-19 · B-REAL-001B: 规划白名单由 router 派生并注入 input schema(壳剔除, 缺省零回归)
+
+- **任务 ID**：AF-BP-BREAL-001B
+新建 server/src/planner_view.rs: planner_tool_names(router) = BASE_TOOLS ∪ (router注册名 \ SHELL_TOOLS) 按名升序; build_tool_schema_hint(router, names) 生成 input schema 注入块(首行=== Tool input schemas ===, 超 8KB 截断+(truncated), 空名返回空串). 改造 build_multistep_planner 签名加 tools: Vec<String> 参数, 删除硬编码 5 工具 vec; 调用点在 router 构建后计算 planner_tool_names + schema_hint, 组合 workspace_context + schema_hint 注入 LlmPlanner.context(R3 零跨 crate). 12/12 breal 测试通过(#7-#12 新增), orch101 12/12 + v8 5/5 + v8_e2e 1/1 回归全绿, clippy 零警告.
+
+---
+
