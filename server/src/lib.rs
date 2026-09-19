@@ -10,6 +10,7 @@ pub mod billing;
 pub mod bus;
 pub mod queue;
 pub mod mcp_tools;
+pub mod builtin_tools;
 pub mod sandbox_verify;
 pub mod progress;
 pub mod task_git;
@@ -384,6 +385,10 @@ async fn execute_orchestration(
         .register(Box::new(forge_exec::EditPatchTool::new(workdir_for_scan.clone())))
         .map_err(ApiError::from)?;
 
+
+    // B-REAL-001A：内置工具按白名单接入编排 router（env 门控，缺省零变化）
+    let builtin_allow = builtin_tools::builtin_allowlist_from_env();
+    let _builtin_report = builtin_tools::register_builtin_tools(&router, &builtin_allow);
     // ORCH-101c：MCP 工具源（未配置零开销；失败仅 warn 不阻断编排）
     let mcp_configs = mcp_tools::configs_from_env();
     if !mcp_configs.is_empty() {

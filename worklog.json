@@ -1214,5 +1214,13 @@
     "task_id": "A-HYGIENE-001",
     "title": "补登记 da7341a 安全修复契约变更(审计N3台账补登)",
     "body": "AF-AUDIT-003 N3 要求补登 f5f56b9..1a479af 六笔整改的台账。其中 da7341a 属冻结契约变更(已在 R6-033 登记), 此处补登任务卡 A-HYGIENE-001 收口。六笔: e4fb115(清误提交+台账收口) / f5a3273(API文档+PG evidence) / da7341a(安全修复) / e4dbcb8(依赖清理) / 38c0802(GA_CHECKLIST修正) / 1a479af(orch101冻结测试修正)。另补登 A-TOOL-001(73da6c0 12工具批) 和 A-TOOL-002(190260a B-01补齐)。"
+  },
+  {
+    "id": "R1-096",
+    "kind": "R1Completed",
+    "date": "2026-09-19",
+    "task_id": "AF-BP-BREAL-001A",
+    "title": "B-REAL-001A: 内置工具按白名单接入编排 router(env 门控, 缺省零变化)",
+    "body": "新建 server/src/builtin_tools.rs: SHELL_TOOLS(6壳)+BASE_TOOLS(5基线)冻结常量, is_shell_tool(裸名/桥接全名mcp_<server>_<shell>), builtin_allowlist_from_env(FORGE_TOOLS_BUILTIN逗号分隔), register_builtin_tools(router,allow)按白名单从parsing/text/zl三crate构造20真逻辑工具注册, 重名跳过不报错, 壳名拒绝, 候选表外记unknown. server/src/lib.rs接线(execute_orchestration edit_patch后MCP前). server/Cargo.toml增3 path依赖. server/tests/breal.rs 6冻结测试全过: #1空allow零变化(router恰5), #2注册csv_parse+markdown_render, #3重名read_file跳过不panic, #4壳名pdf_parse/text_classify拒绝, #5未知not_a_tool报告, #6 is_shell_tool桥接名匹配. clippy零告警. 加项1(L441注释)已在3860c99完成, 加项2(test#13)已在orch101.rs落网."
   }
 ]

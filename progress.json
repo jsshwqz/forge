@@ -870,5 +870,13 @@
     "owner": "executor",
     "last_record": null,
     "commit": "190260a"
+  },
+  {
+    "task_id": "AF-BP-BREAL-001A",
+    "name": "B-REAL-001A 装配面: 内置工具按白名单接入编排 router",
+    "status": "Completed",
+    "owner": "builder-a",
+    "last_record": "R1-096",
+    "commit": "b4e11b0"
   }
 ]

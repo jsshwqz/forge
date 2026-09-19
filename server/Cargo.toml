@@ -45,6 +45,9 @@ uuid = { version = "1", features = ["v4"] }
 forge-mcp = { path = "../capability/mcp" }
 forge-sandbox = { path = "../execution/sandbox" }
 forge-agent = { path = "../core/agent" }
+forge-tools-parsing = { path = "../tools/parsing" }
+forge-tools-text = { path = "../tools/text" }
+forge-tools-zl = { path = "../tools/zl" }
 
 [dev-dependencies]
 tower = { version = "0.4", features = ["util"] }
