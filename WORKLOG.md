@@ -1345,3 +1345,15 @@ D11(拍板): GIT-001 每任务一个 commit——步骤级噪音大, 任务边�
 
 ---
 
+## [R6-033] ⚖️ 决策 · 2026-09-19 · 修订冻结契约: 所有plan_mode过沙箱黑名单(补登记da7341a)
+
+补登记 da7341a 安全修复的契约变更: 原 build_v70a 冻结'仅 MultiStep 启用沙箱, 基线Codegen零回归', 但该契约让 Irreversible 命令(format/rm -rf)在默认 Auto=Codegen 模式直跑宿主机(D10 红线违背)。裁决: 安全优先, 所有 plan_mode 的验收命令都过 SandboxCommandVerifier 黑名单, 冻结测试 baseline_path_verifier_unchanged 断言从'Codegen 不启用沙箱'改为'Codegen 也必须过黑名单'。此前 da7341a 更新行为未同步改冻结测试导致 orch101 打挂, 本次补改+登记
+
+---
+
+## [R7-018] ⚠️ 偏差/风险 · 2026-09-19 · R7-015 知识断链仍为未修(此前误报存疑)
+
+更正此前'存疑'说辞: 外部AI实锤 cli/src/main.rs 的 knowledge-suggest 子命令用 InMemoryKnowledgeBase::default()(独立进程空内存库), server 端 ingest 进的是 server 自己的内存, 两者不共享 → CLI suggest 恒空断链原样存在。server 端 ingest 不能给 CLI 断链贴金。修法需 knowledge 层持久化(PG/文件), 属中等工程, 留待后续批
+
+---
+

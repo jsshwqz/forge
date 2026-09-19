@@ -1182,5 +1182,21 @@
     "task_id": null,
     "title": "修复 progress 测试时序bug + 台账失实修正",
     "body": "外部AI捕获: progress_events_published_on_append 先append(触发publish)后subscribe, 而 InMemoryEventBus 是 tokio broadcast 订阅前发布不回放 → recv().await 永久挂起(死等), 导致此前'workspace全绿'登记失实(该用例自创建起就是死代码路径, 从未通过)。修复: subscribe 挪到 append 前 + recv 加 5s timeout 护栏。交叉验证 v8.rs events_stream_payload_shape(先订阅后append)一直通过, 证明生产 BusProgressStore 正常, 纯测试时序缺陷。修正后 server lib 21 测试全绿(含该用例 0.00s 通过)。对此前 R1-087'冻结测试全绿'与 handoff'workspace全绿'的失实表述致歉并修正"
+  },
+  {
+    "id": "R6-033",
+    "kind": "R6Decision",
+    "date": "2026-09-19",
+    "task_id": null,
+    "title": "修订冻结契约: 所有plan_mode过沙箱黑名单(补登记da7341a)",
+    "body": "补登记 da7341a 安全修复的契约变更: 原 build_v70a 冻结'仅 MultiStep 启用沙箱, 基线Codegen零回归', 但该契约让 Irreversible 命令(format/rm -rf)在默认 Auto=Codegen 模式直跑宿主机(D10 红线违背)。裁决: 安全优先, 所有 plan_mode 的验收命令都过 SandboxCommandVerifier 黑名单, 冻结测试 baseline_path_verifier_unchanged 断言从'Codegen 不启用沙箱'改为'Codegen 也必须过黑名单'。此前 da7341a 更新行为未同步改冻结测试导致 orch101 打挂, 本次补改+登记"
+  },
+  {
+    "id": "R7-018",
+    "kind": "R7DeviationRisk",
+    "date": "2026-09-19",
+    "task_id": null,
+    "title": "R7-015 知识断链仍为未修(此前误报存疑)",
+    "body": "更正此前'存疑'说辞: 外部AI实锤 cli/src/main.rs 的 knowledge-suggest 子命令用 InMemoryKnowledgeBase::default()(独立进程空内存库), server 端 ingest 进的是 server 自己的内存, 两者不共享 → CLI suggest 恒空断链原样存在。server 端 ingest 不能给 CLI 断链贴金。修法需 knowledge 层持久化(PG/文件), 属中等工程, 留待后续批"
   }
 ]

@@ -324,12 +324,13 @@ async fn run_acceptance_records_evidence() {
     assert!(!ev.is_empty(), "运行验收必须留证");
 }
 
-/// 冻结测试：装配矩阵——仅 MultiStep 启用沙箱（基线路径零回归断言）；命令分级冻结。
+/// 冻结测试：装配矩阵——所有 plan_mode 都过沙箱黑名单（R6-033 修订，D10 红线
+/// Irreversible 与 plan_mode 无关）；命令分级冻结。
 #[test]
 fn baseline_path_verifier_unchanged() {
     use forge_server::PlanMode;
     let plain: Arc<dyn forge_verify::Verifier> = Arc::new(forge_verify::CommandVerifier);
-    assert!(!select_command_verifier(PlanMode::Codegen, plain.clone()).1, "Codegen 不启用沙箱");
+    assert!(select_command_verifier(PlanMode::Codegen, plain.clone()).1, "Codegen 也必须过黑名单");
     assert!(select_command_verifier(PlanMode::MultiStep, plain).1, "MultiStep 必须启用沙箱");
     // 命令风险分级冻结
     assert_eq!(command_level("format c:"), PermissionLevel::Irreversible);
