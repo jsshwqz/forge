@@ -4,13 +4,13 @@
 //! 复用 forge-recovery 的 FailureRecord，不引入新存储格式。
 
 use forge_recovery::classify::{FailureCategory, FailureRecord};
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 
 /// 一条知识条目：失败记录 + 关联证据 + 归因工具。
-#[derive(Clone, Debug, Serialize)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct KnowledgeEntry {
     pub record: FailureRecord,
     /// 关联证据 ID（如失败步骤产生的日志/输出）。
@@ -21,7 +21,7 @@ pub struct KnowledgeEntry {
 
 impl KnowledgeEntry {
     /// 命中过滤条件？（全部 Some 的条件都必须满足）
-    fn matches(
+    pub(crate) fn matches(
         &self,
         category: Option<FailureCategory>,
         tool: Option<&str>,

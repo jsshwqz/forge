@@ -42,7 +42,7 @@ use forge_product_instance::{
     ProductInstanceStore as _, TemplateRegistry as _,
 };
 use forge_cap::InMemoryCapabilityRegistry;
-use forge_knowledge::{FailureKnowledgeBase as _, InMemoryKnowledgeBase, KnowledgeEntry, ReplayArchive};
+use forge_knowledge::{knowledge_file, FailureKnowledgeBase, FileKnowledgeBase, KnowledgeEntry, ReplayArchive};
 use forge_recovery::classify::FailureCategory;
 use futures::Stream;
 use serde::Deserialize;
@@ -111,7 +111,7 @@ pub struct AppState {
     pub templates: Arc<forge_product_instance::InMemoryTemplateRegistry>,
     pub metrics: Arc<Metrics>,
     /// KNW-001：失败知识库（服务面 GA-FIX-2）。
-    pub knowledge: Arc<InMemoryKnowledgeBase>,
+    pub knowledge: Arc<dyn FailureKnowledgeBase>,
     /// V5.0 MKT：能力注册表（市场源）。
     pub capabilities: Arc<InMemoryCapabilityRegistry>,
     /// V5.0 TEN-002：鉴权配置与租户钥存储（V5-FIX-2a 接线）。
@@ -142,7 +142,7 @@ impl AppState {
             instances: Arc::new(Default::default()),
             templates: Arc::new(Default::default()),
             metrics: Arc::new(Metrics::default()),
-            knowledge: Arc::new(Default::default()),
+            knowledge: Arc::new(FileKnowledgeBase::new(knowledge_file())),
             capabilities: Arc::new(Default::default()),
             auth: AuthConfig::from_env(),
             tenant_keys: Arc::new(auth::InMemoryTenantKeyStore::default()),
@@ -164,7 +164,7 @@ impl AppState {
             instances: Arc::new(Default::default()),
             templates: Arc::new(Default::default()),
             metrics: Arc::new(Metrics::default()),
-            knowledge: Arc::new(Default::default()),
+            knowledge: Arc::new(FileKnowledgeBase::new(knowledge_file())),
             capabilities: Arc::new(Default::default()),
             auth: AuthConfig::from_env(),
             tenant_keys: Arc::new(auth::InMemoryTenantKeyStore::default()),
@@ -1388,7 +1388,7 @@ pub async fn run_from_env() -> Result<(), Box<dyn std::error::Error>> {
                     instances: Arc::new(Default::default()),
                     templates: Arc::new(Default::default()),
                     metrics: Arc::new(Metrics::default()),
-                    knowledge: Arc::new(Default::default()),
+                    knowledge: Arc::new(FileKnowledgeBase::new(knowledge_file())),
                     capabilities: Arc::new(Default::default()),
                     auth: AuthConfig::from_env(),
                     // TEN-004 R1：PG 模式用 PG 实现（重启不丢）；内存模式保留内存实现

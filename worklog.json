@@ -1198,5 +1198,13 @@
     "task_id": null,
     "title": "R7-015 知识断链仍为未修(此前误报存疑)",
     "body": "更正此前'存疑'说辞: 外部AI实锤 cli/src/main.rs 的 knowledge-suggest 子命令用 InMemoryKnowledgeBase::default()(独立进程空内存库), server 端 ingest 进的是 server 自己的内存, 两者不共享 → CLI suggest 恒空断链原样存在。server 端 ingest 不能给 CLI 断链贴金。修法需 knowledge 层持久化(PG/文件), 属中等工程, 留待后续批"
+  },
+  {
+    "id": "R1-094",
+    "kind": "R1Progress",
+    "date": "2026-09-19",
+    "task_id": "R7-015",
+    "title": "R7-015 修复: 知识文件持久化 FileKnowledgeBase + CLI/server 接线",
+    "body": "此前 R7-018 记录的 CLI knowledge-suggest 断链(InMemoryKnowledgeBase 独立进程空库)现已修复: 新增 FileKnowledgeBase(JSONL append-only 落盘, 跨进程共享), server AppState.knowledge 字段从 Arc<InMemoryKnowledgeBase> 改为 Arc<dyn FailureKnowledgeBase> trait object, 三处构造点(in_memory/new/PG)全部换 FileKnowledgeBase::new(knowledge_file()), CLI knowledge-suggest 子命令同样换 FileKnowledgeBase. KnowledgeEntry 加 Deserialize + matches 改 pub(crate) 供 FileKnowledgeBase 复用. 知识+CLI+server 测试全绿, clippy 零警告."
   }
 ]

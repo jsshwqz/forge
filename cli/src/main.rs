@@ -119,8 +119,8 @@ async fn async_main(command: Option<Commands>) {
         // mcp-server 在同步 main() 中已分发并 return，此处无需 match 分支。
         Some(Commands::McpServer) => unreachable!("mcp-server dispatched synchronously in main()"),
         Some(Commands::KnowledgeSuggest { out, top_n }) => {
-            use forge_knowledge::{InMemoryKnowledgeBase, suggest as gen_suggest, write_suggestions};
-            let kb = InMemoryKnowledgeBase::default();
+            use forge_knowledge::{knowledge_file, FileKnowledgeBase, suggest as gen_suggest, write_suggestions};
+            let kb = FileKnowledgeBase::new(knowledge_file());
             let suggestions = gen_suggest(&kb, top_n).await.unwrap_or_default();
             let path = std::path::Path::new(&out);
             if let Err(e) = write_suggestions(&suggestions, path).await {

@@ -838,5 +838,13 @@
     "owner": null,
     "last_record": null,
     "commit": "190260a"
+  },
+  {
+    "task_id": "R7-015",
+    "name": "知识文件持久化 FileKnowledgeBase + CLI/server 接线(断链修复)",
+    "status": "Completed",
+    "owner": "executor",
+    "last_record": null,
+    "commit": "799535c"
   }
 ]

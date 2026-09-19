@@ -6,6 +6,7 @@
 //! 复用既有 store trait（forge-recovery / forge-session），零新存储。
 
 pub mod failures;
+pub mod failures_file;
 pub mod forge_pr;
 pub mod suggest;
 pub mod replay;
@@ -17,6 +18,7 @@ pub use verify::{case_hash, verify_suggestion, VerifyReport, VERIFY_TIMEOUT_SECS
 pub use failures::{
     FailureKnowledgeBase, InMemoryKnowledgeBase, KnowledgeEntry,
 };
+pub use failures_file::{knowledge_file, load_entries, FileKnowledgeBase};
 pub use replay::{archive_to_json, export_replay, ReplayArchive};
 
 #[cfg(test)]
