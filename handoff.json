@@ -1,9 +1,7 @@
 {
   "updated_at": "2026-09-19 07:27",
   "current_status": "已修复 progress 挂起用例(时序bug), check/clippy 全绿 + 测试 514 全过(内存充足环境全量复核为准); 此前workspace全绿因该用例挂起失实已修正",
-  "blockers": [
-    "market_signing.rs在无PG时panic导致全仓测试退出码1"
-  ],
+  "blockers": [],
   "next_tasks": [
     {
       "priority": "P0",
@@ -22,5 +20,5 @@
     "progress.json": "任务状态事实源",
     "worklog.json": "工作日志事实源"
   },
-  "advice": "剩余建议: ①补 .github/workflows CI(带超时闸) ②核对台账8个提交号 ③真实模型e2e已验证过(DeepSeek flash)"
+  "advice": "P1/P2 历史欠账(证据链PG接入/knowledge-suggest断链/MKT-104/API_REFERENCE落后)留待下轮整改批"
 }

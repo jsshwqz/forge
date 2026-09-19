@@ -108,3 +108,4 @@
 | SANDBOX-002 | V8先行批:容器级验收隔离(默认关) | ✅ 完成 | executor | - | f461d71 |
 | GIT-001 | 任务工作区Git集成(git init+每任务单commit+补丁导出,默认关) | ✅ 完成 | executor | - | 17207b5 |
 | NOTIFY-001 | 任务终态Webhook通知(载荷冻结+3次指数退避,默认关) | ✅ 完成 | executor | - | 17207b5 |
+| B-01-BACKFILL | B-01补齐: regex_match/sanitize/session_report/skill_report 四工具 | ✅ 完成 | - | - | 190260a |

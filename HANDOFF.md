@@ -5,7 +5,7 @@
 
 ## 🚧 阻塞项
 
-- market_signing.rs在无PG时panic导致全仓测试退出码1
+（无）
 
 ## 🗓️ 下一步
 
@@ -27,4 +27,4 @@
 
 ## 🚀 建议
 
-剩余建议: ①补 .github/workflows CI(带超时闸) ②核对台账8个提交号 ③真实模型e2e已验证过(DeepSeek flash)
+P1/P2 历史欠账(证据链PG接入/knowledge-suggest断链/MKT-104/API_REFERENCE落后)留待下轮整改批
