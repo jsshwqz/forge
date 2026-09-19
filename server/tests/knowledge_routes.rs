@@ -10,7 +10,7 @@ use axum::body::Body;
 use axum::http::Request;
 use axum::http::StatusCode;
 use forge_server::{app_with_state, AppState};
-use forge_knowledge::{KnowledgeEntry, FailureKnowledgeBase as _};
+use forge_knowledge::KnowledgeEntry;
 use forge_recovery::classify::{FailureCategory, FailureRecord};
 use http_body_util::BodyExt;
 use tower::ServiceExt;

@@ -42,7 +42,7 @@ use forge_product_instance::{
     ProductInstanceStore as _, TemplateRegistry as _,
 };
 use forge_cap::InMemoryCapabilityRegistry;
-use forge_knowledge::{knowledge_file, FailureKnowledgeBase, FileKnowledgeBase, KnowledgeEntry, ReplayArchive};
+use forge_knowledge::{knowledge_file, FailureKnowledgeBase, FileKnowledgeBase, InMemoryKnowledgeBase, KnowledgeEntry, ReplayArchive};
 use forge_recovery::classify::FailureCategory;
 use futures::Stream;
 use serde::Deserialize;
@@ -142,7 +142,7 @@ impl AppState {
             instances: Arc::new(Default::default()),
             templates: Arc::new(Default::default()),
             metrics: Arc::new(Metrics::default()),
-            knowledge: Arc::new(FileKnowledgeBase::new(knowledge_file())),
+            knowledge: Arc::new(InMemoryKnowledgeBase::default()),
             capabilities: Arc::new(Default::default()),
             auth: AuthConfig::from_env(),
             tenant_keys: Arc::new(auth::InMemoryTenantKeyStore::default()),
@@ -164,7 +164,7 @@ impl AppState {
             instances: Arc::new(Default::default()),
             templates: Arc::new(Default::default()),
             metrics: Arc::new(Metrics::default()),
-            knowledge: Arc::new(FileKnowledgeBase::new(knowledge_file())),
+            knowledge: Arc::new(InMemoryKnowledgeBase::default()),
             capabilities: Arc::new(Default::default()),
             auth: AuthConfig::from_env(),
             tenant_keys: Arc::new(auth::InMemoryTenantKeyStore::default()),

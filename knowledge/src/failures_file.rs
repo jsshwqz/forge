@@ -8,12 +8,28 @@ use crate::failures::{FailureKnowledgeBase, KnowledgeEntry};
 use forge_recovery::classify::FailureCategory;
 use std::path::PathBuf;
 
-/// 默认知识库文件：`$FORGE_KNOWLEDGE_FILE` 或系统临时目录 `forge-knowledge.jsonl`。
+/// 默认知识库文件：`$FORGE_KNOWLEDGE_FILE` 或 `~/.aion-forge/knowledge.jsonl`。
+///
+/// 不用系统 temp 目录——temp 会被 OS 清理，"持久化"名不符实。
+/// 父目录不存在时自动创建。
 pub fn knowledge_file() -> PathBuf {
-    std::env::var("FORGE_KNOWLEDGE_FILE")
-        .ok()
-        .map(PathBuf::from)
-        .unwrap_or_else(|| std::env::temp_dir().join("forge-knowledge.jsonl"))
+    if let Ok(f) = std::env::var("FORGE_KNOWLEDGE_FILE") {
+        return PathBuf::from(f);
+    }
+    let dir = dirs_or_home();
+    let _ = std::fs::create_dir_all(&dir);
+    dir.join("knowledge.jsonl")
+}
+
+/// 稳定数据目录：`$HOME/.aion-forge/`，失败时退回 `./.aion-forge/`。
+fn dirs_or_home() -> PathBuf {
+    if let Ok(home) = std::env::var("HOME") {
+        return PathBuf::from(home).join(".aion-forge");
+    }
+    if let Ok(home) = std::env::var("USERPROFILE") {
+        return PathBuf::from(home).join(".aion-forge");
+    }
+    PathBuf::from(".aion-forge")
 }
 
 /// 从 JSONL 文件加载知识条目（容忍坏行，跳过）。
@@ -24,8 +40,9 @@ pub fn load_entries(path: &std::path::Path) -> Vec<KnowledgeEntry> {
             if line.trim().is_empty() {
                 continue;
             }
-            if let Ok(e) = serde_json::from_str::<KnowledgeEntry>(line) {
-                out.push(e);
+            match serde_json::from_str::<KnowledgeEntry>(line) {
+                Ok(e) => out.push(e),
+                Err(_) => eprintln!("[knowledge] skipping malformed JSONL line"),
             }
         }
     }
@@ -50,15 +67,31 @@ impl FileKnowledgeBase {
 #[async_trait::async_trait]
 impl FailureKnowledgeBase for FileKnowledgeBase {
     async fn ingest(&self, entry: KnowledgeEntry) {
-        // JSONL 落盘（同步 std::fs append；失败仅忽略不阻断）。
-        if let Ok(line) = serde_json::to_string(&entry) {
-            if let Ok(mut f) = std::fs::OpenOptions::new()
-                .create(true)
-                .append(true)
-                .open(&self.path)
-            {
+        // JSONL 落盘（同步 std::fs append；失败 warn 不阻断）。
+        let line = match serde_json::to_string(&entry) {
+            Ok(s) => s,
+            Err(e) => {
+                eprintln!("[knowledge] ingest serialize failed: {e}");
+                return;
+            }
+        };
+        // 确保父目录存在
+        if let Some(parent) = self.path.parent() {
+            let _ = std::fs::create_dir_all(parent);
+        }
+        match std::fs::OpenOptions::new()
+            .create(true)
+            .append(true)
+            .open(&self.path)
+        {
+            Ok(mut f) => {
                 use std::io::Write;
-                let _ = writeln!(f, "{line}");
+                if let Err(e) = writeln!(f, "{line}") {
+                    eprintln!("[knowledge] ingest write failed: {e}");
+                }
+            }
+            Err(e) => {
+                eprintln!("[knowledge] ingest open failed: {e}");
             }
         }
     }
@@ -111,5 +144,74 @@ mod tests {
         let all = b.all().await;
         assert_eq!(all.len(), 1);
         assert_eq!(all[0].tool.as_deref(), Some("echo"));
+    }
+
+    #[tokio::test]
+    async fn file_kb_search_filters() {
+        let tmp = tempfile::tempdir().unwrap();
+        let path = tmp.path().join("search.jsonl");
+        let kb = FileKnowledgeBase::new(&path);
+
+        kb.ingest(KnowledgeEntry {
+            record: forge_recovery::classify::FailureRecord {
+                id: "f-a".into(),
+                execution_id: forge_core::ExecutionId::new_execution_id(),
+                at: chrono::Utc::now(),
+                category: FailureCategory::ToolError,
+                message: "disk full".into(),
+                retriable: true,
+            },
+            related_evidence: vec![],
+            tool: Some("write_file".into()),
+        })
+        .await;
+
+        kb.ingest(KnowledgeEntry {
+            record: forge_recovery::classify::FailureRecord {
+                id: "f-b".into(),
+                execution_id: forge_core::ExecutionId::new_execution_id(),
+                at: chrono::Utc::now(),
+                category: FailureCategory::Timeout,
+                message: "slow query".into(),
+                retriable: false,
+            },
+            related_evidence: vec![],
+            tool: Some("shell".into()),
+        })
+        .await;
+
+        assert_eq!(kb.all().await.len(), 2);
+        assert_eq!(
+            kb.search(Some(FailureCategory::Timeout), None, None)
+                .await
+                .len(),
+            1
+        );
+        assert_eq!(kb.search(None, Some("write_file"), None).await.len(), 1);
+        assert_eq!(kb.search(None, None, Some("disk")).await.len(), 1);
+    }
+
+    #[tokio::test]
+    async fn file_kb_tolerates_malformed_lines() {
+        let tmp = tempfile::tempdir().unwrap();
+        let path = tmp.path().join("malformed.jsonl");
+        // 写一行坏数据 + 一行好数据
+        std::fs::write(&path, "garbage\n").unwrap();
+        let kb = FileKnowledgeBase::new(&path);
+        kb.ingest(KnowledgeEntry {
+            record: forge_recovery::classify::FailureRecord {
+                id: "good".into(),
+                execution_id: forge_core::ExecutionId::new_execution_id(),
+                at: chrono::Utc::now(),
+                category: FailureCategory::ToolError,
+                message: "ok".into(),
+                retriable: true,
+            },
+            related_evidence: vec![],
+            tool: None,
+        })
+        .await;
+        let all = kb.all().await;
+        assert_eq!(all.len(), 1, "should skip malformed, keep good");
     }
 }

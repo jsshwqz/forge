@@ -1357,3 +1357,10 @@ D11(拍板): GIT-001 每任务一个 commit——步骤级噪音大, 任务边�
 
 ---
 
+## [R1-095] ✅ 成功 · 2026-09-19 · R7-015 修复: 知识文件持久化 FileKnowledgeBase + CLI/server 接线
+
+- **任务 ID**：R7-015
+此前 R7-018 记录的 CLI knowledge-suggest 断链(InMemoryKnowledgeBase 独立进程空库)现已修复: 新增 FileKnowledgeBase(JSONL append-only 落盘, 跨进程共享), server AppState.knowledge 字段从 Arc<InMemoryKnowledgeBase> 改为 Arc<dyn FailureKnowledgeBase> trait object, in_memory()/new() 保留 InMemoryKnowledgeBase(测试隔离), 只有 run_from_env() 用 FileKnowledgeBase(生产持久化). 默认路径从 temp_dir() 改为 ~/.aion-forge/knowledge.jsonl(稳定目录, 非易失). ingest 写失败加 eprintln warn(不再静默吞错). CLI knowledge-suggest 子命令换 FileKnowledgeBase. KnowledgeEntry 加 Deserialize + matches 改 pub(crate) 供 FileKnowledgeBase 复用. 全量门禁: cargo test --workspace 114套件零失败 + clippy --workspace --all-targets -D warnings 零警告. 千问审核整改: 修 in_memory 语义/默认路径/ingest warn/clippy unused import/台账三连.
+
+---
+
