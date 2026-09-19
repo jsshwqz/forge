@@ -1222,5 +1222,13 @@
     "task_id": "AF-BP-BREAL-001A",
     "title": "B-REAL-001A: 内置工具按白名单接入编排 router(env 门控, 缺省零变化)",
     "body": "新建 server/src/builtin_tools.rs: SHELL_TOOLS(6壳)+BASE_TOOLS(5基线)冻结常量, is_shell_tool(裸名/桥接全名mcp_<server>_<shell>), builtin_allowlist_from_env(FORGE_TOOLS_BUILTIN逗号分隔), register_builtin_tools(router,allow)按白名单从parsing/text/zl三crate构造20真逻辑工具注册, 重名跳过不报错, 壳名拒绝, 候选表外记unknown. server/src/lib.rs接线(execute_orchestration edit_patch后MCP前). server/Cargo.toml增3 path依赖. server/tests/breal.rs 6冻结测试全过: #1空allow零变化(router恰5), #2注册csv_parse+markdown_render, #3重名read_file跳过不panic, #4壳名pdf_parse/text_classify拒绝, #5未知not_a_tool报告, #6 is_shell_tool桥接名匹配. clippy零告警. 加项1(L441注释)已在3860c99完成, 加项2(test#13)已在orch101.rs落网."
+  },
+  {
+    "id": "R1-097",
+    "kind": "R1Completed",
+    "date": "2026-09-19",
+    "task_id": "AF-BP-BREAL-001B",
+    "title": "B-REAL-001B: 规划白名单由 router 派生并注入 input schema(壳剔除, 缺省零回归)",
+    "body": "新建 server/src/planner_view.rs: planner_tool_names(router) = BASE_TOOLS ∪ (router注册名 \\ SHELL_TOOLS) 按名升序; build_tool_schema_hint(router, names) 生成 input schema 注入块(首行=== Tool input schemas ===, 超 8KB 截断+(truncated), 空名返回空串). 改造 build_multistep_planner 签名加 tools: Vec<String> 参数, 删除硬编码 5 工具 vec; 调用点在 router 构建后计算 planner_tool_names + schema_hint, 组合 workspace_context + schema_hint 注入 LlmPlanner.context(R3 零跨 crate). 12/12 breal 测试通过(#7-#12 新增), orch101 12/12 + v8 5/5 + v8_e2e 1/1 回归全绿, clippy 零警告."
   }
 ]

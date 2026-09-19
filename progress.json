@@ -878,5 +878,13 @@
     "owner": "builder-a",
     "last_record": "R1-096",
     "commit": "a620c9e"
+  },
+  {
+    "task_id": "AF-BP-BREAL-001B",
+    "name": "B-REAL-001B 决策面: 规划白名单由 router 派生 + input schema 注入",
+    "status": "Completed",
+    "owner": "builder-a",
+    "last_record": "R1-097",
+    "commit": "468c5a9"
   }
 ]
