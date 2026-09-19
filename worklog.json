@@ -1238,5 +1238,21 @@
     "task_id": "AF-BP-BREAL-001C",
     "title": "B-REAL-001C: 步骤输出引用 $sN.output[.path][|json](缺省零回归)",
     "body": "sdk/src/orchestrator.rs: EngineStepExecutor 增 done: Mutex<BTreeMap<String,Value>> 字段, execute 前调 resolve_refs 解析 $ 引用, 成功后入 done 表; replan 时清空 done 表防旧版本歧义(R6). resolve_refs 递归遍历 Object/Array 深度上限8, 仅 $ 开头串解析, 含 $ 非开头串报错(R4 不做内插). 路径语法: $step.output / $step.output.key / $step.output.arr[n].key / |json 序列化. 悬空引用/缺键/越界均报 InvalidState 含完整引用串(R3). 7/7 breal_refs 测试通过, sdk lib 6/6 + orch101 12/12 回归全绿, clippy 零警告."
+  },
+  {
+    "id": "R1-099",
+    "kind": "R1Completed",
+    "date": "2026-09-19",
+    "task_id": "AF-BP-BREAL-001D",
+    "title": "B-REAL-001D: 真实干活e2e(写→读→解析→渲染→落盘) + 台账整改",
+    "body": "server/tests/breal_e2e.rs: breal_csv_to_report_e2e 离线 mock e2e 测试. 5 步计划(write_file→read_file→csv_parse→markdown_render→write_file) 使用 $sN.output 引用链传递数据. 断言: final_status==Completed, gate.passed==true, completed.len()==5, s2/s3/s4 非 write_file 步骤在列, report.html 含 alice. 台账整改: progress.json B-REAL-001A/B/C/D 全建档, A-TOOL-001/002/A-HYGIENE-001 已存在, N3 六 hash 可 grep 命中, handoff.json blockers 已清空."
+  },
+  {
+    "id": "R6-034",
+    "kind": "R6Decision",
+    "date": "2026-09-19",
+    "task_id": "A-HYGIENE-001",
+    "title": "R6-033 修订 build_v70a 沙箱装配契约(da7341a 冻结契约变更)",
+    "body": "da7341a 提交将所有 plan_mode 的 Irreversible 黑名单统一通过(此前仅 multistep 覆盖), 属冻结契约变更. DemoAllowAll 策略改为拒绝 Irreversible 操作. 此变更已由 orch101.rs codegen_irreversible_command_denied_e2e 测试覆盖(AF-AUDIT-003 N2). 本条 R6 注明契约变更经审计确认无回归."
   }
 ]

@@ -894,5 +894,13 @@
     "owner": "builder-a",
     "last_record": "R1-098",
     "commit": "14dffcb"
+  },
+  {
+    "task_id": "AF-BP-BREAL-001D",
+    "name": "B-REAL-001D 真实干活e2e(写→读→解析→渲染→落盘) + 台账整改",
+    "status": "Completed",
+    "owner": "builder-a",
+    "last_record": "R1-099",
+    "commit": "PENDING"
   }
 ]
