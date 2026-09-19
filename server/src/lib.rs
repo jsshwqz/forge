@@ -439,7 +439,7 @@ async fn execute_orchestration(
             PlanMode::Auto => unreachable!("resolve_plan_mode 不返回 Auto"),
         };
 
-    // ORCH-101b：仅 MultiStep 走沙箱化命令验收（基线路径零回归）
+    // ORCH-101b：所有 plan_mode 均过沙箱黑名单（R6-033 修订，D10 红线与 plan_mode 无关）
     let (verifier_cmd, _uses_sandbox) = sandbox_verify::select_command_verifier(
         plan_mode,
         Arc::new(CommandVerifier),

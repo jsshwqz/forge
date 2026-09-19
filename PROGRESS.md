@@ -110,3 +110,6 @@
 | NOTIFY-001 | 任务终态Webhook通知(载荷冻结+3次指数退避,默认关) | ✅ 完成 | executor | - | 17207b5 |
 | B-01-BACKFILL | B-01补齐: regex_match/sanitize/session_report/skill_report 四工具 | ✅ 完成 | - | - | 190260a |
 | R7-015 | 知识文件持久化 FileKnowledgeBase + CLI/server 接线(断链修复) | ✅ 完成 | executor | - | 15910c1 |
+| A-HYGIENE-001 | 整改批6提交: e4fb115(清误提交) f5a3273(API文档+PG evidence) da7341a(安全修复) e4dbcb8(依赖清理) 38c0802(GA_CHECKLIST修正) 1a479af(orch101测试修正) | ✅ 完成 | executor | - | 1a479af |
+| A-TOOL-001 | A阶段12工具批(parsing/text/zl工具移植) | ✅ 完成 | executor | - | 73da6c0 |
+| A-TOOL-002 | B-01补齐: regex_match/sanitize/session_report/skill_report | ✅ 完成 | executor | - | 190260a |

@@ -1206,5 +1206,13 @@
     "task_id": "R7-015",
     "title": "R7-015 修复: 知识文件持久化 FileKnowledgeBase + CLI/server 接线",
     "body": "此前 R7-018 记录的 CLI knowledge-suggest 断链(InMemoryKnowledgeBase 独立进程空库)现已修复: 新增 FileKnowledgeBase(JSONL append-only 落盘, 跨进程共享), server AppState.knowledge 字段从 Arc<InMemoryKnowledgeBase> 改为 Arc<dyn FailureKnowledgeBase> trait object, in_memory()/new() 保留 InMemoryKnowledgeBase(测试隔离), 只有 run_from_env() 用 FileKnowledgeBase(生产持久化). 默认路径从 temp_dir() 改为 ~/.aion-forge/knowledge.jsonl(稳定目录, 非易失). ingest 写失败加 eprintln warn(不再静默吞错). CLI knowledge-suggest 子命令换 FileKnowledgeBase. KnowledgeEntry 加 Deserialize + matches 改 pub(crate) 供 FileKnowledgeBase 复用. 全量门禁: cargo test --workspace 114套件零失败 + clippy --workspace --all-targets -D warnings 零警告. 千问审核整改: 修 in_memory 语义/默认路径/ingest warn/clippy unused import/台账三连."
+  },
+  {
+    "id": "R6-034",
+    "kind": "R6Decision",
+    "date": "2026-09-19",
+    "task_id": "A-HYGIENE-001",
+    "title": "补登记 da7341a 安全修复契约变更(审计N3台账补登)",
+    "body": "AF-AUDIT-003 N3 要求补登 f5f56b9..1a479af 六笔整改的台账。其中 da7341a 属冻结契约变更(已在 R6-033 登记), 此处补登任务卡 A-HYGIENE-001 收口。六笔: e4fb115(清误提交+台账收口) / f5a3273(API文档+PG evidence) / da7341a(安全修复) / e4dbcb8(依赖清理) / 38c0802(GA_CHECKLIST修正) / 1a479af(orch101冻结测试修正)。另补登 A-TOOL-001(73da6c0 12工具批) 和 A-TOOL-002(190260a B-01补齐)。"
   }
 ]

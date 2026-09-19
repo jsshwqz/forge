@@ -398,3 +398,79 @@ fn mcp_tools_off_when_unconfigured() {
     let configs = forge_server::mcp_tools::configs_from_env();
     assert!(configs.is_empty(), "未配置时必须为空表（进程未设 FORGE_MCP_SERVERS）");
 }
+
+// ==================== AF-AUDIT-003 N2: Codegen 路径 Irreversible 行为级回归 ====================
+
+/// Codegen 装配（与 multistep_deps 相同但 plan_mode=Codegen，验证基线路径也过黑名单）。
+fn codegen_deps(
+    ws: &std::path::Path,
+    responses: Vec<String>,
+    evidence: Arc<forge_evidence::InMemoryEvidenceStore>,
+) -> OrchestratorDeps {
+    let mock = Arc::new(MockLlm { responses: Mutex::new(responses) });
+    let planner = LlmPlanner {
+        backend: mock.clone() as Arc<dyn LlmPlanBackend>,
+        model: "mock".into(),
+        schema_max_attempts: 3,
+        tools: vec!["echo".into(), "write_file".into()],
+        ledger: None,
+        meter: None,
+        brief_mode: false,
+        context: None,
+    };
+    let router = ToolRouter::new();
+    router.register(Box::new(EchoTool::new())).unwrap();
+    router.register(Box::new(WriteFileTool::new(ws))).unwrap();
+    OrchestratorDeps {
+        router: Arc::new(router),
+        policy: Arc::new(AllowAll),
+        verifier_cmd: select_command_verifier(
+            forge_server::PlanMode::Codegen,
+            Arc::new(forge_verify::CommandVerifier),
+        )
+        .0,
+        verifier_file: Arc::new(forge_verify::FileVerifier),
+        evidence: evidence.clone(),
+        workspace: Arc::new(forge_workspace::WorkspaceManager::new(ws.join("ws-root")).unwrap()),
+        timeout: Duration::from_secs(15),
+        recovery: Arc::new(forge_recovery::BoundedRetryStrategy { max_attempts: 1, base_backoff_ms: 10 }),
+        replanner: None,
+        max_replans: 1,
+        planner: Some(Arc::new(planner)),
+        workspace_task: None,
+    }
+}
+
+/// 冻结测试（AF-AUDIT-003 N2）：Codegen 模式下 Irreversible 命令行为级拦截。
+/// 证明不只是装配断言，而是真实验收 `format c:` → Fail + SANDBOX_DENY_MARKER 入证据。
+#[tokio::test]
+async fn codegen_irreversible_command_denied_e2e() {
+    let ws = tempfile::tempdir().unwrap();
+    let sdk = ForgeSdk::in_memory();
+    let acceptance = vec![forge_task::AcceptanceCriterion {
+        id: "AC-CG-1".into(),
+        description: "dangerous in codegen".into(),
+        check: forge_task::CheckSpec::Command("format c:".into()),
+    }];
+    let task = sdk.create_task("codegen irreversible probe", vec![], acceptance).await.unwrap();
+    let store: Arc<forge_evidence::InMemoryEvidenceStore> = Default::default();
+    let deps = codegen_deps(ws.path(), vec![single_echo_plan()], store.clone());
+    let orch = Orchestrator { capability: "echo".into(), timeout: Duration::from_secs(15) };
+
+    let report = sdk.run_end_to_end(&task.id, &deps, &orch).await.unwrap();
+    assert_eq!(
+        report.verifications[0].verdict,
+        forge_verify::Verdict::Fail,
+        "Codegen 模式下 Irreversible 命令必须 Fail"
+    );
+    assert!(
+        report.verifications[0].reason.contains(SANDBOX_DENY_MARKER),
+        "Codegen 拒绝原因必须带审计标记: {}",
+        report.verifications[0].reason
+    );
+    let ev = store.by_criterion("AC-CG-1").await.unwrap();
+    assert!(
+        !ev.is_empty() && ev[0].content.contains(SANDBOX_DENY_MARKER),
+        "Codegen 拒绝必须留证可审计"
+    );
+}

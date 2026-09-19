@@ -846,5 +846,29 @@
     "owner": "executor",
     "last_record": null,
     "commit": "15910c1"
+  },
+  {
+    "task_id": "A-HYGIENE-001",
+    "name": "整改批6提交: e4fb115(清误提交) f5a3273(API文档+PG evidence) da7341a(安全修复) e4dbcb8(依赖清理) 38c0802(GA_CHECKLIST修正) 1a479af(orch101测试修正)",
+    "status": "Completed",
+    "owner": "executor",
+    "last_record": null,
+    "commit": "1a479af"
+  },
+  {
+    "task_id": "A-TOOL-001",
+    "name": "A阶段12工具批(parsing/text/zl工具移植)",
+    "status": "Completed",
+    "owner": "executor",
+    "last_record": null,
+    "commit": "73da6c0"
+  },
+  {
+    "task_id": "A-TOOL-002",
+    "name": "B-01补齐: regex_match/sanitize/session_report/skill_report",
+    "status": "Completed",
+    "owner": "executor",
+    "last_record": null,
+    "commit": "190260a"
   }
 ]
