@@ -902,5 +902,13 @@
     "owner": "builder-a",
     "last_record": "R1-099",
     "commit": "bec4fdc"
+  },
+  {
+    "task_id": "B-REAL-G6",
+    "name": "G6 真模型签核: SenseNova 多步编排 e2e 跑通(判据A/B/C全PASS)+人工签核关账",
+    "status": "Completed",
+    "owner": null,
+    "last_record": null,
+    "commit": "7874673"
   }
 ]

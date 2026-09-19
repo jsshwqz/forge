@@ -1254,5 +1254,13 @@
     "task_id": "A-HYGIENE-001",
     "title": "R6-033 修订 build_v70a 沙箱装配契约(da7341a 冻结契约变更)",
     "body": "da7341a 提交将所有 plan_mode 的 Irreversible 黑名单统一通过(此前仅 multistep 覆盖), 属冻结契约变更. DemoAllowAll 策略改为拒绝 Irreversible 操作. 此变更已由 orch101.rs codegen_irreversible_command_denied_e2e 测试覆盖(AF-AUDIT-003 N2). 本条 R6 注明契约变更经审计确认无回归."
+  },
+  {
+    "id": "R1-100",
+    "kind": "R1Completed",
+    "date": "2026-09-20",
+    "task_id": "B-REAL-G6",
+    "title": "B-REAL G6 真模型签核 PASS, B阶段真实干活首次实证关账",
+    "body": "SenseNova(sensenova-6.8-flash-lite) 真模型 POST /orchestrate plan_mode=multi_step: final_status=Completed gate_passed=true steps=5 replans=0, AC-1 FileContains report.html:alice Pass. FORGE_TOOLS_BUILTIN=5(csv_parse+markdown_render入router). 判据A/B/C全PASS: C证非write_file成功步=s2read/s3csv_parse/s4markdown_render(>=3)且引用运行期解析(csv_parse输入为read_file产物). 签核人=项目所有人(非执行方GLM), 证据 artifacts/breal_e2e_20260919.json. AF-BP-BREAL-001 四单元+五门禁G1-G6全闭合."
   }
 ]

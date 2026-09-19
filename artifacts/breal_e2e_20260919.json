@@ -1,0 +1,80 @@
+{
+  "gate": "G6 真模型签核 (AF-BP-BREAL-001 §3.4b)",
+  "date": "2026-09-19",
+  "baseline_head": "7874673",
+  "operator": "审计/规划层(Qoder)",
+  "signoff_authority": "项目所有人（非执行方人类）",
+  "signoff": {
+    "signed_by": "项目所有人（非执行方）",
+    "date": "2026-09-19",
+    "verdict": "G6 PASS",
+    "baseline_head": "7874673",
+    "note": "证据经审计/规划层(Qoder, 非001A-D执行方GLM)实跑并交叉核验, 判据A/B/C全PASS; 项目所有人复核 dossier 后授权人工签核, 执行方≠签核方成立"
+  },
+  "provider_preset": "https://token.sensenova.cn/v1",
+  "model": "sensenova-6.8-flash-lite",
+  "request": {
+    "plan_mode": "multi_step",
+    "goal": "创建 data.csv→读→解析→渲染 report.html",
+    "acceptance": "FileContains report.html:alice"
+  },
+  "response": {
+    "escalated_to_human": false,
+    "evidence_count": 1,
+    "evidence_ids": [
+      "evidence_18e2fdb3-720a-4e49-b1ae-28d2a5128631"
+    ],
+    "final_status": "Completed",
+    "gate_passed": true,
+    "plan_versions": [
+      "plan_3af772f1-d031-461e-85ef-47d5af336bfb"
+    ],
+    "replans_used": 0,
+    "steps_completed": 5,
+    "task_id": "task_6ef9988f-b288-4931-aa6a-d0b5b62a7355",
+    "verifications": [
+      {
+        "criterion_id": "AC-1",
+        "reason": "found 'alice' in report.html",
+        "verdict": "Pass"
+      }
+    ]
+  },
+  "builtin_gate_log": "builtin_tools: registered=5 skipped=0 rejected=0 unknown=0",
+  "dataflow_chain": [
+    {
+      "step": "s1",
+      "out": "wrote data.csv (27B)",
+      "tool": "write_file"
+    },
+    {
+      "step": "s2",
+      "out": "content=\"name,score\\nalice,91\\nbob,72\\n\"",
+      "tool": "read_file"
+    },
+    {
+      "step": "s3",
+      "out": "headers=[name,score] rows=2 (alice,91)(bob,72)",
+      "note": "输入必为 $s2.output.content 运行时解析",
+      "tool": "csv_parse"
+    },
+    {
+      "step": "s4",
+      "out": "html 含 | alice | 91 |",
+      "note": "输入引用 $s3 输出",
+      "tool": "markdown_render"
+    },
+    {
+      "step": "s5",
+      "out": "wrote report.html (309B)",
+      "tool": "write_file"
+    }
+  ],
+  "criteria": {
+    "A": "PASS: final_status=Completed, gate_passed=true",
+    "B": "PASS: D:\\TEMP\\forge-ws\\ws-task_6ef9988f-b288-4931-aa6a-d0b5b62a7355\\report.html (309B) 含 alice",
+    "C": "PASS: 非write_file成功步=s2/s3/s4(=3>=3); 数据链证引用生效(模型无法内联运行时才产生的读取内容)"
+  },
+  "report_html_path": "D:\\TEMP\\forge-ws\\ws-task_6ef9988f-b288-4931-aa6a-d0b5b62a7355\\report.html",
+  "runbook_note": "工作区目录实际前缀为 ws-<task_id>(runbook 原写 <task_id>), 已更正"
+}

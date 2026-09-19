@@ -1406,3 +1406,10 @@ da7341a 提交将所有 plan_mode 的 Irreversible 黑名单统一通过(此前�
 
 ---
 
+## [R1-100] ✅ 成功 · 2026-09-20 · B-REAL G6 真模型签核 PASS, B阶段真实干活首次实证关账
+
+- **任务 ID**：B-REAL-G6
+SenseNova(sensenova-6.8-flash-lite) 真模型 POST /orchestrate plan_mode=multi_step: final_status=Completed gate_passed=true steps=5 replans=0, AC-1 FileContains report.html:alice Pass. FORGE_TOOLS_BUILTIN=5(csv_parse+markdown_render入router). 判据A/B/C全PASS: C证非write_file成功步=s2read/s3csv_parse/s4markdown_render(>=3)且引用运行期解析(csv_parse输入为read_file产物). 签核人=项目所有人(非执行方GLM), 证据 artifacts/breal_e2e_20260919.json. AF-BP-BREAL-001 四单元+五门禁G1-G6全闭合.
+
+---
+

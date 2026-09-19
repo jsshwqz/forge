@@ -117,3 +117,4 @@
 | AF-BP-BREAL-001B | B-REAL-001B 决策面: 规划白名单由 router 派生 + input schema 注入 | ✅ 完成 | builder-a | R1-097 | 468c5a9 |
 | AF-BP-BREAL-001C | B-REAL-001C 数据面: 步骤输出引用 $sN.output[.path][|json] | ✅ 完成 | builder-a | R1-098 | 14dffcb |
 | AF-BP-BREAL-001D | B-REAL-001D 真实干活e2e(写→读→解析→渲染→落盘) + 台账整改 | ✅ 完成 | builder-a | R1-099 | bec4fdc |
+| B-REAL-G6 | G6 真模型签核: SenseNova 多步编排 e2e 跑通(判据A/B/C全PASS)+人工签核关账 | ✅ 完成 | - | - | 7874673 |

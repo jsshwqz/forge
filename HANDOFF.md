@@ -1,7 +1,7 @@
 # HANDOFF · 交接快照（由 forge-worklog 自动生成）
 
-- **更新时间**：2026-09-19 16:00
-- **当前状态**：B-REAL 批交付完毕(001A/B/C/D 全绿); 全量test口径已复核(AF-AUDIT-003基线3860c99实跑522 passed/0 failed/clippy零告警, 本批新增13用例breal 6+breal_refs 7+breal_e2e 1=14, 总通过数≥536); R7-015 CLI知识断链实为未修(已更正此前误报存疑)
+- **更新时间**：2026-09-20 00:39
+- **当前状态**：B-REAL批全批收口(001A/B/C/D + G6真模型签核PASS): SenseNova多步编排e2e跑通, 项目所有人(非执行方)人工签核, 证据 artifacts/breal_e2e_20260919.json; B阶段用新forge真实干活首次实证. KNOW批(R7-015缺省serve知识库持久化断链)已获P8批准, 待按 know_001a_kickoff 下发执行方(执行方≠复核方).
 
 ## 🚧 阻塞项
 
@@ -27,4 +27,4 @@
 
 ## 🚀 建议
 
-待办: ①多租户批(任务写归属/Session读隔离) ②MKT-104制品包体 ③R7-015 knowledge持久化断链 ④B-REAL批
+G6已关账. 下一步: KNOW-001A(R7-015缺省serve持久化,P8已批待下发). 后续待办: ①多租户批(任务写归属/Session读隔离) ②MKT-104制品包体.
