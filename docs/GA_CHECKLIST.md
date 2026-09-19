@@ -46,7 +46,7 @@
 |---|---|---|
 | H1 | QUICKSTART 干净机演练 | PASS — 文档头含演练记录（2026-08-27 · Windows + PG@15432 · 十三步全 PASS + 证据指针）；2026-09-05 复跑十三步再次全 PASS（ga_evidence_20260905_225958.json） |
 | H2 | SEC-001 强制鉴权 | PASS — 非 loopback 无 key 启动拒绝实测（"SEC-001: refusing to listen on non-loopback '0.0.0.0'..."）；退出码 78 由 security_baseline::refusal_exit_code_is_78 测试在案；逃生门 escape_hatch_allows_startup 在案；豁免名单仅 /health（auth.rs L169，/metrics 不豁免） |
-| H3 | DOC 四件套交叉核对 | PASS — QUICKSTART/USER_GUIDE/API_REFERENCE/OPERATIONS 齐备；API_REFERENCE 端点表与 lib.rs 实际 25 条路由抽查一致（含 V4.0 产品工厂六端点、V5.0 market 三端点）；OPERATIONS 备份命令实跑：`podman exec forge-pg pg_dump -U postgres forge` 产出 382 行转储 ✅ |
+| H3 | DOC 四件套交叉核对 | PASS — QUICKSTART/USER_GUIDE/API_REFERENCE/OPERATIONS 齐备；API_REFERENCE 端点表已补齐至覆盖全部 route（系统/任务/编排/会话/证据/产品/知识/市场/计费admin/LLM/控制台，2026-09 补 15 端点，此前"25 条一致"系失实数）；OPERATIONS 备份命令实跑：`podman exec forge-pg pg_dump -U postgres forge` 产出 382 行转储 ✅ |
 | H4 | KNW-001 收官九层 | PASS — forge-knowledge 8 测试全绿（含 session_replay_export_roundtrip、ingest_and_filter_by_category_tool_keyword、write_suggestions_rejects_src_path）；服务面 export roundtrip 测试 export_endpoint_roundtrips_format_version 在案 |
 | H5 | 历史门禁抽样复跑 | PASS — e2e_task_plan_execute / e2e_verify_recovery / e2e_product_assembly 三条里程碑 e2e 复跑全绿（2026-09-06）；workspace 全量 336 passed 含 M1 replay（pg_events_are_replayable） |
 | H6 | 登记卫生 | PASS — PROGRESS.md placeholder/WIP 计数 0（V5-FIX-1 后）；API-003=「SSE事件流」、API-004=「CORS层」真名在档 |
