@@ -104,7 +104,7 @@ fn sse_buffer() -> usize {
 #[derive(Clone)]
 pub struct AppState {
     pub sdk: ForgeSdk,
-    pub evidence: Arc<InMemoryEvidenceStore>,
+    pub evidence: Arc<dyn EvidenceStore>,
     pub workspaces: Arc<WorkspaceManager>,
     pub event_bus: Arc<InMemoryEventBus>,
     pub instances: Arc<forge_product_instance::InMemoryProductInstanceStore>,
@@ -1373,7 +1373,7 @@ pub async fn run_from_env() -> Result<(), Box<dyn std::error::Error>> {
                         Arc::new(forge_storage::PgTaskStore::new(pool.clone())),
                         sessions,
                     ),
-                    evidence: Arc::new(InMemoryEvidenceStore::default()),
+                    evidence: Arc::new(forge_storage::PgEvidenceStore::new(pool.clone())),
                     workspaces: Arc::new(WorkspaceManager::new(std::env::temp_dir().join("forge-ws")).unwrap()),
                     event_bus,
                     instances: Arc::new(Default::default()),

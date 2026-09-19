@@ -1,4 +1,4 @@
-# API 参考（V4.0）
+# API 参考（V6.0）
 
 基址：`http://<host>:<port>`；启用 `FORGE_API_KEY` 后，除 `GET /health`
 外所有请求需带 `Authorization: Bearer <key>`。401 为统一文案，不回显密钥。
@@ -62,6 +62,43 @@ curl -X POST :8080/templates -d '{
 curl -X POST :8080/products/instantiate \
   -d '{"template_id":"tpl.demo","version":"1.0.0"}'
 ```
+
+## 知识（KNW，V4.0）
+
+| 方法 | 路径 | 说明 |
+|---|---|---|
+| GET | `/knowledge/failures` | 失败知识库列表（FailureRecord 聚合） |
+| GET | `/knowledge/sessions/:id/export` | 会话回放导出（JSON 归档） |
+
+## 能力市场（MKT，V5.0/V6.0）
+
+| 方法 | 路径 | 说明 |
+|---|---|---|
+| GET | `/market/capabilities` | 公开只读能力目录（免鉴权） |
+| GET | `/market/templates` | 已发布模板目录（免鉴权） |
+| POST | `/market/install` | 安装能力（需鉴权；钉 yanked 版本 → 409，`*` 解析跳过 yanked → 404） |
+| POST | `/market/publish` | 发布 release（需鉴权 + 发布者签名验签；未登记 publisher → 403） |
+| POST | `/market/review` | 审核 release（pending→approved 自动转 published / pending→rejected 终态；终态再审 → 409） |
+| GET | `/market/releases` | release 版本列表（隐藏 yanked） |
+
+## 计费与用量（BILL，admin 面）
+
+| 方法 | 路径 | 说明 |
+|---|---|---|
+| GET | `/admin/usage` | 计量三维度流水查询（按租户/用途聚合） |
+| POST | `/admin/rates` | 设置费率（幂等，费率表） |
+| GET | `/admin/rates` | 列出费率表 |
+| POST | `/admin/bills/generate` | 生成账单（幂等，按费率×用量） |
+| GET | `/admin/bills/:id` | 账单详情 |
+| GET | `/admin/bills/:id/export` | 账单导出（JSON/CSV） |
+
+## 大模型配置（LLM）
+
+| 方法 | 路径 | 说明 |
+|---|---|---|
+| GET | `/api/llm/config` | 当前配置视图 + 厂商预设列表（不回显完整 key） |
+| POST | `/api/llm/config` | 热更新大模型配置（可选持久化至 forge.env） |
+| POST | `/api/llm/test` | 在线连通性与模型探测测试 |
 
 ## 控制台（HTML）
 
