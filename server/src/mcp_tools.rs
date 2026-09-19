@@ -34,7 +34,8 @@ pub fn configs_from_env() -> Vec<McpServerConfig> {
     configs_cache().clone()
 }
 
-/// 允许清单：env `FORGE_MCP_ALLOWLIST`（逗号分隔）；未设置 → None = 全部发现工具放行。
+/// 允许清单：env `FORGE_MCP_ALLOWLIST`（逗号分隔）；未设置 → None = **禁用**（不注册任何
+/// MCP 工具，最安全口径）。调用方在 None 时跳过注册。
 pub fn allowlist_from_env() -> Option<HashSet<String>> {
     let raw = std::env::var("FORGE_MCP_ALLOWLIST").unwrap_or_default();
     if raw.trim().is_empty() {
