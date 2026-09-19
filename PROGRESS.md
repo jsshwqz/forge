@@ -113,3 +113,4 @@
 | A-HYGIENE-001 | 整改批6提交: e4fb115(清误提交) f5a3273(API文档+PG evidence) da7341a(安全修复) e4dbcb8(依赖清理) 38c0802(GA_CHECKLIST修正) 1a479af(orch101测试修正) | ✅ 完成 | executor | - | 1a479af |
 | A-TOOL-001 | A阶段12工具批(parsing/text/zl工具移植) | ✅ 完成 | executor | - | 73da6c0 |
 | A-TOOL-002 | B-01补齐: regex_match/sanitize/session_report/skill_report | ✅ 完成 | executor | - | 190260a |
+| AF-BP-BREAL-001A | B-REAL-001A 装配面: 内置工具按白名单接入编排 router | ✅ 完成 | builder-a | R1-096 | a620c9e |

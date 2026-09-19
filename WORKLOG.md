@@ -1371,3 +1371,10 @@ AF-AUDIT-003 N3 要求补登 f5f56b9..1a479af 六笔整改的台账。其中 da7
 
 ---
 
+## [R1-096] ✅ 成功 · 2026-09-19 · B-REAL-001A: 内置工具按白名单接入编排 router(env 门控, 缺省零变化)
+
+- **任务 ID**：AF-BP-BREAL-001A
+新建 server/src/builtin_tools.rs: SHELL_TOOLS(6壳)+BASE_TOOLS(5基线)冻结常量, is_shell_tool(裸名/桥接全名mcp_<server>_<shell>), builtin_allowlist_from_env(FORGE_TOOLS_BUILTIN逗号分隔), register_builtin_tools(router,allow)按白名单从parsing/text/zl三crate构造20真逻辑工具注册, 重名跳过不报错, 壳名拒绝, 候选表外记unknown. server/src/lib.rs接线(execute_orchestration edit_patch后MCP前). server/Cargo.toml增3 path依赖. server/tests/breal.rs 6冻结测试全过: #1空allow零变化(router恰5), #2注册csv_parse+markdown_render, #3重名read_file跳过不panic, #4壳名pdf_parse/text_classify拒绝, #5未知not_a_tool报告, #6 is_shell_tool桥接名匹配. clippy零告警. 加项1(L441注释)已在3860c99完成, 加项2(test#13)已在orch101.rs落网.
+
+---
+
