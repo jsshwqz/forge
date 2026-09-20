@@ -9,23 +9,34 @@
 //! - tools/list → 返回 ToolRouter 中所有已注册工具
 //! - tools/call → 路由到对应 Tool::invoke
 //!
-//! 工具注册：启动时注册 BASE_TOOLS(5) + 内置白名单（由 FORGE_TOOLS_BUILTIN 控制）。
+//! 工具注册：启动时注册 BASE_TOOLS(5)（恒注册），内置白名单工具与编排工具
+//! （MCP-002）由 FORGE_TOOLS_BUILTIN 白名单点名注册，缺省零回归。
 //! 工具构造逻辑与 server/src/builtin_tools.rs 的 construct_tool 保持一致。
 //!
 //! 用法：
 //!   forge-mcp-server
 //!   FORGE_TOOLS_BUILTIN=csv_parse,markdown_render forge-mcp-server
+//!   FORGE_TOOLS_BUILTIN=forge_task_create,forge_task_get,forge_task_list,forge_orchestrate \
+//!     FORGE_WORKSPACE=/tmp/ws forge-mcp-server
 //!
 //! 被 Forge MCP 客户端消费时，client 侧的 FORGE_MCP_SERVERS 配置示例：
 //!   FORGE_MCP_SERVERS='[{"name":"forge","command":"forge-mcp-server","args":[],"env":{}}]'
 //!
 //! 调用白名单（FORGE_MCP_ALLOWLIST）是 client 侧 mcp_tools.rs 的行为，
 //! 不在本 binary 侧——binary 会列出所有已注册工具，是否允许调用由 client 决定。
+//! MCP-002-B：本 binary 侧新增同名 env 的服务端调用闸 FORGE_MCP_ALLOWLIST：
+//! 设置后仅白名单内工具可被 tools/call 调用，未设置 = 全部放行（与 MCP-001 兼容）。
+//! 两处同名 env 语义区分：client 侧 = 接入闸（注册哪些桥接工具）；
+//! binary 侧 = 服务端调用闸（tools/call 前置过滤）。
 
-use std::io::{BufRead, Write};
+mod orchestrate_tools;
 
 use forge_exec::{Tool, ToolDescriptor, ToolRouter};
 use forge_mcp::jsonrpc::PROTOCOL_VERSION;
+use std::io::{BufRead, Write};
+use std::sync::Arc;
+
+use orchestrate_tools::{OrchestrateContext, ORCHESTRATE_TOOLS};
 
 // ── 工具构造（与 server/src/builtin_tools.rs::construct_tool 保持一致） ──
 
@@ -112,18 +123,19 @@ fn respond_error(id: &serde_json::Value, code: i64, message: &str) -> String {
 ///
 /// 注册策略：
 /// 1. BASE_TOOL_NAMES(5) 恒注册（echo, write_file, read_file, list_dir, edit_patch）
-/// 2. FORGE_TOOLS_BUILTIN 白名单工具按 env 注册（csv_parse, markdown_render 等）
+/// 2. FORGE_TOOLS_BUILTIN 白名单工具按 env 注册（csv_parse, markdown_render 等；
+///    编排工具 forge_* 也在白名单点名后注册，MCP-002）
 /// 3. 壳工具（SHELL_TOOLS）一律跳过
-fn build_router() -> ToolRouter {
+async fn build_router() -> Arc<ToolRouter> {
     // 工作区根目录：FORGE_WORKSPACE 环境变量优先，缺省 "."（当前目录）。
     let workspace_root = std::path::PathBuf::from(
-        std::env::var("FORGE_WORKSPACE").unwrap_or_else(|_| ".".into())
+        std::env::var("FORGE_WORKSPACE").unwrap_or_else(|_| ".".into()),
     );
-    let router = ToolRouter::new();
-    let mut registered = Vec::new();
-    let mut skipped = Vec::new();
-    let mut rejected = Vec::new();
-    let mut unknown = Vec::new();
+    let router = Arc::new(ToolRouter::new());
+    let mut registered: Vec<&str> = Vec::new();
+    let mut skipped: Vec<&str> = Vec::new();
+    let mut rejected: Vec<&str> = Vec::new();
+    let mut unknown: Vec<&str> = Vec::new();
 
     // 注册 BASE_TOOLS
     for name in BASE_TOOL_NAMES {
@@ -143,9 +155,17 @@ fn build_router() -> ToolRouter {
     // 注册 env 白名单工具
     let builtin_raw = std::env::var("FORGE_TOOLS_BUILTIN").unwrap_or_default();
     if !builtin_raw.trim().is_empty() {
-        for name in builtin_raw.split(',').map(|s| s.trim()).filter(|s| !s.is_empty()) {
+        for name in builtin_raw
+            .split(',')
+            .map(|s| s.trim())
+            .filter(|s| !s.is_empty())
+        {
             if is_shell_tool(name) {
                 rejected.push(name);
+                continue;
+            }
+            if ORCHESTRATE_TOOLS.contains(&name) {
+                // MCP-002：编排工具由下方独立段注册，此处跳过避免 unknown 误报
                 continue;
             }
             if router.route(name).is_ok() {
@@ -153,6 +173,34 @@ fn build_router() -> ToolRouter {
                 continue;
             }
             match construct_tool(name, &workspace_root) {
+                Some(tool) => match router.register(tool) {
+                    Ok(()) => registered.push(name),
+                    Err(_) => skipped.push(name),
+                },
+                None => unknown.push(name),
+            }
+        }
+    }
+
+    // MCP-002：白名单点名注册编排工具（缺省不注册，保持 MCP-001 零回归）
+    let want_orchestrate: Vec<&str> = builtin_raw
+        .split(',')
+        .map(|s| s.trim())
+        .filter(|s| ORCHESTRATE_TOOLS.contains(s))
+        .collect();
+    if !want_orchestrate.is_empty() {
+        let ctx = Arc::new(
+            OrchestrateContext::new(router.clone()).await.unwrap_or_else(|e| {
+                eprintln!("forge-mcp-server: orchestrate context unavailable: {e}");
+                std::process::exit(1);
+            }),
+        );
+        for name in want_orchestrate {
+            if router.route(name).is_ok() {
+                skipped.push(name);
+                continue;
+            }
+            match orchestrate_tools::construct_orchestrate_tool(name, &ctx) {
                 Some(tool) => match router.register(tool) {
                     Ok(()) => registered.push(name),
                     Err(_) => skipped.push(name),
@@ -189,7 +237,14 @@ fn descriptor_to_mcp_tool(desc: &ToolDescriptor) -> serde_json::Value {
 }
 
 fn main() {
-    let router = build_router();
+    let rt = match tokio::runtime::Runtime::new() {
+        Ok(rt) => rt,
+        Err(e) => {
+            eprintln!("forge-mcp-server: failed to create tokio runtime: {e}");
+            std::process::exit(1);
+        }
+    };
+    let router = rt.block_on(build_router());
     let stdin = std::io::stdin();
     let stdout = std::io::stdout();
     let mut out = stdout.lock();
@@ -201,19 +256,22 @@ fn main() {
         .map(descriptor_to_mcp_tool)
         .collect();
 
+    // MCP-002-B：服务端调用闸（tools/call 前置过滤）。
+    // env FORGE_MCP_ALLOWLIST（逗号分隔）；未设置 = 全部放行。
+    let call_allowlist: Option<Vec<String>> = std::env::var("FORGE_MCP_ALLOWLIST")
+        .ok()
+        .filter(|s| !s.trim().is_empty())
+        .map(|s| {
+            s.split(',')
+                .map(|x| x.trim().to_string())
+                .filter(|x| !x.is_empty())
+                .collect()
+        });
+
     eprintln!(
         "forge-mcp-server: serving {} tools over stdio",
         tools_cache.len()
     );
-
-    // tokio runtime 用于异步工具调用
-    let rt = match tokio::runtime::Runtime::new() {
-        Ok(rt) => rt,
-        Err(e) => {
-            eprintln!("forge-mcp-server: failed to create tokio runtime: {e}");
-            std::process::exit(1);
-        }
-    };
 
     for line in stdin.lock().lines() {
         let line = match line {
@@ -256,6 +314,23 @@ fn main() {
                     .pointer("/params/name")
                     .and_then(|n| n.as_str())
                     .unwrap_or("");
+                // MCP-002-B：白名单外拒绝（未设置 allowlist = 全放行）
+                if let Some(allowed) = &call_allowlist {
+                    if !allowed.iter().any(|a| a == name) {
+                        writeln!(
+                            out,
+                            "{}",
+                            respond_error(
+                                &id,
+                                -32601,
+                                &format!("allowlist rejected: {name}")
+                            )
+                        )
+                        .unwrap();
+                        out.flush().unwrap();
+                        continue;
+                    }
+                }
                 let arguments = v
                     .pointer("/params/arguments")
                     .cloned()

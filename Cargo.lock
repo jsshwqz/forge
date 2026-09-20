@@ -941,12 +941,20 @@ dependencies = [
 name = "forge-mcp"
 version = "0.1.0"
 dependencies = [
+ "async-trait",
  "forge-cap",
  "forge-core",
+ "forge-evidence",
  "forge-exec",
+ "forge-recovery",
+ "forge-sandbox",
+ "forge-sdk",
+ "forge-task",
  "forge-tools-parsing",
  "forge-tools-text",
  "forge-tools-zl",
+ "forge-verify",
+ "forge-workspace",
  "serde",
  "serde_json",
  "tokio",

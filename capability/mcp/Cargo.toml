@@ -16,6 +16,14 @@ tokio = { version = "1", features = ["process", "io-util", "time", "rt"] }
 forge-tools-parsing = { path = "../../tools/parsing", optional = true }
 forge-tools-text = { path = "../../tools/text", optional = true }
 forge-tools-zl = { path = "../../tools/zl", optional = true }
+forge-sdk = { path = "../../sdk", optional = true }
+forge-sandbox = { path = "../../execution/sandbox", optional = true }
+forge-evidence = { path = "../../verification/evidence", optional = true }
+forge-verify = { path = "../../verification/verifier", optional = true }
+forge-workspace = { path = "../../execution/workspace", optional = true }
+forge-recovery = { path = "../../recovery", optional = true }
+forge-task = { path = "../../core/task", optional = true }
+async-trait = { version = "0.1", optional = true }
 
 [[bin]]
 name = "mock-mcp-server"
@@ -23,11 +31,23 @@ path = "src/bin/mock_mcp_server.rs"
 
 [[bin]]
 name = "forge-mcp-server"
-path = "src/bin/forge_mcp_server.rs"
+path = "src/bin/forge_mcp_server/main.rs"
 required-features = ["server-bin"]
 
 [features]
-server-bin = ["dep:forge-tools-parsing", "dep:forge-tools-text", "dep:forge-tools-zl"]
+server-bin = [
+  "dep:forge-tools-parsing",
+  "dep:forge-tools-text",
+  "dep:forge-tools-zl",
+  "dep:forge-sdk",
+  "dep:forge-sandbox",
+  "dep:forge-evidence",
+  "dep:forge-verify",
+  "dep:forge-workspace",
+  "dep:forge-recovery",
+  "dep:forge-task",
+  "dep:async-trait",
+]
 
 [dev-dependencies]
 tokio = { version = "1", features = ["macros", "rt-multi-thread", "process", "io-util", "time"] }
