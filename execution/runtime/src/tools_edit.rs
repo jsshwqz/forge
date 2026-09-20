@@ -117,7 +117,12 @@ impl Tool for EditPatchTool {
                 ));
             }
             if !content.contains(find) {
-                return Err(ForgeError::InvalidState("edit: find not found".into()));
+                // IMPROVE-7: find 未精确命中时, 返回文件内容片段帮助调用方修正.
+                // 取与 find 共享最多词的行 ± 2 行作为上下文提示.
+                let hint = find_context_hint(&content, find);
+                return Err(ForgeError::InvalidState(format!(
+                    "edit: find not found — the exact string does not exist in {rel}.\n                     Hint: closest matching lines:\n{hint}\n                     Possible causes: whitespace/indentation mismatch, or the text was already edited.\n                     Try read_file to see the current file content."
+                )));
             }
             // 重叠命中计数（match_indices），确保 "aa" in "aaa" 正确识别为多处。
             let occurrences = content.match_indices(find).count();
@@ -151,6 +156,44 @@ impl Tool for EditPatchTool {
 
         Ok(serde_json::json!({ "path": rel, "applied": applied }))
     }
+}
+
+
+/// IMPROVE-7: find 未命中时, 返回文件中与 find 最相似的行片段.
+/// 简单算法: 按行分割, 找与 find 共享最多 token (空白分割) 的行, 返回该行 ± 2 行.
+fn find_context_hint(content: &str, find: &str) -> String {
+    let lines: Vec<&str> = content.lines().collect();
+    if lines.is_empty() {
+        return "(file is empty)".into();
+    }
+    let find_tokens: Vec<&str> = find.split_whitespace().collect();
+    if find_tokens.is_empty() {
+        return format!("line 1: {}", lines.first().unwrap());
+    }
+
+    let mut best_idx = 0usize;
+    let mut best_score = 0usize;
+    for (i, line) in lines.iter().enumerate() {
+        let line_tokens: Vec<&str> = line.split_whitespace().collect();
+        let score = find_tokens
+            .iter()
+            .filter(|t| line_tokens.iter().any(|lt| lt == *t))
+            .count();
+        if score > best_score {
+            best_score = score;
+            best_idx = i;
+        }
+    }
+
+    let start = best_idx.saturating_sub(2);
+    let end = (best_idx + 3).min(lines.len());
+    let mut result = String::new();
+    for (i, line) in lines[start..end].iter().enumerate() {
+        let line_num = start + i + 1;
+        let marker = if line_num - 1 == best_idx { ">>>" } else { "   " };
+        result.push_str(&format!("  {marker} L{line_num}: {line}\n"));
+    }
+    result.trim_end().to_string()
 }
 
 #[cfg(test)]
@@ -193,13 +236,17 @@ mod tests {
     #[tokio::test]
     async fn edit_patch_find_not_found() {
         let tmp = tempfile::tempdir().unwrap();
-        std::fs::write(tmp.path().join("a.txt"), "hello").unwrap();
+        std::fs::write(tmp.path().join("a.txt"), "hello world\nfoo bar baz").unwrap();
         let tool = EditPatchTool::new(tmp.path());
         let err = tool
             .invoke(serde_json::json!({"path": "a.txt", "edits": [{"find": "nope", "replace": "x"}]}))
             .await
             .unwrap_err();
-        assert!(err.to_string().contains("find not found"), "got {err}");
+        let msg = err.to_string();
+        // IMPROVE-7: error should include context hint and read_file suggestion
+        assert!(msg.contains("find not found"), "got {msg}");
+        assert!(msg.contains("Hint:"), "should include hint, got {msg}");
+        assert!(msg.contains("read_file"), "should suggest read_file, got {msg}");
     }
 
     #[tokio::test]
@@ -240,7 +287,7 @@ mod tests {
             }))
             .await
             .unwrap_err();
-        assert!(err2.to_string().contains("find not found"));
+        assert!(err2.to_string().contains("find not found"));  // IMPROVE-7: still contains "find not found"
     }
 
     #[tokio::test]
