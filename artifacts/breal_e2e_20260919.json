@@ -5,7 +5,7 @@
   "operator": "审计/规划层(Qoder)",
   "signoff_authority": "项目所有人（非执行方人类）",
   "signoff": {
-    "signed_by": "项目所有人（非执行方）",
+    "signed_by": "行天",
     "date": "2026-09-19",
     "verdict": "G6 PASS",
     "baseline_head": "7874673",
