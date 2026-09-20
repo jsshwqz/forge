@@ -1,15 +1,23 @@
 {
-  "updated_at": "2026-09-20 20:10",
-  "current_status": "MCP-002 完成: forge-mcp-server 编排能力暴露为 MCP tool(forge_task_create/get/list/orchestrate) + binary侧调用闸 FORGE_MCP_ALLOWLIST; clippy零告警; forge-mcp 34 passed/0 failed; workspace feature 569 passed/0 failed(551基线+18新增); commit 6f79a0a. MKT-104S规格草案待D5拍板.",
+  "updated_at": "2026-09-20 21:30",
+  "current_status": "MKT-104A 完成: FileArtifactStore(content-hash分片) + publish真hash复核 + download路由 + 5冻结测试全绿; G1 clippy 0 / G2 578 pass / G3 artifact 5+signing 4+routes 6 / G4 无泄漏; commit 2c44965. MKT-104S规格S1已补ArtifactStore trait行。",
   "blockers": [],
   "next_tasks": [
     {
-      "priority": "P0",
-      "task_id": "D5-DECISION",
-      "name": "D5 存储后端拍板: PG bytea (A) vs 文件系统 (B)",
-      "prerequisites": "MKT-104S 已完成",
-      "actions": "项目所有人阅读 spec_mkt_104.md S2 决策表后选择 A 或 B",
-      "acceptance": "明确选择 A 或 B, 后续 104A/104B/104C 按选择实施"
+      "priority": "P1",
+      "task_id": "MKT-104B",
+      "name": "制品库数据面: install双校验(先hash后验签) + 删除路由 + review流程联动",
+      "prerequisites": "MKT-104A 已完成",
+      "actions": "实现 install 时先下载制品→sha256复核→再验签; DELETE /market/releases/:name/:version; review_status 与 artifact 可见性联动",
+      "acceptance": "install 双校验测试通过; 删除路由测试通过; clippy 0 warnings"
+    },
+    {
+      "priority": "P2",
+      "task_id": "MKT-104C",
+      "name": "制品库验收面: 端到端发布→下载→安装→运行 完整闭环验证",
+      "prerequisites": "MKT-104B 已完成",
+      "actions": "真机 e2e: 发布者签名上传→安装者下载→hash复核→验签→注册→运行; 包含篡改检测负路径",
+      "acceptance": "e2e 闭环测试通过; 负路径(篡改制品)被拒绝"
     },
     {
       "priority": "P2",
@@ -28,5 +36,5 @@
     "progress.json": "任务状态事实源",
     "worklog.json": "工作日志事实源"
   },
-  "advice": "下一步: D5-DECISION(MKT-104S规格拍板)优先级最高; G6-SIGNOFF 补签待办."
+  "advice": "下一步: MKT-104B(数据面: install双校验+删除路由)优先级最高; G6-SIGNOFF补签待办。"
 }

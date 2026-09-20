@@ -124,3 +124,4 @@
 | HYGIENE-001 | 卫生批三票: CI feature口径洞 + MCP注释修复(抢跑) + KNOW弱证点整改 | ✅ 完成 | GLM | 2026-09-20 | 95b6f9a |
 | MKT-104S | 制品库与安装闭环规格草案(纯文档批, 零代码) | ✅ 完成 | GLM | 2026-09-20 | 9bf961e |
 | MCP-002 | MCP server 扩展: 编排能力暴露为 MCP tool + 调用级 allowlist | ✅ 完成 | GLM | 2026-09-20 | 6f79a0a |
+| MKT-104A | 制品库装配面: FileArtifactStore + upload/download 路由 + 5 冻结测试 | ✅ 完成 | GLM | 2026-09-20 | 2c44965 |

@@ -1454,3 +1454,10 @@ run_from_env() Err 分支新增 FORGE_KNOWLEDGE_PERSIST 门控(缺省持久, PER
 
 ---
 
+## [R1-106] ✅ 成功 · 2026-09-20 · MKT-104A 装配面完成: FileArtifactStore + publish真hash复核 + download路由 + 5冻结测试
+
+- **任务 ID**：MKT-104A
+D5=B文件系统拍板后实施。storage/migrations/0017: releases表加artifact_path/artifact_size/artifact_sha256三列(制品字节不入PG)。storage/src/artifact.rs: FileArtifactStore实现ArtifactStore trait, content-hash分片目录{sha[0..2]}/{sha[2..4]}/{sha256}+.meta.json sidecar+index文件, atomic write(.tmp+rename)。server/routes/market.rs: publish_release接package_data(base64)→decode→check FORGE_PACKAGE_MAX_BYTES(413)→ArtifactStore.put→服务端recheck sha256 vs req.package_hash(409 mismatch)→INSERT releases含3新列; download_release GET /market/releases/:name/:version/download, SELECT→yanked 409→artifact_path NULL 410→ArtifactStore.read→sha256 recheck→200 octet-stream。5冻结测试(PG-gated, tempfile隔离): upload_then_download_bytes_match/upload_exceeds_max_bytes_rejected/publish_artifact_hash_mismatch_rejected/upload_without_publisher_key_rejected/download_yanked_returns_409。spec_mkt_104.md S1补ArtifactStore trait+PG/Minio已有impl行。门禁: G1 clippy 0 warnings / G2 578 passed 0 failed / G3 artifact 5+signing 4+routes 6 / G4 ~/.aion-forge/artifacts 无泄漏。commit 2c44965。
+
+---
+

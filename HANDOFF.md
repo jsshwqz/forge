@@ -1,7 +1,7 @@
 # HANDOFF · 交接快照（由 forge-worklog 自动生成）
 
-- **更新时间**：2026-09-20 20:10
-- **当前状态**：MCP-002 完成: forge-mcp-server 编排能力暴露为 MCP tool(forge_task_create/get/list/orchestrate) + binary侧调用闸 FORGE_MCP_ALLOWLIST; clippy零告警; forge-mcp 34 passed/0 failed; workspace feature 569 passed/0 failed(551基线+18新增); commit 6f79a0a. MKT-104S规格草案待D5拍板.
+- **更新时间**：2026-09-20 21:30
+- **当前状态**：MKT-104A 完成: FileArtifactStore(content-hash分片) + publish真hash复核 + download路由 + 5冻结测试全绿; G1 clippy 0 / G2 578 pass / G3 artifact 5+signing 4+routes 6 / G4 无泄漏; commit 2c44965. MKT-104S规格S1已补ArtifactStore trait行。
 
 ## 🚧 阻塞项
 
@@ -11,7 +11,8 @@
 
 | 优先级 | 任务 ID | 名称 | 前置 | 动作 | 验收 |
 |---|---|---|---|---|---|
-| P0 | D5-DECISION | D5 存储后端拍板: PG bytea (A) vs 文件系统 (B) | MKT-104S 已完成 | 项目所有人阅读 spec_mkt_104.md S2 决策表后选择 A 或 B | 明确选择 A 或 B, 后续 104A/104B/104C 按选择实施 |
+| P1 | MKT-104B | 制品库数据面: install双校验(先hash后验签) + 删除路由 + review流程联动 | MKT-104A 已完成 | 实现 install 时先下载制品→sha256复核→再验签; DELETE /market/releases/:name/:version; review_status 与 artifact 可见性联动 | install 双校验测试通过; 删除路由测试通过; clippy 0 warnings |
+| P2 | MKT-104C | 制品库验收面: 端到端发布→下载→安装→运行 完整闭环验证 | MKT-104B 已完成 | 真机 e2e: 发布者签名上传→安装者下载→hash复核→验签→注册→运行; 包含篡改检测负路径 | e2e 闭环测试通过; 负路径(篡改制品)被拒绝 |
 | P2 | G6-SIGNOFF | G6 签名占位符补签 | 用户提供署名 | 用户给署名后一笔提交补签 artifacts/breal_e2e_20260919.json | signed_by 字段不再是占位符 |
 
 ## ⚠️ 风险/偏差
@@ -28,4 +29,4 @@
 
 ## 🚀 建议
 
-下一步: D5-DECISION(MKT-104S规格拍板)优先级最高; G6-SIGNOFF 补签待办.
+下一步: MKT-104B(数据面: install双校验+删除路由)优先级最高; G6-SIGNOFF补签待办。

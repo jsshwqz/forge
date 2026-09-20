@@ -958,5 +958,13 @@
     "owner": "GLM",
     "last_record": "2026-09-20",
     "commit": "6f79a0a"
+  },
+  {
+    "task_id": "MKT-104A",
+    "name": "制品库装配面: FileArtifactStore + upload/download 路由 + 5 冻结测试",
+    "status": "Completed",
+    "owner": "GLM",
+    "last_record": "2026-09-20",
+    "commit": "2c44965"
   }
 ]
