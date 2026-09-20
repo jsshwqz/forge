@@ -23,7 +23,10 @@ forge-verify = { path = "../../verification/verifier", optional = true }
 forge-workspace = { path = "../../execution/workspace", optional = true }
 forge-recovery = { path = "../../recovery", optional = true }
 forge-task = { path = "../../core/task", optional = true }
+forge-planner = { path = "../../planning/planner", optional = true }
+forge-worklog = { path = "../../tools/worklog", optional = true }
 async-trait = { version = "0.1", optional = true }
+chrono = { version = "0.4", features = ["serde"], optional = true }
 
 [[bin]]
 name = "mock-mcp-server"
@@ -46,8 +49,12 @@ server-bin = [
   "dep:forge-workspace",
   "dep:forge-recovery",
   "dep:forge-task",
+  "dep:forge-planner",
+  "dep:forge-worklog",
   "dep:async-trait",
+  "dep:chrono",
 ]
 
 [dev-dependencies]
 tokio = { version = "1", features = ["macros", "rt-multi-thread", "process", "io-util", "time"] }
+tempfile = "3"

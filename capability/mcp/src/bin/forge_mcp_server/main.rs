@@ -30,6 +30,8 @@
 //! binary 侧 = 服务端调用闸（tools/call 前置过滤）。
 
 mod orchestrate_tools;
+mod planner;
+mod worklog_tools;
 
 use forge_exec::{Tool, ToolDescriptor, ToolRouter};
 use forge_mcp::jsonrpc::PROTOCOL_VERSION;
@@ -37,6 +39,7 @@ use std::io::{BufRead, Write};
 use std::sync::Arc;
 
 use orchestrate_tools::{OrchestrateContext, ORCHESTRATE_TOOLS};
+use worklog_tools::{construct_worklog_tool, WORKLOG_TOOLS};
 
 // ── 工具构造（与 server/src/builtin_tools.rs::construct_tool 保持一致） ──
 
@@ -190,7 +193,7 @@ async fn build_router() -> Arc<ToolRouter> {
         .collect();
     if !want_orchestrate.is_empty() {
         let ctx = Arc::new(
-            OrchestrateContext::new(router.clone()).await.unwrap_or_else(|e| {
+            OrchestrateContext::new().await.unwrap_or_else(|e| {
                 eprintln!("forge-mcp-server: orchestrate context unavailable: {e}");
                 std::process::exit(1);
             }),
@@ -207,6 +210,26 @@ async fn build_router() -> Arc<ToolRouter> {
                 },
                 None => unknown.push(name),
             }
+        }
+    }
+
+    // MCP-003 票3：白名单点名注册台账工具（forge_worklog_add/show, forge_export）
+    let want_worklog: Vec<&str> = builtin_raw
+        .split(',')
+        .map(|s| s.trim())
+        .filter(|s| WORKLOG_TOOLS.contains(s))
+        .collect();
+    for name in want_worklog {
+        if router.route(name).is_ok() {
+            skipped.push(name);
+            continue;
+        }
+        match construct_worklog_tool(name) {
+            Some(tool) => match router.register(tool) {
+                Ok(()) => registered.push(name),
+                Err(_) => skipped.push(name),
+            },
+            None => unknown.push(name),
         }
     }
 

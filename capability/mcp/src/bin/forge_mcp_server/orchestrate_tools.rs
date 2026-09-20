@@ -10,12 +10,13 @@ use async_trait::async_trait;
 use forge_core::{ForgeError, ForgeResult, TaskId};
 use forge_evidence::InMemoryEvidenceStore;
 use forge_exec::{
-    PermissionLevel, PermissionPolicy, Tool, ToolDescriptor, ToolRouter,
+    PermissionLevel, PermissionPolicy, Tool, ToolDescriptor,
 };
 use forge_recovery::BoundedRetryStrategy;
 use forge_sandbox::AllowListPolicy;
 use forge_sdk::{ForgeSdk, Orchestrator, OrchestratorDeps};
 use forge_task::{AcceptanceCriterion, TaskStatus};
+use crate::planner::AcceptanceDrivenPlanner;
 use forge_verify::{CommandVerifier, FileVerifier};
 use forge_workspace::WorkspaceManager;
 use serde::Deserialize;
@@ -37,7 +38,6 @@ pub const ORCHESTRATE_TOOLS: &[&str] = &[
 /// 共享（编排执行时工具路由含全部已注册工具，计划只调度 base tools，无循环）。
 pub struct OrchestrateContext {
     pub sdk: ForgeSdk,
-    pub router: Arc<ToolRouter>,
     pub workspace: Arc<WorkspaceManager>,
     pub evidence: Arc<InMemoryEvidenceStore>,
     pub timeout: Duration,
@@ -47,7 +47,7 @@ impl OrchestrateContext {
     /// 构造编排上下文。存储后端跟随 FORGE_PG_URL；缺省内存栈。
     ///
     /// 工作区根：`FORGE_WORKSPACE` 优先，缺省系统临时目录。
-    pub async fn new(router: Arc<ToolRouter>) -> ForgeResult<Self> {
+    pub async fn new() -> ForgeResult<Self> {
         let sdk = match ForgeSdk::postgres_from_env().await {
             Ok(s) => s,
             Err(e) => {
@@ -61,15 +61,43 @@ impl OrchestrateContext {
         let workspace = Arc::new(WorkspaceManager::new(ws_root)?);
         Ok(Self {
             sdk,
-            router,
             workspace,
             evidence: Arc::new(InMemoryEvidenceStore::default()),
             timeout: Duration::from_secs(300),
         })
     }
 
-    /// 组装 OrchestratorDeps（每次调用新建，字段随本次参数变化）。
-    fn make_deps(&self, max_replans: u32, workspace_task: Option<String>) -> OrchestratorDeps {
+    /// 按任务 workdir 构造执行 router（文件工具 root=workdir，保证工具写文件
+    /// 与验收核对在同一目录——Practice-1 实证 MCP-002 的 root 分裂缺陷）。
+    fn exec_router_for(workdir: &std::path::Path) -> forge_exec::ToolRouter {
+        use forge_exec::{EchoTool, WriteFileTool, ReadFileTool, ListDirTool, EditPatchTool};
+        let r = forge_exec::ToolRouter::new();
+        // 基础 5 工具（与 MCP-001 BASE_TOOLS 对齐），文件类以 workdir 为 root
+        let _ = r.register(Box::new(EchoTool::new()));
+        let _ = r.register(Box::new(WriteFileTool::new(workdir.to_path_buf())));
+        let _ = r.register(Box::new(ReadFileTool::new(workdir.to_path_buf())));
+        let _ = r.register(Box::new(ListDirTool::new(workdir.to_path_buf())));
+        let _ = r.register(Box::new(EditPatchTool::new(workdir.to_path_buf())));
+        // 纯解析工具（无 root 依赖）按 FORGE_TOOLS_BUILTIN 白名单附加
+        let raw = std::env::var("FORGE_TOOLS_BUILTIN").unwrap_or_default();
+        for name in raw.split(',').map(|s| s.trim()).filter(|s| !s.is_empty()) {
+            // 已注册基础工具或编排/台账工具名跳过
+            if r.route(name).is_ok() { continue; }
+            if let Some(t) = crate::construct_tool(name, workdir) {
+                let _ = r.register(t);
+            }
+        }
+        r
+    }
+
+    /// 组装 OrchestratorDeps（每次调用新建，workdir 由调用方解析）。
+    fn make_deps_for(
+        &self,
+        workdir: &std::path::Path,
+        planner: Option<Arc<dyn forge_planner::Planner>>,
+        max_replans: u32,
+        workspace_task: Option<String>,
+    ) -> OrchestratorDeps {
         // 策略：拒绝 Irreversible，其余放行（与 server DemoAllowAll 语义一致；
         // MCP-001 头注释已澄清 binary 侧不做 client 允许清单）
         let policy: Arc<dyn PermissionPolicy> = Arc::new(AllowListPolicy {
@@ -80,7 +108,7 @@ impl OrchestrateContext {
             ],
         });
         OrchestratorDeps {
-            router: self.router.clone(),
+            router: Arc::new(Self::exec_router_for(workdir)),
             policy,
             verifier_cmd: Arc::new(CommandVerifier),
             verifier_file: Arc::new(FileVerifier),
@@ -94,7 +122,7 @@ impl OrchestrateContext {
             }),
             replanner: None,
             max_replans,
-            planner: None,
+            planner,
             workspace_task,
         }
     }
@@ -331,9 +359,16 @@ impl Tool for ForgeOrchestrateTool {
             .and_then(|v| v.as_str())
             .map(|s| s.to_string());
 
-        let deps = self.ctx.make_deps(max_replans, workspace_task);
-        // 编排器 capability = echo（与 server orchestrate 一致，SequentialPlanner 按
-        // capability 机械展开，步骤落到 base tools）
+        // MCP-003 票2：工作区对齐——先 create_for 拿 workdir，再以 workdir 构造
+        // 执行 router（工具 root 与验收 workdir 同一目录）
+        let workdir = match &workspace_task {
+            Some(prev) => self.ctx.workspace.create_for(prev.as_str())?,
+            None => self.ctx.workspace.create_for(id.as_ref())?,
+        };
+        // MCP-003 票1：验收驱动规划器——文件类验收前置 write_file，Command 保持 echo
+        let planner: Option<Arc<dyn forge_planner::Planner>> =
+            Some(Arc::new(AcceptanceDrivenPlanner::default()));
+        let deps = self.ctx.make_deps_for(&workdir, planner, max_replans, workspace_task);
         let orch = Orchestrator {
             capability: "echo".into(),
             timeout: self.ctx.timeout,
@@ -365,8 +400,7 @@ mod tests {
 
     #[tokio::test]
     async fn create_get_list_roundtrip_in_memory() {
-        let router = Arc::new(ToolRouter::new());
-        let ctx = OrchestrateContext::new(router.clone()).await.unwrap();
+        let ctx = OrchestrateContext::new().await.unwrap();
         let tool = ForgeTaskCreateTool::new(Arc::new(ctx));
 
         let out = tool
@@ -399,10 +433,7 @@ mod tests {
 
     #[tokio::test]
     async fn orchestrate_end_to_end_completes() {
-        let router = Arc::new(ToolRouter::new());
-        // 注册 echo 作为 base tool（编排执行需要）
-        router.register(Box::new(forge_exec::EchoTool::new())).unwrap();
-        let ctx = OrchestrateContext::new(router.clone()).await.unwrap();
+        let ctx = OrchestrateContext::new().await.unwrap();
         let ctx = Arc::new(ctx);
         let create = ForgeTaskCreateTool::new(ctx.clone());
         let task_id = create
