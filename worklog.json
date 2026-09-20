@@ -1382,5 +1382,21 @@
     "task_id": "IMPROVE-5",
     "title": "IMPROVE-5: FileArtifactStore orphan cleanup + D9 构造点 hooks",
     "body": "新增 cleanup_orphans()/cleanup_orphans_inner() 扫描 index 目录删除 orphan index/meta 文件. D9: ArtifactStore trait 无 as_any 无法 downcast, 改在 server/src/lib.rs 3 处 FileArtifactStore::with_default_dir() 构造后直接调用. 新增 13th storage test cleanup_orphans_removes_unreferenced_files. 修复重复 import 污染(连续重复 use Duration/timeout 坍缩为单对). Gates: clippy -D warnings clean, 593 passed (baseline 589+4)."
+  },
+  {
+    "id": "R1-114",
+    "kind": "R1Completed",
+    "date": "2026-09-21",
+    "task_id": "IMPROVE-6",
+    "title": "IMPROVE-6: 编排错误信息透传",
+    "body": "EngineStepExecutor.execute() 和 EngineStepBridge.execute() 在 ExecutionResult.status != Success 时, 将 result.output (失败时为 {\"error\":\"...\"}) 序列化后追加到 ForgeError message. 修改前只返回状态名 (如 'Failed'), 重规划器和日志看不到具体失败原因. 新增测试 error_message_contains_output_detail 验证 VersionGateTool 失败时 failure reason 包含 tool 错误文案."
+  },
+  {
+    "id": "R1-115",
+    "kind": "R1Completed",
+    "date": "2026-09-21",
+    "task_id": "IMPROVE-7",
+    "title": "IMPROVE-7: edit_patch find 未命中上下文提示",
+    "body": "新增 find_context_hint() 按词重叠度找最相似行, 返回 ±2 行上下文并标记最匹配行. find 未命中时错误消息变为包含 Hint 上下文 + read_file 建议, LLM 可据此 read_file 看实际内容再重试, 形成修正闭环. 更新测试验证新错误消息包含 Hint: 和 read_file 建议."
   }
 ]

@@ -1022,5 +1022,21 @@
     "owner": "DeepSeek",
     "last_record": "2026-09-21",
     "commit": "120aa70"
+  },
+  {
+    "task_id": "IMPROVE-6",
+    "name": "编排错误信息透传 — result.output 注入 ForgeError message",
+    "status": "Completed",
+    "owner": "DeepSeek",
+    "last_record": "2026-09-21",
+    "commit": "095c341"
+  },
+  {
+    "task_id": "IMPROVE-7",
+    "name": "edit_patch find 未命中时返回上下文提示, 助 LLM 自我修正",
+    "status": "Completed",
+    "owner": "DeepSeek",
+    "last_record": "2026-09-21",
+    "commit": "9b9236d"
   }
 ]

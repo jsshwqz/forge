@@ -4,7 +4,7 @@
   "blockers": [],
   "next_tasks": [],
   "risks": [
-    "IMPROVE-1~5 共 5 commits (0a6c958..120aa70) 待推送 devspace",
+    "IMPROVE-1~7 共 7 commits (0a6c958..9b9236d) 待推送 devspace",
     "DeepSeek 余额约 1.2 元, 编排重试预算有限"
   ],
   "files": {
@@ -14,5 +14,5 @@
     "progress.json": "任务状态事实源",
     "worklog.json": "工作日志事实源"
   },
-  "advice": "Forge 自我改进批 IMPROVE-1~5 完成: delete 引用计数/FORGE_WORKSPACE 隔离/测试竞态修复/spec 期望码修正/e2e 闭环测试/orphan cleanup. 全量门禁 green: clippy -D warnings clean, 593 passed (baseline 589→593, +4 新测试). 后续方向: (1) 编排错误信息透传 (EngineStepExecutor 丢弃 result.output); (2) edit_patch empty-find 设计缺口致 forge 无法自编辑; (3) 新批次需求. 各 AI 接入 MCP 请读 docs/MCP_GUIDE.md; 台账操作走 forge-worklog CLI 或 MCP 工具, 勿手改 JSON."
+  "advice": "Forge 自我改进批 IMPROVE-1~7 完成: delete 引用计数/FORGE_WORKSPACE 隔离/测试竞态修复/spec 期望码修正/e2e 闭环测试/orphan cleanup/编排错误透传/edit_patch 上下文提示. 全量门禁 green: clippy -D warnings clean, 594 passed (baseline 589→594, +5 新测试). 后续方向: (1) 用 forge 实际跑一次编排自编辑验证 IMPROVE-6+7 闭环; (2) 新批次需求. 各 AI 接入 MCP 请读 docs/MCP_GUIDE.md."
 }
