@@ -1270,5 +1270,13 @@
     "task_id": "AF-BP-KNOW-001",
     "title": "KNOW批 P8 批准: R7-015 缺省 serve 知识库持久化断链补全立项",
     "body": "项目所有人 2026-09-20 批示: 批准 AF-BP-KNOW-001(KNOW-001A/B 全包). D15 采纳默认(缺省单机 serve 翻转文件持久, 逃生阀 FORGE_KNOWLEDGE_PERSIST=0), D16 维持 Out of scope. 前提: G6 真模型签核已 @a2c785c 关账. 下发单 docs/handoff/know_001a_kickoff.json 已翻牌为可开工. 纪律: 执行方≠复核方."
+  },
+  {
+    "id": "R1-101",
+    "kind": "R1Completed",
+    "date": "2026-09-20",
+    "task_id": "KNOW-001A/001B",
+    "title": "KNOW-001A/001B: 缺省 serve 知识库改文件持久(env 门控+重启不丢e2e, 551passed/0failed/clippy0warn)",
+    "body": "run_from_env() Err 分支新增 FORGE_KNOWLEDGE_PERSIST 门控(缺省持久, PERSIST=0逃生阀); knowledge_persist_enabled()纯函数; know.rs 5测试全绿(#4跨实例重启不丢行为级证明); AppState::in_memory()未改(29调用点零扰动); R7-015缺省serve分支持久化补全(本批闭合最后一处断链)"
   }
 ]

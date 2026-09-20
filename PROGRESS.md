@@ -118,3 +118,5 @@
 | AF-BP-BREAL-001C | B-REAL-001C 数据面: 步骤输出引用 $sN.output[.path][|json] | ✅ 完成 | builder-a | R1-098 | 14dffcb |
 | AF-BP-BREAL-001D | B-REAL-001D 真实干活e2e(写→读→解析→渲染→落盘) + 台账整改 | ✅ 完成 | builder-a | R1-099 | bec4fdc |
 | B-REAL-G6 | G6 真模型签核: SenseNova 多步编排 e2e 跑通(判据A/B/C全PASS)+人工签核关账 | ✅ 完成 | - | - | 7874673 |
+| KNOW-001A | 缺省单机 serve 知识库改文件持久(env 门控, 缺省持久, 测试零扰动) | ✅ 完成 | executor | - | 9d34f0c |
+| KNOW-001B | 知识持久化重启不丢 e2e(两实例共享文件路径, tempdir 隔离) | ✅ 完成 | executor | - | 9d34f0c |

@@ -1420,3 +1420,10 @@ SenseNova(sensenova-6.8-flash-lite) 真模型 POST /orchestrate plan_mode=multi_
 
 ---
 
+## [R1-101] ✅ 成功 · 2026-09-20 · KNOW-001A/001B: 缺省 serve 知识库改文件持久(env 门控+重启不丢e2e, 551passed/0failed/clippy0warn)
+
+- **任务 ID**：KNOW-001A/001B
+run_from_env() Err 分支新增 FORGE_KNOWLEDGE_PERSIST 门控(缺省持久, PERSIST=0逃生阀); knowledge_persist_enabled()纯函数; know.rs 5测试全绿(#4跨实例重启不丢行为级证明); AppState::in_memory()未改(29调用点零扰动); R7-015缺省serve分支持久化补全(本批闭合最后一处断链)
+
+---
+

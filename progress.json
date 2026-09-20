@@ -910,5 +910,21 @@
     "owner": null,
     "last_record": null,
     "commit": "7874673"
+  },
+  {
+    "task_id": "KNOW-001A",
+    "name": "缺省单机 serve 知识库改文件持久(env 门控, 缺省持久, 测试零扰动)",
+    "status": "Completed",
+    "owner": "executor",
+    "last_record": null,
+    "commit": "9d34f0c"
+  },
+  {
+    "task_id": "KNOW-001B",
+    "name": "知识持久化重启不丢 e2e(两实例共享文件路径, tempdir 隔离)",
+    "status": "Completed",
+    "owner": "executor",
+    "last_record": null,
+    "commit": "9d34f0c"
   }
 ]

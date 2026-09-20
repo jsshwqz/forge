@@ -1,7 +1,7 @@
 # HANDOFF · 交接快照（由 forge-worklog 自动生成）
 
 - **更新时间**：2026-09-20 00:39
-- **当前状态**：B-REAL批全批收口(001A/B/C/D + G6真模型签核PASS): SenseNova多步编排e2e跑通, 项目所有人(非执行方)人工签核, 证据 artifacts/breal_e2e_20260919.json; B阶段用新forge真实干活首次实证. KNOW批(R7-015缺省serve知识库持久化断链)已获P8批准, 待按 know_001a_kickoff 下发执行方(执行方≠复核方).
+- **当前状态**：KNOW批(KNOW-001A/001B)交付完毕: 缺省单机serve知识库改文件持久(env门控FORGE_KNOWLEDGE_PERSIST, 缺省持久, PERSIST=0逃生阀); know.rs 5测试全绿(含跨实例重启不丢e2e行为级证明); 全量551passed/0failed/clippy0warn(基线544+本批5+余量2); R7-015缺省serve分支持久化断链闭合(本批补全最后一处漏改). B-REAL批G1-G6全闭合.
 
 ## 🚧 阻塞项
 
