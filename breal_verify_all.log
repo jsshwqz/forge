@@ -1,0 +1,1250 @@
+   Compiling forge-sdk v0.1.0 (D:\test\aionui\鏂癴orge\aion-forge\sdk)
+   Compiling forge-server v0.1.0 (D:\test\aionui\鏂癴orge\aion-forge\server)
+   Compiling forge-cli v0.1.0 (D:\test\aionui\鏂癴orge\aion-forge\cli)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 11m 53s
+     Running unittests src\lib.rs (target\debug\deps\forge_agent-5b2b57d97def07c3.exe)
+
+running 8 tests
+test model::tests::test_agent_action_equality ... ok
+test model::tests::test_agent_config_default ... ok
+test model::tests::test_agent_action_serde ... ok
+test turn::tests::test_max_turns ... ok
+test turn::tests::test_normal_finish ... ok
+test model::tests::test_scripted_agent_object_safe ... ok
+test turn::tests::test_abort ... ok
+test turn::tests::test_loop_detected ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running unittests src\lib.rs (target\debug\deps\forge_api-22da4d8173c41e5b.exe)
+
+running 15 tests
+test tests::chat_message_roles ... ok
+test llm_agent::tests::with_system_prompt_full_override ... ok
+test llm_agent::tests::connect_auto_discovers_chat_model ... ok
+test llm_agent::tests::act_maps_reply_and_includes_observation ... ok
+test llm_agent::tests::connect_model_override_wins ... ok
+test llm_agent::tests::with_task_goal_injects_goal_into_system_prompt ... ok
+test tests::extract_content_missing_is_error ... ok
+test llm_agent::tests::finish_outcome_still_handled_by_engine_not_agent ... ok
+test llm_agent::tests::long_observation_is_truncated ... ok
+test tests::extract_content_reads_pointer ... ok
+test tests::extract_content_trims_reasoning_model_whitespace ... ok
+test tests::pick_empty_is_not_found ... ok
+test tests::pick_falls_back_to_first_sorted ... ok
+test tests::pick_prefers_chat_named_model ... ok
+test tests::pick_prefers_sensenova_official_68_then_67 ... ok
+
+test result: ok. 15 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests\live.rs (target\debug\deps\live-e17fe824772ef6f7.exe)
+
+running 2 tests
+test live_chat_roundtrip ... ok
+test live_list_models_and_auto_pick ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\live_agent.rs (target\debug\deps\live_agent-05779202e4fc9e30.exe)
+
+running 2 tests
+test real_model_drives_agent_trait ... ok
+test real_model_works_toward_injected_goal ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running unittests src\lib.rs (target\debug\deps\forge_artifact-8520938dca993c31.exe)
+
+running 6 tests
+test store::tests::test_size_bytes ... ok
+test store::tests::test_not_found ... ok
+test store::tests::test_same_content_different_id_same_checksum ... ok
+test store::tests::test_put_and_read ... ok
+test store::tests::test_meta_preserved ... ok
+test store::tests::test_checksum_correctness ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src\main.rs (target\debug\deps\forge_bench-6f7e4649276f5a45.exe)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src\lib.rs (target\debug\deps\forge_cap-2f8087128cc6937c.exe)
+
+running 15 tests
+test registry::tests::test_not_found ... ok
+test registry::tests::test_duplicate_name_version_rejected ... ok
+test registry::tests::test_deprecate ... ok
+test registry::tests::test_list_by_kind ... ok
+test registry::tests::test_find_by_name ... ok
+test signing::tests::fingerprint_is_16_chars ... ok
+test registry::tests::test_register_and_get ... ok
+test signing::tests::format_errors_are_err_not_false ... ok
+test versioning::tests::invalid_constraint_is_none ... ok
+test versioning::tests::pinned_version_not_upgraded ... ok
+test versioning::tests::highest_compatible_wins ... ok
+test versioning::tests::star_constraint_resolves_latest ... ok
+test versioning::tests::yanked_excluded_everywhere ... ok
+test signing::tests::tampered_package_rejected ... ok
+test signing::tests::sign_verify_roundtrip ... ok
+
+test result: ok. 15 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.07s
+
+     Running unittests src\main.rs (target\debug\deps\forge-b0bed4ca2d18bf79.exe)
+
+running 7 tests
+test mcp_server::tests::test_unknown_notification_silent ... ok
+test mcp_server::tests::test_initialize_response_shape ... ok
+test mcp_server::tests::test_router_has_echo_and_worklog ... ok
+test mcp_server::tests::test_tools_call_missing_name_is_invalid_params ... ok
+test mcp_server::tests::test_tools_list_shape ... ok
+test mcp_server::tests::test_tools_call_unknown_tool_is_invalid_params ... ok
+test mcp_server::tests::test_tools_call_echo_roundtrip ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+
+     Running unittests src\lib.rs (target\debug\deps\forge_core-9404e9ba58c88821.exe)
+
+running 27 tests
+test error::tests::test_dependency_missing_display ... ok
+test error::tests::test_permission_denied_display ... ok
+test error::tests::test_not_found_display ... ok
+test error::tests::test_invalid_state_display ... ok
+test id::tests::test_agent_id_serde_roundtrip ... ok
+test error::tests::test_io_error_from ... ok
+test error::tests::test_verification_failed_display ... ok
+test id::tests::test_artifact_id_prefix ... ok
+test id::tests::test_agent_id_prefix ... ok
+test id::tests::test_artifact_id_serde_roundtrip ... ok
+test id::tests::test_as_ref ... ok
+test id::tests::test_capability_id_prefix ... ok
+test id::tests::test_capability_id_serde_roundtrip ... ok
+test id::tests::test_display ... ok
+test id::tests::test_evidence_id_prefix ... ok
+test id::tests::test_evidence_id_serde_roundtrip ... ok
+test id::tests::test_execution_id_prefix ... ok
+test id::tests::test_execution_id_serde_roundtrip ... ok
+test id::tests::test_plan_id_prefix ... ok
+test id::tests::test_plan_id_serde_roundtrip ... ok
+test id::tests::test_product_id_prefix ... ok
+test id::tests::test_product_id_serde_roundtrip ... ok
+test id::tests::test_session_id_prefix ... ok
+test id::tests::test_session_id_serde_roundtrip ... ok
+test id::tests::test_task_id_prefix ... ok
+test id::tests::test_task_id_uniqueness ... ok
+test id::tests::test_task_id_serde_roundtrip ... ok
+
+test result: ok. 27 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running unittests src\lib.rs (target\debug\deps\forge_dag-53ba5bd009098fa2.exe)
+
+running 7 tests
+test graph::tests::test_dangling_dependency ... ok
+test graph::tests::test_cycle_detected ... ok
+test graph::tests::test_ready_steps_sorted ... ok
+test graph::tests::test_diamond_parallel ... ok
+test graph::tests::test_empty_plan ... ok
+test graph::tests::test_linear_chain ... ok
+test graph::tests::test_self_dependency ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src\lib.rs (target\debug\deps\forge_event-b1ca0ff68513e653.exe)
+
+running 4 tests
+test bus::tests::test_with_buffer_capacity_enforced ... ok
+test bus::tests::test_multiple_subscribers ... ok
+test bus::tests::test_topic_filtering ... ok
+test bus::tests::test_no_replay_before_subscribe ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.21s
+
+     Running unittests src\lib.rs (target\debug\deps\forge_evidence-7828c99ed400bc0d.exe)
+
+running 6 tests
+test store::tests::test_duplicate_id_rejected ... ok
+test store::tests::test_nonzero_at_preserved ... ok
+test store::tests::test_put_and_get ... ok
+test store::tests::test_zero_at_filled ... ok
+test store::tests::test_not_found ... ok
+test store::tests::test_by_criterion ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src\lib.rs (target\debug\deps\forge_exec-2fb29d696de5a750.exe)
+
+running 30 tests
+test engine::tests::test_permission_denied ... ok
+test engine::tests::test_echo_success ... ok
+test engine::tests::test_tool_not_found ... ok
+test permission_level::tests::test_ordering ... ok
+test permission_level::tests::test_serde ... ok
+test router::tests::test_duplicate_register ... ok
+test router::tests::test_register_and_route ... ok
+test router::tests::test_list ... ok
+test router::tests::test_echo_tool ... ok
+test router::tests::test_route_not_found ... ok
+test tools_edit::tests::edit_patch_escape_rejected ... ok
+test tools_edit::tests::edit_patch_create_if_missing ... ok
+test tools_file::tests::rejects_escape_attempts ... ok
+test tools_file::tests::write_file_size_cap_enforced ... ok
+test tools_edit::tests::edit_patch_find_not_found ... ok
+test tools_edit::tests::edit_patch_empty_find_rejected ... ok
+test tools_path::tests::accepts_plain_relative_paths ... ok
+test tools_path::tests::empty_path_is_workspace_root ... ok
+test tools_edit::tests::edit_patch_sequential_apply ... ok
+test tools_path::tests::rejects_escape_attempts ... ok
+test tools_file::tests::writes_relative_file_and_creates_dirs ... ok
+test engine::tests::test_timeout ... ok
+test tools_edit::tests::edit_patch_unique_replace ... ok
+test tools_read::tests::read_file_escape_rejected ... ok
+test tools_edit::tests::edit_patch_not_unique_requires_flag ... ok
+test tools_file::tests::write_file_utf8_roundtrip ... ok
+test tools_read::tests::list_dir_lists_and_sorts ... ok
+test tools_read::tests::read_file_roundtrip ... ok
+test tools_read::tests::read_file_not_found ... ok
+test tools_read::tests::read_file_size_cap_enforced ... ok
+
+test result: ok. 30 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.15s
+
+     Running unittests src\lib.rs (target\debug\deps\forge_gates-147eee92a9279a39.exe)
+
+running 5 tests
+test gate::tests::test_all_pass ... ok
+test gate::tests::test_missing_and_failed_separate ... ok
+test gate::tests::test_missing_results ... ok
+test gate::tests::test_empty_required_rejected ... ok
+test gate::tests::test_one_fail ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src\lib.rs (target\debug\deps\forge_knowledge-0937a4cf342ed8b6.exe)
+
+running 7 tests
+test suggest::tests::roundtrip_parses ... ok
+test suggest::tests::top_n_suggestions_generated ... ok
+test tests::ingest_and_filter_by_category_tool_keyword ... ok
+test tests::session_replay_export_roundtrip ... ok
+test failures_file::tests::file_kb_search_filters ... ok
+test failures_file::tests::file_kb_tolerates_malformed_lines ... ok
+test failures_file::tests::file_kb_persists_across_instances ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.07s
+
+     Running tests\forge_pr.rs (target\debug\deps\forge_pr-ae0f6226a3b0b7a8.exe)
+
+running 8 tests
+test verified_case_reproduces_failure ... ok
+test green_case_rejected_not_reproducible ... ok
+test ledger_roundtrip ... ok
+test forge_pr_requires_approval_ledger ... ok
+test forge_pr_case_cap_five ... ok
+test branch_patch_roundtrip_applies_clean ... ok
+test forge_pr_patch_only_touches_knowledge_cases ... ok
+test main_head_untouched_after_forge_pr ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 11.75s
+
+     Running tests\suggest_test.rs (target\debug\deps\suggest_test-7f6cfb6ef65b4f01.exe)
+
+running 4 tests
+test roundtrip_parses ... ok
+test empty_kb_returns_empty ... ok
+test write_suggestions_rejects_src_path ... ok
+test top_n_suggestions_generated ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src\lib.rs (target\debug\deps\forge_mcp-361d5cf3a74a559d.exe)
+
+running 13 tests
+test adapter::tests::test_empty_command_fails ... ok
+test config::tests::test_empty_name ... ok
+test adapter::tests::test_to_capability ... ok
+test config::tests::test_empty_command ... ok
+test config::tests::test_valid_config ... ok
+test jsonrpc::tests::parse_garbage_is_none ... ok
+test config::tests::test_serde_roundtrip ... ok
+test jsonrpc::tests::parse_notification_is_other ... ok
+test jsonrpc::tests::parse_response_with_error ... ok
+test jsonrpc::tests::parse_response_with_result ... ok
+test jsonrpc::tests::parse_server_request_is_other ... ok
+test jsonrpc::tests::request_serializes_with_id_and_params ... ok
+test jsonrpc::tests::request_without_params_omits_field ... ok
+
+test result: ok. 13 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src\bin\mock_mcp_server.rs (target\debug\deps\mock_mcp_server-ac5c618cc887da4e.exe)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\stdio.rs (target\debug\deps\stdio-63a812e54ebbfe04.exe)
+
+running 3 tests
+test empty_command_fails_fast ... ok
+test handshake_list_call_shutdown_full_flow ... ok
+test unknown_method_maps_to_error ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.27s
+
+     Running unittests src\lib.rs (target\debug\deps\forge_pipeline-4b9cfd1dd2114ee5.exe)
+
+running 33 tests
+test autoselect::tests::budget_pressure_above_threshold_does_not_downgrade ... ok
+test autoselect::tests::budget_pressure_downgrades_to_cheapest ... ok
+test autoselect::tests::estimate_prompt_tokens_scales_with_length ... ok
+test autoselect::tests::architect_irreversible_prefers_highest_capability ... ok
+test autoselect::tests::context_limit_too_small_is_validation_error ... ok
+test autoselect::tests::from_tier_enables_configured_models_and_stays_auto ... ok
+test autoselect::tests::default_catalog_is_all_disabled_but_serde_roundtrips ... ok
+test autoselect::tests::infer_risk_maps_keywords_with_priority ... ok
+test autoselect::tests::from_tier_honors_extra_candidates_env ... ok
+test autoselect::tests::json_required_excludes_non_json_candidates ... ok
+test autoselect::tests::low_capability_only_candidate_sets_low_tier ... ok
+test autoselect::tests::manual_override_wins_over_auto ... ok
+test autoselect::tests::manual_unknown_or_disabled_id_is_config_error ... ok
+test autoselect::tests::min_capability_is_clamped_and_role_sensitive ... ok
+test autoselect::tests::no_active_candidate_is_config_error ... ok
+test autoselect::tests::no_candidates_below_min_relaxes_and_flags_downgraded ... ok
+test autoselect::tests::set_enabled_toggles_candidate ... ok
+test autoselect::tests::selection_is_deterministic_with_id_tiebreak ... ok
+test autoselect::tests::worker_mechanical_picks_highest_capability_of_qualified ... ok
+test role::tests::bad_json_rejected ... ok
+test role::tests::default_profiles_cover_four_roles ... ok
+test role::tests::permission_mapping ... ok
+test role::tests::distributes_via_capability_registry ... ok
+test pipeline::tests::architect_invalid_output_fails_closed ... ok
+test role::tests::serde_roundtrip ... ok
+test tier::tests::empty_low_treated_as_missing ... ok
+test pipeline::tests::builder_failure_escalates_without_review ... ok
+test tier::tests::falls_back_to_high_when_low_missing ... ok
+test tier::tests::resolves_configured_low ... ok
+test tier::tests::from_env_requires_high ... ok
+test pipeline::tests::pass_flow_completes_with_review_and_costs ... ok
+test pipeline::tests::reject_verdict_vetoes_gate ... ok
+test pipeline::tests::concern_allows_completion ... ok
+
+test result: ok. 33 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.42s
+
+     Running tests\pipeline_live.rs (target\debug\deps\pipeline_live-e379092f7b359dfe.exe)
+
+running 1 test
+test live_four_role_pipeline_smoke ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\review_meter.rs (target\debug\deps\review_meter-9c338bb63edeae7e.exe)
+
+running 1 test
+test review_usage_reaches_meter ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src\lib.rs (target\debug\deps\forge_plan_llm-7f50d75b2cbf9e76.exe)
+
+running 15 tests
+test codegen::tests::strip_fence_variants ... ok
+test codegen::tests::codegen_plan_fallback_on_llm_error ... ok
+test codegen::tests::codegen_plan_rejects_unsafe_path ... ok
+test llm_planner::tests::exhausted_attempts_reports_last_error ... ok
+test validator::tests::cycle_detected ... ok
+test llm_planner::tests::valid_first_shot ... ok
+test validator::tests::empty_steps_rejected ... ok
+test validator::tests::missing_steps_rejected ... ok
+test codegen::tests::path_safety_matrix ... ok
+test validator::tests::dangling_dependency_rejected ... ok
+test codegen::tests::codegen_plan_single_step_write_file ... ok
+test llm_planner::tests::prompt_contains_goal_constraints_and_acceptance ... ok
+test validator::tests::duplicate_id_rejected ... ok
+test llm_planner::tests::repair_loop_accepts_after_wrapped_output ... ok
+test validator::tests::valid_plan_passes ... ok
+
+test result: ok. 15 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+
+     Running tests\meter.rs (target\debug\deps\meter-a672d2535e0c251d.exe)
+
+running 4 tests
+test meter_none_is_noop ... ok
+test purpose_labels_frozen ... ok
+test replan_usage_reaches_meter ... ok
+test llm_planner_usage_reaches_meter ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running unittests src\lib.rs (target\debug\deps\forge_planner-08743d62de7e9020.exe)
+
+running 3 tests
+test sequential::tests::test_three_acceptance_three_steps ... ok
+test sequential::tests::test_deterministic_same_input ... ok
+test sequential::tests::test_no_acceptance_single_step ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src\lib.rs (target\debug\deps\forge_product-7338577761df054a.exe)
+
+running 12 tests
+test manifest::tests::test_all_satisfied ... ok
+test template::tests::test_default_value ... ok
+test assembly::tests::test_assemble_missing_required ... ok
+test manifest::tests::test_missing_optional_not_reported ... ok
+test manifest::tests::test_validate_non_orchestrator_rejected ... ok
+test assembly::tests::test_assemble_snapshot_immutable ... ok
+test manifest::tests::test_missing_required ... ok
+test assembly::tests::test_assemble_success ... ok
+test template::tests::test_extra_params_ignored ... ok
+test template::tests::test_missing_required ... ok
+test template::tests::test_full_instantiation ... ok
+test template::tests::test_two_instantiations_different_ids ... ok
+
+test result: ok. 12 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src\lib.rs (target\debug\deps\forge_product_instance-8a8e87f2c11fad5f.exe)
+
+running 5 tests
+test tests::happy_path_lifecycle ... ok
+test tests::illegal_transitions_rejected ... ok
+test tests::duplicate_version_rejected_and_versions_listed ... ok
+test tests::publish_requires_pass_or_concern ... ok
+test tests::store_crud_and_conflict ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s
+
+     Running unittests src\lib.rs (target\debug\deps\forge_recovery-72891daad8f9db9a.exe)
+
+running 9 tests
+test classify::tests::test_classify_success_errors ... ok
+test classify::tests::test_classify_permission_denied ... ok
+test classify::tests::test_classify_failed ... ok
+test classify::tests::test_deterministic_same_input_same_output ... ok
+test classify::tests::test_classify_timeout ... ok
+test engine::tests::test_backoff_cap ... ok
+test engine::tests::test_retry_backoff ... ok
+test engine::tests::test_non_retriable_escalates ... ok
+test engine::tests::test_engine_publishes_event ... ok
+
+test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running unittests src\lib.rs (target\debug\deps\forge_sandbox-629bf64c6d597c75.exe)
+
+running 9 tests
+test policy::tests::test_allow_list_custom ... ok
+test policy::tests::test_default_policy_external_denied ... ok
+test policy::tests::test_default_policy_irreversible_denied ... ok
+test policy::tests::test_default_policy_readonly_passes ... ok
+test policy::tests::test_deny_all_rejects_everything ... ok
+test policy::tests::test_default_policy_write_denied ... ok
+test policy::tests::test_policy_chain_all_pass ... ok
+test policy::tests::test_denial_message_contains_tool_name ... ok
+test policy::tests::test_policy_chain_deny_all_blocks ... ok
+
+test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src\lib.rs (target\debug\deps\forge_scheduler-90a2a6e55002dc83.exe)
+
+running 4 tests
+test tests::failure_stops_downstream ... ok
+test tests::linear_chain_executes_in_order ... ok
+test tests::empty_plan_zero_waves ... ok
+test tests::diamond_respects_wave_boundaries ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running unittests src\lib.rs (target\debug\deps\forge_sdk-efc5ee66992bf90c.exe)
+
+running 6 tests
+test orchestrator::replan_tests::budget_exhausted_escalates ... ok
+test orchestrator::replan_tests::default_bounded_retry_eventually_escalates_without_replanner ... ok
+test orchestrator::replan_tests::no_replanner_escalates_like_orch002 ... ok
+test tests::in_memory_flow ... ok
+test orchestrator::replan_tests::replan_recovers_completed ... ok
+test orchestrator::replan_tests::retry_precedes_replan ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.49s
+
+     Running tests\breal_refs.rs (target\debug\deps\breal_refs-da1adba1b5831b0c.exe)
+
+running 7 tests
+test ref_depth_limit ... ok
+test ref_dot_path_and_index ... ok
+test ref_absent_passthrough_unchanged ... ok
+test ref_no_interpolation ... ok
+test ref_unresolved_is_error ... ok
+test ref_whole_output_injects_typed_value ... ok
+test ref_json_suffix_stringifies ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\orchestrator_e2e.rs (target\debug\deps\orchestrator_e2e-78c18cc83044374b.exe)
+
+running 3 tests
+test exec_failure_short_circuits_verification ... ok
+test gate_rejected_marks_failed ... ok
+test happy_path_completed_with_evidence ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.10s
+
+     Running tests\orchestrator_replan_live.rs (target\debug\deps\orchestrator_replan_live-eb2235668087fbec.exe)
+
+running 2 tests
+test live_forced_failure_replans_or_escalates ... ok
+test live_llm_plan_runs_to_completed ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.20s
+
+     Running tests\scheduler_flow.rs (target\debug\deps\scheduler_flow-e8689ebd2c0644e1.exe)
+
+running 1 test
+test sdk_plan_and_schedule_flow ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+
+     Running unittests src\lib.rs (target\debug\deps\forge_server-2c598b1aa97ac0b0.exe)
+
+running 22 tests
+test auth::tests::constant_time_eq_diff_content ... ok
+test auth::tests::auth_config_from_env_missing_is_local_mode ... ok
+test auth::tests::auth_config_enabled_when_key_present ... ok
+test auth::tests::constant_time_eq_diff_length ... ok
+test auth::tests::tenant_key_resolves ... ok
+test auth::tests::legacy_key_maps_default ... ok
+test auth::tests::constant_time_eq_same ... ok
+test billing::tests::llm_meter_records_token_usage ... ok
+test builtin_tools::tests::shell_tools_constant_frozen ... ok
+test notify::tests::notify_disabled_by_default ... ok
+test notify::tests::notify_payload_fields_frozen ... ok
+test bus::tests::notify_rejects_oversize_payload ... ok
+test queue::tests::queued_task_roundtrip ... ok
+test queue::tests::worker_id_format ... ok
+test progress::tests::progress_events_published_on_append ... ok
+test sse_relay::tests::malformed_event_stays_local ... ok
+test sse_relay::tests::publish_failure_does_not_block ... ok
+test task_git::tests::git_disabled_by_default ... ok
+test sse_relay::tests::merge_dedupes_by_event_id ... ok
+test sse_relay::tests::merge_prefers_local_order ... ok
+test billing::tests::workspace_bytes_sums_files_recursively ... ok
+test task_git::tests::commit_task_workdir_produces_commit_and_patch ... ok
+
+test result: ok. 22 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 3.37s
+
+     Running unittests src\main.rs (target\debug\deps\forge_server-fad5cbd52cb60a7c.exe)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\auth_tenant.rs (target\debug\deps\auth_tenant-9ce441001a62afab.exe)
+
+running 2 tests
+test unknown_key_401 ... ok
+test tenant_key_http_resolves_and_legacy_falls_back ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s
+
+     Running tests\billing.rs (target\debug\deps\billing-1dba7ca5845562ee.exe)
+
+running 2 tests
+test usage_three_dimensions_recorded ... ok
+test summarize_aggregates_by_kind ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests\billing_admin.rs (target\debug\deps\billing_admin-e4e8b61b3f4bb6e3.exe)
+
+running 5 tests
+test unrated_kind_billed_zero ... ok
+test rates_per_tenant_isolated ... ok
+test bill_export_csv_roundtrip ... ok
+test billing_admin_requires_default_tenant ... ok
+test bill_recompute_is_byte_identical ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+
+     Running tests\breal.rs (target\debug\deps\breal-a3be1bf00b9d8043.exe)
+
+running 12 tests
+test builtin_unknown_reported ... ok
+test builtin_shell_names_rejected ... ok
+test is_shell_tool_matches_bridged_name ... ok
+test builtin_registers_selected ... ok
+test planner_tool_names_defaults_to_base_tools ... ok
+test builtin_off_when_allowlist_empty ... ok
+test builtin_duplicate_skipped_not_fatal ... ok
+test planner_tool_names_excludes_shells ... ok
+test schema_hint_contains_input_schema ... ok
+test multistep_prompt_sees_real_tools ... ok
+test planner_tool_names_includes_registered_and_bridged ... ok
+     Running tests\breal_e2e.rs (target\debug\deps\breal_e2e-cabb7ed817b51bdf.exe)
+test schema_hint_budget_cap ... ok
+
+test result: ok. 12 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.04s
+
+
+running 1 test
+test breal_csv_to_report_e2e ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.34s
+
+     Running tests\endpoints.rs (target\debug\deps\endpoints-c63dae3cf744b024.exe)
+
+running 6 tests
+test test_04_get_nonexistent_task_returns_404 ... ok
+test test_06_get_existing_session_has_state ... ok
+test test_01_health_returns_ok ... ok
+test test_05_get_nonexistent_session_returns_404 ... ok
+test test_03_get_existing_task_fields_match ... ok
+test test_02_create_task_returns_id ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s
+
+     Running tests\full_lifecycle.rs (target\debug\deps\full_lifecycle-d69cd7d295af61ce.exe)
+
+running 1 test
+test full_lifecycle_over_http_with_pg ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+
+     Running tests\gate_v6a.rs (target\debug\deps\gate_v6a-ab2ce14743fdfbcc.exe)
+
+running 1 test
+test concurrent_claim_e2e_100_tasks_no_loss_no_duplication ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\knowledge_routes.rs (target\debug\deps\knowledge_routes-9ec2e20888088d0a.exe)
+
+running 6 tests
+test failures_endpoint_returns_ingested ... ok
+test export_endpoint_roundtrips_format_version ... ok
+test limit_clamped_to_500 ... ok
+test knowledge_failures_filter_by_tool ... ok
+test knowledge_failures_filter_by_category ... ok
+test export_endpoint_returns_not_found_for_invalid_session ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.06s
+
+     Running tests\market_routes.rs (target\debug\deps\market_routes-044195e797cb8dfc.exe)
+
+running 6 tests
+test missing_capability_returns_404 ... ok
+test catalog_public_no_auth ... ok
+test no_entry_leak ... ok
+test pagination_clamped ... ok
+test install_registers_active ... ok
+test idempotent_reinstall ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.08s
+
+     Running tests\market_signing.rs (target\debug\deps\market_signing-ce576b023e349059.exe)
+
+running 4 tests
+test install_requires_valid_signature ... ok
+test review_state_machine_transitions ... ok
+test pinned_to_yanked_conflict_409 ... ok
+test unknown_publisher_rejected ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\orch101.rs (target\debug\deps\orch101-6131f133d5789466.exe)
+
+running 12 tests
+test baseline_path_verifier_unchanged ... ok
+test mcp_tools_off_when_unconfigured ... ok
+test plan_mode_resolution_matrix ... ok
+test codegen_irreversible_command_denied_e2e ... ok
+test sandbox_blocks_irreversible ... ok
+test mcp_tool_denied_when_not_whitelisted ... ok
+test mcp_tool_discovered_and_registered ... ok
+test replanner_invoked_on_step_failure ... ok
+test run_acceptance_records_evidence ... ok
+test multistep_plan_executes_waves ... ok
+test multistep_falls_back_without_llm ... ok
+test multi_file_project_generated ... ok
+
+test result: ok. 12 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.70s
+
+     Running tests\pg_persistence.rs (target\debug\deps\pg_persistence-a31210f027b266db.exe)
+
+running 3 tests
+test cross_tenant_get_blocked ... ok
+test tenant_isolation_list ... ok
+test task_survives_storage_restart ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests\products_api.rs (target\debug\deps\products_api-1dc8c5d8df88fe68.exe)
+
+running 3 tests
+test console_pages_served_from_readonly_apis ... ok
+test metrics_counters_match_actual_execution ... ok
+test g_v40_full_lifecycle_e2e ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.27s
+
+     Running tests\queue_pg.rs (target\debug\deps\queue_pg-b9a910004da9128a.exe)
+
+running 4 tests
+test worker_crash_task_recovers ... ok
+test expired_lease_reclaimed ... ok
+test claim_is_exclusive_under_concurrency ... ok
+test notify_received_by_listener ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests\quota_routes.rs (target\debug\deps\quota_routes-02cc44ca495241cb.exe)
+
+running 3 tests
+test daily_exceeded_429 ... ok
+test concurrency_exceeded_429 ... ok
+test default_quota_applies ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.13s
+
+     Running tests\security_baseline.rs (target\debug\deps\security_baseline-0af00f2a10d12de1.exe)
+
+running 3 tests
+test sec001_baseline_matrix ... ok
+test refusal_exit_code_is_78 ... ok
+test escape_hatch_allows_startup ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 9.22s
+
+     Running tests\tenant_pg.rs (target\debug\deps\tenant_pg-271e4f88c3a37dc1.exe)
+
+running 5 tests
+test issue_hash_sha256_roundtrip ... ok
+test pg_unknown_tenant_rejected ... ok
+test pg_key_store_persists_across_pools ... ok
+test pg_quota_store_persists_across_pools ... ok
+test pg_store_unavailable_maps_503 ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.66s
+
+     Running tests\v8.rs (target\debug\deps\v8-6d7ae860fe8f831c.exe)
+
+running 5 tests
+test container_args_matrix ... ok
+test container_disabled_by_default ... ok
+test events_stream_payload_shape ... ok
+test context_injection_truncates ... ok
+test resume_workspace_reuses_dir ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.17s
+
+     Running tests\v8_e2e.rs (target\debug\deps\v8_e2e-dbcb7b5c61de50f3.exe)
+
+running 1 test
+test resume_then_edit_patch_passes ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s
+
+     Running unittests src\lib.rs (target\debug\deps\forge_session-32d6e82383dda035.exe)
+
+running 15 tests
+test replay::tests::test_empty_sequence ... ok
+test replay::tests::test_failure_recovery_sequence ... ok
+test replay::tests::test_out_of_order_seq ... ok
+test replay::tests::test_recovered_from_active_is_illegal ... ok
+test replay::tests::test_deterministic_same_input_same_output ... ok
+test replay::tests::test_illegal_sequence_completed_then_task_received ... ok
+test replay::tests::test_normal_sequence ... ok
+test store::tests::test_illegal_completed_from_failed ... ok
+test store::tests::test_illegal_completed_to_active ... ok
+test store::tests::test_concurrent_append_no_duplicate_seq ... ok
+test store::tests::test_create_and_append ... ok
+test store::tests::test_illegal_recovered_from_active ... ok
+test store::tests::test_legal_transitions ... ok
+test store::tests::test_list ... ok
+test store::tests::test_not_found ... ok
+
+test result: ok. 15 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+
+     Running unittests src\lib.rs (target\debug\deps\forge_skill-0baa203a882de59e.exe)
+
+running 5 tests
+test loader::tests::test_missing_file ... ok
+test loader::tests::test_bad_json ... ok
+test loader::tests::test_missing_name_field ... ok
+test loader::tests::test_duplicate_load_rejected ... ok
+test loader::tests::test_load_valid_skill ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.07s
+
+     Running tests\trust.rs (target\debug\deps\trust-96f5d8da7d13b417.exe)
+
+running 6 tests
+test sign_helper_matches_verify ... ok
+test hmac_tampered_content_is_denied ... ok
+test disabled_keeps_phase1_behavior ... ok
+test hmac_missing_sig_file_is_not_found ... ok
+test checksum_whitelist_pass_and_fail ... ok
+test hmac_valid_signature_passes_and_registers ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.12s
+
+     Running unittests src\lib.rs (target\debug\deps\forge_storage-ace4073ed66d5520.exe)
+
+running 7 tests
+test pool_bounds_tests::env_values_win ... ok
+test pool_bounds_tests::invalid_falls_back ... ok
+test pool_bounds_tests::defaults_when_unset ... ok
+test s3::tests::different_payload_changes_signature ... ok
+test s3::tests::signature_is_deterministic_and_wellformed ... ok
+test s3::tests::authority_extraction ... ok
+test pool_bounds_tests::min_clamped_below_max ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests\minio.rs (target\debug\deps\minio-7de3689701dd1e3e.exe)
+
+running 2 tests
+test minio_put_read_meta_roundtrip ... ok
+test minio_config_validation ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests\pg.rs (target\debug\deps\pg-8edbbec1f42ec622.exe)
+
+running 3 tests
+test evidence_immutable_and_query ... ok
+test artifacts_put_read_checksum ... ok
+test sessions_full_state_machine_flow ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\pg_replay.rs (target\debug\deps\pg_replay-5435e19b7ca0053f.exe)
+
+running 1 test
+test pg_events_are_replayable ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\tenant_isolation.rs (target\debug\deps\tenant_isolation-c24103ecbffa0ad9.exe)
+
+running 4 tests
+test default_tenant_is_default ... ok
+test tenant_id_default_impl ... ok
+test tenant_id_has_ten_prefix ... ok
+test tenant_isolation_type_check ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running unittests src\lib.rs (target\debug\deps\forge_task-7b893fa46bf7c7e8.exe)
+
+running 16 tests
+test model::tests::test_failed_from_pending ... ok
+test model::tests::test_illegal_completed_to_anything ... ok
+test model::tests::test_illegal_pending_to_executing ... ok
+test model::tests::test_illegal_planned_to_verifying ... ok
+test model::tests::test_empty_acceptance_cannot_complete ... ok
+test model::tests::test_illegal_executing_to_completed ... ok
+test model::tests::test_failed_from_executing ... ok
+test model::tests::test_illegal_failed_to_planned ... ok
+test model::tests::test_retry_from_failed ... ok
+test model::tests::test_legal_full_path ... ok
+test model::tests::test_serde_roundtrip ... ok
+test store::tests::test_create_and_get ... ok
+test store::tests::test_empty_acceptance_cannot_complete ... ok
+test store::tests::test_list ... ok
+test store::tests::test_not_found ... ok
+test store::tests::test_update_status ... ok
+
+test result: ok. 16 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running unittests src\lib.rs (target\debug\deps\forge_tests-750e04696b8fa768.exe)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\e2e_product_assembly.rs (target\debug\deps\e2e_product_assembly-8529d3f7c5620524.exe)
+
+running 1 test
+test e2e_product_assembly ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.04s
+
+     Running tests\e2e_task_plan_execute.rs (target\debug\deps\e2e_task_plan_execute-1631324d7e6e33a0.exe)
+
+running 1 test
+test e2e_task_plan_execute ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests\e2e_verify_recovery.rs (target\debug\deps\e2e_verify_recovery-ec8fee5abadf2fdc.exe)
+
+running 1 test
+test e2e_verify_recovery ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src\lib.rs (target\debug\deps\forge_tools_fs-1d0eaf32b0c3767c.exe)
+
+running 5 tests
+test tool::tests::test_write_file ... ok
+test tool::tests::test_edit_file_multiple_no_replace_all ... ok
+test tool::tests::test_edit_file ... ok
+test tool::tests::test_read_file ... ok
+test tool::tests::test_exec_command ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.47s
+
+     Running unittests src\lib.rs (target\debug\deps\forge_tools_metatool-00a1b69bb4401065.exe)
+
+running 4 tests
+test auto_wrap::tests::test_to_pascal_case ... ok
+test auto_wrap::tests::test_auto_wrap_missing_source ... ok
+test auto_wrap::tests::test_auto_wrap_dry_run ... ok
+test auto_wrap::tests::test_auto_wrap_write ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.11s
+
+     Running unittests src\lib.rs (target\debug\deps\forge_tools_parsing-ff46ea703f3d31cf.exe)
+
+running 8 tests
+test tool::tests::test_pdf_parse_pending ... ok
+test tool::tests::test_json_parse_bad_json ... ok
+test tool::tests::test_register_all_5_tools ... ok
+test tool::tests::test_yaml_parse_roundtrip ... ok
+test tool::tests::test_yaml_parse_missing_text ... ok
+test tool::tests::test_json_parse_roundtrip ... ok
+test tool::tests::test_csv_parse_roundtrip ... ok
+test tool::tests::test_toml_parse_roundtrip ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running unittests src\lib.rs (target\debug\deps\forge_tools_search-2a6a9569718c670d.exe)
+
+running 3 tests
+test tool::tests::test_glob ... ok
+test tool::tests::test_regex_match ... ok
+test tool::tests::test_grep_file ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.09s
+
+     Running unittests src\lib.rs (target\debug\deps\forge_tools_text-2891508935cbc2a7.exe)
+
+running 11 tests
+test tool::tests::test_sanitize_html_mode ... ok
+test tool::tests::test_sanitize_removes_control ... ok
+test tool::tests::test_text_classify_pending_engine ... ok
+test tool::tests::test_markdown_render_roundtrip ... ok
+test tool::tests::test_text_diff_roundtrip ... ok
+test tool::tests::test_skill_report ... ok
+test tool::tests::test_session_report ... ok
+test tool::tests::test_register_all_12_tools ... ok
+test tool::tests::test_text_wordcount_roundtrip ... ok
+test tool::tests::test_text_toon_roundtrip ... ok
+test tool::tests::test_text_embed_pending_engine ... ok
+
+test result: ok. 11 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+
+     Running unittests src\lib.rs (target\debug\deps\forge_tools_zl-5be8e6e6ab3bf21a.exe)
+
+running 27 tests
+test tool::tests::test_check_sufficiency_ok ... ok
+test tool::tests::test_check_sufficiency_partial ... ok
+test tool::tests::test_compile_contract_explicit_criteria ... ok
+test tool::tests::test_check_sufficiency_no_match_clarify ... ok
+test tool::tests::test_check_sufficiency_task_text_degrade ... ok
+test tool::tests::test_compile_contract_empty_task_error ... ok
+test tool::tests::test_contradiction_analyze_clean ... ok
+test tool::tests::test_compile_contract_structure ... ok
+test tool::tests::test_detect_drift_changed ... ok
+test tool::tests::test_dialectical_retry_timeout ... ok
+test tool::tests::test_contradiction_analyze_text ... ok
+test tool::tests::test_contradiction_analyze_conflict ... ok
+test tool::tests::test_dialectical_retry_not_found ... ok
+test tool::tests::test_detect_drift_clean ... ok
+test tool::tests::test_dialectical_retry_unknown ... ok
+test tool::tests::test_prompt_audit_adaptation_hint ... ok
+test tool::tests::test_prompt_audit_empty ... ok
+test tool::tests::test_register_all_registers_nine ... ok
+test tool::tests::test_strategic_plan_full_coverage_offense ... ok
+test tool::tests::test_prompt_audit_full_framework ... ok
+test tool::tests::test_prompt_audit_partial ... ok
+test tool::tests::test_strategic_plan_partial_stalemate ... ok
+test tool::tests::test_task_dialectic_clear_task ... ok
+test tool::tests::test_task_dialectic_vague_task_zero_confidence ... ok
+test tool::tests::test_strategic_plan_task_text ... ok
+test tool::tests::test_verify_result_accept ... ok
+test tool::tests::test_verify_result_retry_and_escalate ... ok
+
+test result: ok. 27 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.17s
+
+     Running unittests src\lib.rs (target\debug\deps\forge_verify-5ec658172f4054da.exe)
+
+running 7 tests
+test command::tests::test_non_command_returns_inconclusive ... ok
+test file::tests::test_file_exists_fail ... ok
+test file::tests::test_file_exists_pass ... ok
+test file::tests::test_file_contains_fail ... ok
+test file::tests::test_file_contains_pass ... ok
+test command::tests::test_command_pass ... ok
+test command::tests::test_command_fail ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.31s
+
+     Running unittests src\lib.rs (target\debug\deps\forge_worklog-e3bd89debc0cb519.exe)
+
+running 18 tests
+test export::tests::test_render_progress_table ... ok
+test export::tests::test_render_handoff ... ok
+test export::tests::test_render_worklog ... ok
+test store::tests::test_load_missing_returns_empty ... ok
+test store::tests::test_load_progress_dedupes_and_keeps_best_row ... ok
+test store::tests::test_lock_acquire_release_reacquire ... ok
+test store::tests::test_lock_stale_takeover ... ok
+test store::tests::test_handoff_roundtrip ... ok
+test store::tests::test_append_record_auto_ids ... ok
+test store::tests::test_save_leaves_no_tmp_residue ... ok
+test store::tests::test_append_record_kind_specific_seq ... ok
+test store::tests::test_progress_roundtrip ... ok
+test tool::tests::test_descriptors ... ok
+test tool::tests::test_parse_record_kind ... ok
+test tool::tests::test_export_all ... ok
+test tool::tests::test_status_empty ... ok
+test tool::tests::test_append_and_status ... ok
+test store::tests::test_lock_conflict_times_out ... ok
+
+test result: ok. 18 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.11s
+
+     Running unittests src\main.rs (target\debug\deps\forge_worklog-c3d25071b5647e42.exe)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src\lib.rs (target\debug\deps\forge_workspace-564e2ddc3c03fa69.exe)
+
+running 7 tests
+test tests::refuse_cleanup_root_itself ... ok
+test tests::unusable_task_id_rejected ... ok
+test tests::create_is_idempotent_per_task_and_unique_across_tasks ... ok
+test tests::create_after_cleanup_yields_fresh_dir ... ok
+test tests::escape_denied_and_victim_intact ... ok
+test tests::create_list_cleanup_roundtrip ... ok
+test tests::create_same_task_many_times_idempotent ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.04s
+
+   Doc-tests forge_agent
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests forge_api
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests forge_artifact
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests forge_cap
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests forge_core
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests forge_dag
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests forge_event
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests forge_evidence
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests forge_exec
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests forge_gates
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests forge_knowledge
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests forge_mcp
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests forge_pipeline
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests forge_plan_llm
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests forge_planner
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests forge_product
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests forge_product_instance
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests forge_recovery
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests forge_sandbox
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests forge_scheduler
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests forge_sdk
+
+running 1 test
+test sdk\src\lib.rs - (line 4) - compile ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 3.07s
+
+   Doc-tests forge_server
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests forge_session
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests forge_skill
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests forge_storage
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests forge_task
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests forge_tests
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests forge_tools_fs
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests forge_tools_metatool
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests forge_tools_parsing
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests forge_tools_search
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests forge_tools_text
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests forge_tools_zl
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests forge_verify
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests forge_worklog
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests forge_workspace
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
