@@ -270,6 +270,13 @@ pub struct OrchestrateRequest {
 fn default_timeout() -> u64 { 30 }
 fn default_codegen_flag() -> bool { true }
 
+/// KNOW-001A: 缺省单机 serve 知识库是否持久化到文件。
+/// `FORGE_KNOWLEDGE_PERSIST=0` ⇒ 保持旧内存行为（逃生阀）；
+/// 未设或非 "0" ⇒ 缺省持久（对齐 PG 分支 L1400 与 CLI main.rs:123）。
+fn knowledge_persist_enabled() -> bool {
+    std::env::var("FORGE_KNOWLEDGE_PERSIST").ok().as_deref() != Some("0")
+}
+
 /// 规划器选择结果：（MultiStep 时的）重规划器可选项。
 type PlannerOpt = Option<Arc<dyn forge_planner::Planner>>;
 type ReplannerOpt = Option<Arc<dyn forge_plan_llm::Replanner>>;
@@ -1407,7 +1414,17 @@ pub async fn run_from_env() -> Result<(), Box<dyn std::error::Error>> {
                     llm_config: Arc::new(tokio::sync::RwLock::new(routes::llm::LlmRuntimeConfig::from_env())),
                 }
             }
-            Err(_) => { println!("storage: in-memory"); AppState::in_memory() }
+            Err(_) => {
+                println!("storage: in-memory");
+                let mut state = AppState::in_memory();
+                // KNOW-001A: 缺省单机 serve 也持久化知识（对齐 PG 分支 L1400 与 CLI main.rs:123）。
+                // 不改 in_memory() 构造器本体（29 测试调用点依赖内存态）。
+                if knowledge_persist_enabled() {
+                    state.knowledge = Arc::new(FileKnowledgeBase::new(knowledge_file()));
+                    eprintln!("knowledge: file-backed ({})", knowledge_file().display());
+                }
+                state
+            }
         };
         // FED-001：多副本部署口径下显式拉起后台认领 worker（FORGE_QUEUE_WORKER=1）
         if state.pool.is_some() && std::env::var("FORGE_QUEUE_WORKER").ok().as_deref() == Some("1") {
