@@ -13,6 +13,26 @@ use async_trait::async_trait;
 use forge_core::{ForgeError, ForgeResult};
 use forge_exec::{PermissionLevel, Tool, ToolDescriptor};
 use forge_worklog::store::Store;
+use forge_worklog::models::{ProgressEntry, TaskStatus as WlTaskStatus};
+
+/// forge_progress_add 用的最小建卡结构（与 CLI task add 语义对齐）。
+struct ProgressAddEntry {
+    task_id: String,
+    name: String,
+}
+
+impl From<ProgressAddEntry> for ProgressEntry {
+    fn from(e: ProgressAddEntry) -> Self {
+        Self {
+            task_id: e.task_id,
+            name: e.name,
+            status: WlTaskStatus::NotStarted,
+            owner: None,
+            last_record: None,
+            commit: None,
+        }
+    }
+}
 use forge_worklog::{render_handoff, render_progress, render_worklog, RecordKind};
 use serde_json::{json, Value};
 use std::path::{Path, PathBuf};
@@ -248,6 +268,160 @@ impl Tool for ForgeExportTool {
     }
 }
 
+// ── forge_progress_add ──
+
+pub struct ForgeProgressAddTool {
+    descriptor: ToolDescriptor,
+}
+
+impl ForgeProgressAddTool {
+    pub fn new() -> Self {
+        Self {
+            descriptor: wl_desc(
+                "forge_progress_add",
+                "Create a new task card in progress.json (id + name). Fails if the card already exists.",
+                json!({
+                    "type": "object",
+                    "properties": {
+                        "task_id": { "type": "string", "description": "Progress card task ID" },
+                        "name": { "type": "string", "description": "Task name" }
+                    },
+                    "required": ["task_id", "name"]
+                }),
+            ),
+        }
+    }
+}
+
+impl Default for ForgeProgressAddTool {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+#[async_trait]
+impl Tool for ForgeProgressAddTool {
+    fn descriptor(&self) -> &ToolDescriptor {
+        &self.descriptor
+    }
+
+    async fn invoke(&self, input: Value) -> ForgeResult<Value> {
+        let task_id = input
+            .get("task_id")
+            .and_then(|v| v.as_str())
+            .ok_or_else(|| ForgeError::InvalidState("forge_progress_add: task_id required".into()))?;
+        let name = input
+            .get("name")
+            .and_then(|v| v.as_str())
+            .ok_or_else(|| ForgeError::InvalidState("forge_progress_add: name required".into()))?;
+
+        let root = detect_project_root()?;
+        let store = Store::new(root);
+        let _guard = store.lock().map_err(map_store_err)?;
+        let mut entries = store.load_progress().map_err(map_store_err)?;
+        if entries.iter().any(|e| e.task_id == task_id) {
+            return Err(ForgeError::InvalidState(format!(
+                "forge_progress_add: task already exists: {task_id}"
+            )));
+        }
+        entries.push(ProgressAddEntry {
+            task_id: task_id.to_string(),
+            name: name.to_string(),
+        }.into());
+        store.save_progress(&entries).map_err(map_store_err)?;
+        Ok(json!({ "ok": true, "task_id": task_id, "status": "NotStarted" }))
+    }
+}
+
+// ── forge_progress_update ──
+
+pub struct ForgeProgressUpdateTool {
+    descriptor: ToolDescriptor,
+}
+
+impl ForgeProgressUpdateTool {
+    pub fn new() -> Self {
+        Self {
+            descriptor: wl_desc(
+                "forge_progress_update",
+                "Update a task card in progress.json: status (NotStarted/Wip/Completed/Failed/Blocked), optional owner/commit. Uses cross-process lock.",
+                json!({
+                    "type": "object",
+                    "properties": {
+                        "task_id": { "type": "string", "description": "Progress card task ID" },
+                        "status": { "type": "string", "enum": ["NotStarted","Wip","Completed","Failed","Blocked"], "description": "New status" },
+                        "owner": { "type": "string", "description": "Optional owner/assignee" },
+                        "commit": { "type": "string", "description": "Optional commit hash (only meaningful for Completed)" }
+                    },
+                    "required": ["task_id", "status"]
+                }),
+            ),
+        }
+    }
+}
+
+impl Default for ForgeProgressUpdateTool {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+#[async_trait]
+impl Tool for ForgeProgressUpdateTool {
+    fn descriptor(&self) -> &ToolDescriptor {
+        &self.descriptor
+    }
+
+    async fn invoke(&self, input: Value) -> ForgeResult<Value> {
+        let task_id = input
+            .get("task_id")
+            .and_then(|v| v.as_str())
+            .ok_or_else(|| ForgeError::InvalidState("forge_progress_update: task_id required".into()))?;
+        let status_str = input
+            .get("status")
+            .and_then(|v| v.as_str())
+            .ok_or_else(|| ForgeError::InvalidState("forge_progress_update: status required".into()))?;
+        let owner = input.get("owner").and_then(|v| v.as_str()).map(|s| s.to_string());
+        let commit = input.get("commit").and_then(|v| v.as_str()).map(|s| s.to_string());
+
+        let status = match status_str {
+            "NotStarted" => WlTaskStatus::NotStarted,
+            "Wip" => WlTaskStatus::Wip,
+            "Completed" => WlTaskStatus::Completed,
+            "Failed" => WlTaskStatus::Failed,
+            "Blocked" => WlTaskStatus::Blocked,
+            other => {
+                return Err(ForgeError::InvalidState(format!(
+                    "forge_progress_update: bad status: {other}"
+                )))
+            }
+        };
+
+        let root = detect_project_root()?;
+        let store = Store::new(root);
+        let guard = store.lock().map_err(map_store_err)?;
+        let mut entries = store.load_progress().map_err(map_store_err)?;
+        let entry = entries
+            .iter_mut()
+            .find(|e| e.task_id == task_id)
+            .ok_or_else(|| {
+                ForgeError::InvalidState(format!(
+                    "forge_progress_update: task not found: {task_id}"
+                ))
+            })?;
+        entry.status = status;
+        if let Some(o) = owner {
+            entry.owner = Some(o);
+        }
+        if let Some(c) = commit {
+            entry.commit = Some(c);
+        }
+        store.save_progress(&entries).map_err(map_store_err)?;
+        drop(guard);
+        Ok(json!({ "ok": true, "task_id": task_id, "status": status_str }))
+    }
+}
+
 // ── 构造入口 ──
 
 /// 构造台账工具（白名单点名注册时调用）。
@@ -255,6 +429,8 @@ pub fn construct_worklog_tool(name: &str) -> Option<Box<dyn Tool>> {
     match name {
         "forge_worklog_add" => Some(Box::new(ForgeWorklogAddTool::new())),
         "forge_worklog_show" => Some(Box::new(ForgeWorklogShowTool::new())),
+        "forge_progress_add" => Some(Box::new(ForgeProgressAddTool::new())),
+        "forge_progress_update" => Some(Box::new(ForgeProgressUpdateTool::new())),
         "forge_export" => Some(Box::new(ForgeExportTool::new())),
         _ => None,
     }
@@ -264,6 +440,8 @@ pub fn construct_worklog_tool(name: &str) -> Option<Box<dyn Tool>> {
 pub const WORKLOG_TOOLS: &[&str] = &[
     "forge_worklog_add",
     "forge_worklog_show",
+    "forge_progress_add",
+    "forge_progress_update",
     "forge_export",
 ];
 

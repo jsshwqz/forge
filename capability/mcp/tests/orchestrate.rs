@@ -295,3 +295,77 @@ async fn worklog_add_and_export_via_mcp() {
 
     client.shutdown().await.unwrap();
 }
+#[tokio::test]
+async fn progress_update_via_mcp() {
+    // 台账工具：更新进度卡状态（在隔离副本上验证，不污染仓库真实台账）
+    // 用临时目录模拟项目根，先写最小 progress.json 种子
+    let bin = env!("CARGO_BIN_EXE_forge-mcp-server");
+    let tmp = tempfile::tempdir().unwrap();
+    let root = tmp.path().to_string_lossy().to_string();
+    std::fs::write(
+        tmp.path().join("progress.json"),
+        r#"[{"task_id":"DEMO-001","name":"demo task","status":"NotStarted","owner":null,"last_record":null,"commit":null}]"#,
+    ).unwrap();
+    // AI_WORKFLOW.md 占位，让 detect_project_root 认可
+    std::fs::write(tmp.path().join("AI_WORKFLOW.md"), "# dw").unwrap();
+
+    let mut env = HashMap::new();
+    env.insert("FORGE_TOOLS_BUILTIN".to_string(), "forge_progress_update".to_string());
+    env.insert("FORGE_PROJECT_ROOT".to_string(), root);
+    let ws = tmp.path().join("ws");
+    std::fs::create_dir_all(&ws).unwrap();
+    env.insert("FORGE_WORKSPACE".to_string(), ws.to_string_lossy().to_string());
+    let cfg = McpServerConfig { name: "forge".into(), command: bin.into(), args: vec![], env };
+    let mut client = McpClient::connect(&cfg).await.unwrap();
+
+    let upd = client
+        .call_tool(
+            "forge_progress_update",
+            serde_json::json!({"task_id":"DEMO-001","status":"Completed","owner":"GLM","commit":"abc123"}),
+        )
+        .await
+        .unwrap();
+    assert!(upd["content"][0]["text"].as_str().unwrap().contains("ok\":true"));
+
+    // 验证落盘
+    let raw = std::fs::read_to_string(tmp.path().join("progress.json")).unwrap();
+    assert!(raw.contains("Completed") && raw.contains("abc123") && raw.contains("GLM"));
+
+    // 不存在的任务 → 错误
+    let err = client
+        .call_tool("forge_progress_update", serde_json::json!({"task_id":"NOPE","status":"Wip"}))
+        .await
+        .unwrap_err();
+    assert!(err.to_string().contains("task not found"));
+
+    client.shutdown().await.unwrap();
+}
+
+#[tokio::test]
+async fn progress_add_then_update_via_mcp() {
+    let bin = env!("CARGO_BIN_EXE_forge-mcp-server");
+    let tmp = tempfile::tempdir().unwrap();
+    let root = tmp.path().to_string_lossy().to_string();
+    std::fs::write(tmp.path().join("progress.json"), "[]").unwrap();
+    std::fs::write(tmp.path().join("AI_WORKFLOW.md"), "# dw").unwrap();
+    let mut env = HashMap::new();
+    env.insert("FORGE_TOOLS_BUILTIN".to_string(), "forge_progress_add,forge_progress_update".to_string());
+    env.insert("FORGE_PROJECT_ROOT".to_string(), root);
+    let ws = tmp.path().join("ws");
+    std::fs::create_dir_all(&ws).unwrap();
+    env.insert("FORGE_WORKSPACE".to_string(), ws.to_string_lossy().to_string());
+    let cfg = McpServerConfig { name: "forge".into(), command: bin.into(), args: vec![], env };
+    let mut client = McpClient::connect(&cfg).await.unwrap();
+
+    let add = client.call_tool("forge_progress_add", serde_json::json!({"task_id":"T-ADD-1","name":"add test"})).await.unwrap();
+    assert!(add["content"][0]["text"].as_str().unwrap().contains("ok"));
+
+    // 重复建卡 → 错误
+    let dup = client.call_tool("forge_progress_add", serde_json::json!({"task_id":"T-ADD-1","name":"dup"})).await.unwrap_err();
+    assert!(dup.to_string().contains("already exists"));
+
+    let upd = client.call_tool("forge_progress_update", serde_json::json!({"task_id":"T-ADD-1","status":"Wip","owner":"me"})).await.unwrap();
+    assert!(upd["content"][0]["text"].as_str().unwrap().contains("Wip"));
+    client.shutdown().await.unwrap();
+}
+
