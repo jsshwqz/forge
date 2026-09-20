@@ -1,7 +1,7 @@
 # HANDOFF · 交接快照（由 forge-worklog 自动生成）
 
 - **更新时间**：2026-09-20 00:39
-- **当前状态**：MCP-001 完成: forge-mcp-server binary 落地, 10 测试全绿, 已 commit e0d6739
+- **当前状态**：FIX-001 卫生批完成: CI feature口径洞修复 + MCP注释修复(抢跑) + KNOW弱证点整改, 3票齐, commit 95b6f9a
 
 ## 🚧 阻塞项
 
@@ -11,8 +11,8 @@
 
 | 优先级 | 任务 ID | 名称 | 前置 | 动作 | 验收 |
 |---|---|---|---|---|---|
-| P1 | MCP-002 | MCP server 扩展: 编排能力暴露为 MCP tool | MCP-001 已完成 | 把 plan→execute→verify 链路封装为 MCP tool, 让外部 agent 可以驱动完整编排 | 集成测试覆盖编排全链路 + clippy 0 + 全量测试通过 |
-| P2 | KNOW-FIX-001 | 千问 KNOW 批弱证点整改: know.rs #2 测本体 | KNOW-001A 已批闭 | 在 lib.rs 加 #[cfg(test)] 单元测试测 knowledge_persist_enabled() 本体, 删掉测试侧复刻 | 本体被直接测试 + 复制品删除 + 全量测试不退步 |
+| P1 | MCP-002 | MCP server 扩展: 编排能力暴露为 MCP tool | MCP-001 已完成, FIX-001 已完成 | 把 plan→execute→verify 链路封装为 MCP tool, 让外部 agent 可以驱动完整编排 | 集成测试覆盖编排全链路 + clippy 0 + 全量测试通过 |
+| P2 | MKT-104 | 制品包体(千问队列下一个) | FIX-001 已完成 | 等待千问出单 | 按工单 |
 | P3 | G6-SIGNOFF | G6 签名占位符补签 | 用户提供署名 | 用户给署名后一笔提交补签 artifacts/breal_e2e_20260919.json | signed_by 字段不再是占位符 |
 
 ## ⚠️ 风险/偏差

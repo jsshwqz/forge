@@ -1434,3 +1434,10 @@ run_from_env() Err 分支新增 FORGE_KNOWLEDGE_PERSIST 门控(缺省持久, PER
 
 ---
 
+## [R1-103] ✅ 成功 · 2026-09-20 · 卫生批三票完成: CI feature口径洞修复 + MCP注释修复(抢跑e11f5fc) + KNOW弱证点整改
+
+- **任务 ID**：FIX-001
+票1 CI-001: ci.yml clippy+test 两行追加 --features forge-mcp/server-bin, 修复 forge_server.rs 10个MCP测试在CI中静默消失的口径洞。票2 MCP-FIX-001: 已由 e11f5fc 抢跑完成(头注释 FORGE_MCP_ALLOWLIST 误导修正为准确client侧说明), 千问验收通过不重复。票3 KNOW-FIX-001: lib.rs 抽 persist_decision() 纯函数(无env依赖), knowledge_persist_enabled() 改为薄包装转调; lib.rs #[cfg(test)] 新增 knowledge_persist_enabled_three_states 单测测本体三态(Some(0)=>false/None=>true/Some(1)=>true); 删 know.rs #2 persist_env_gate_reads_flag 用例 + knowledge_persist_check 复刻函数; know.rs 剩4用例。门禁(口径升级): G1 clippy 0 warnings / G2 561 passed 0 failed(Linux口径) / G3 know 4/4 orch101 12/12 v8 5/5 forge-mcp 10/10 / G4 knowledge.jsonl 不存在。
+
+---
+

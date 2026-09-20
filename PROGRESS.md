@@ -99,7 +99,6 @@
 | TEN-004 | 租户密钥与配额PG持久化及503降级语义 | ✅ 完成 | executor | R1-074 | 4bca3a4 |
 | BILL-003 | 编排LLM计量全覆盖(plan/replan/review入账) | ✅ 完成 | executor | R1-075 | 67b82ff |
 | LOCAL-001 | 本地实用化套件(DeepSeek接入+一键启动+工作台UI+桌面四件套)+真实E2E三缺陷修复 | ✅ 完成 | executor | R1-077 | b295923 |
-| FIX-001 | market_signing无PG panic跳过逻辑修复(阻塞项清理) | ✅ 完成 | executor | - | e15588a |
 | CTX-001 | V8先行批:工作区感知(ListDirTool+规划器注入+workspace_task_id续作) | ✅ 完成 | executor | - | 2e9906a |
 | ZL-001 | 9个zl工具移植到新forge + build_router 25→34 | ✅ 完成 | - | - | 59265bb |
 | ZL-002 | 按原版aion-router规格对齐9个zl工具(字段名+降级语义) | ✅ 完成 | - | - | 268d339 |
@@ -121,3 +120,4 @@
 | KNOW-001A | 缺省单机 serve 知识库改文件持久(env 门控, 缺省持久, 测试零扰动) | ✅ 完成 | executor | - | 9d34f0c |
 | KNOW-001B | 知识持久化重启不丢 e2e(两实例共享文件路径, tempdir 隔离) | ✅ 完成 | executor | - | 9d34f0c |
 | MCP-001 | Forge MCP Server binary — 内置工具经 MCP stdio 对外暴露 | ✅ 完成 | GLM | 2026-09-20 | e0d6739 |
+| FIX-001 | 卫生批三票: CI feature口径洞 + MCP注释修复(抢跑) + KNOW弱证点整改 | ✅ 完成 | GLM | 2026-09-20 | 95b6f9a |

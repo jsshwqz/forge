@@ -1,23 +1,23 @@
 {
   "updated_at": "2026-09-20 00:39",
-  "current_status": "MCP-001 完成: forge-mcp-server binary 落地, 10 测试全绿, 已 commit e0d6739",
+  "current_status": "FIX-001 卫生批完成: CI feature口径洞修复 + MCP注释修复(抢跑) + KNOW弱证点整改, 3票齐, commit 95b6f9a",
   "blockers": [],
   "next_tasks": [
     {
       "priority": "P1",
       "task_id": "MCP-002",
       "name": "MCP server 扩展: 编排能力暴露为 MCP tool",
-      "prerequisites": "MCP-001 已完成",
+      "prerequisites": "MCP-001 已完成, FIX-001 已完成",
       "actions": "把 plan→execute→verify 链路封装为 MCP tool, 让外部 agent 可以驱动完整编排",
       "acceptance": "集成测试覆盖编排全链路 + clippy 0 + 全量测试通过"
     },
     {
       "priority": "P2",
-      "task_id": "KNOW-FIX-001",
-      "name": "千问 KNOW 批弱证点整改: know.rs #2 测本体",
-      "prerequisites": "KNOW-001A 已批闭",
-      "actions": "在 lib.rs 加 #[cfg(test)] 单元测试测 knowledge_persist_enabled() 本体, 删掉测试侧复刻",
-      "acceptance": "本体被直接测试 + 复制品删除 + 全量测试不退步"
+      "task_id": "MKT-104",
+      "name": "制品包体(千问队列下一个)",
+      "prerequisites": "FIX-001 已完成",
+      "actions": "等待千问出单",
+      "acceptance": "按工单"
     },
     {
       "priority": "P3",
@@ -37,5 +37,5 @@
     "worklog.json": "工作日志事实源"
   },
   "advice": "G6已关账. 下一步: KNOW-001A(R7-015缺省serve持久化,P8已批待下发). 后续待办: ①多租户批(任务写归属/Session读隔离) ②MKT-104制品包体.",
-  "last_commit": "e0d6739"
+  "last_commit": "95b6f9a"
 }

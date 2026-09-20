@@ -934,5 +934,13 @@
     "owner": "GLM",
     "last_record": "2026-09-20",
     "commit": "e0d6739"
+  },
+  {
+    "task_id": "FIX-001",
+    "name": "卫生批三票: CI feature口径洞 + MCP注释修复(抢跑) + KNOW弱证点整改",
+    "status": "Completed",
+    "owner": "GLM",
+    "last_record": "2026-09-20",
+    "commit": "95b6f9a"
   }
 ]
