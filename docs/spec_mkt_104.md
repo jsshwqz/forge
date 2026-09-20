@@ -146,7 +146,9 @@ GET /market/releases/{name}/{version}/download
 
 **顺序理由**: hash 是快速本地计算, 验签涉及 ed25519 公钥查找; 先快后慢, 快速拒绝篡改。
 
-**失败语义**: hash 不匹配 = 篡改 (409); 验签失败 = 伪造 (403); 两者均不 install。
+**失败语义**: 
+- install 路径 hash 不匹配 = 篡改 (409 CONFLICT); 验签失败 = 伪造 (403); 两者均不 install。
+- download 路径 hash 不匹配 = 服务端存储损坏 (500 INTERNAL_SERVER_ERROR), 非 409——文件在服务端被篡改属于服务端故障, 不是客户端冲突。
 
 ### 删除
 
@@ -204,7 +206,7 @@ ALTER TABLE releases ADD COLUMN IF NOT EXISTS artifact_sha256 TEXT;
 |---|---|---|---|
 | 1 | `upload_then_download_bytes_match` | async + timeout | 上传制品 → 下载 → 字节一致 |
 | 2 | `upload_exceeds_max_bytes_rejected` | async + timeout | 超过 FORGE_PACKAGE_MAX_BYTES → 413 |
-| 3 | `download_tampered_package_hash_mismatch` | async + timeout | 篡改制品文件 → 下载 hash 复核 → 409 |
+| 3 | `download_tampered_package_hash_mismatch` | async + timeout | 篡改制品文件 → 下载 hash 复核 → 500 (服务端存储损坏, 非 409 客户端冲突) |
 | 4 | `install_with_hash_recheck_passes` | async + timeout | 正常制品 → hash 复核通过 → install 成功 |
 | 5 | `install_with_hash_mismatch_rejected` | async + timeout | 制品被篡改 → hash 复核失败 → 409 |
 | 6 | `install_with_bad_signature_rejected` | async + timeout | 验签失败 → 403 |
