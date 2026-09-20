@@ -56,6 +56,12 @@ pub trait ArtifactStore: Send + Sync {
 
     /// 读取产物内容。
     async fn read(&self, id: &ArtifactId) -> ForgeResult<Vec<u8>>;
+
+    /// 删除产物。默认实现为 no-op（后端不支持删除时安全跳过）。
+    /// 删除不存在的产物视为成功（幂等语义）。
+    async fn delete(&self, _id: &ArtifactId) -> ForgeResult<()> {
+        Ok(())
+    }
 }
 
 /// 内存产物存储中的条目：元数据 + 内容。
@@ -125,6 +131,11 @@ impl ArtifactStore for InMemoryArtifactStore {
             .get(id)
             .map(|(_, data)| data.clone())
             .ok_or_else(|| forge_core::ForgeError::NotFound(format!("artifact: {}", id)))
+    }
+
+    async fn delete(&self, id: &ArtifactId) -> ForgeResult<()> {
+        self.artifacts.write().await.remove(id);
+        Ok(())
     }
 }
 

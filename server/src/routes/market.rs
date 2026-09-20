@@ -188,6 +188,34 @@ pub async fn install_capability(
 
     let cap = caps.into_iter().find(|c| c.version == target).ok_or((StatusCode::NOT_FOUND, "capability not found".into()))?;
 
+    // MKT-104B: 制品 hash 复核（先快后慢: sha256 本地计算 → ed25519 验签查找）
+    // 存在 artifact_path 的 release 必须盘上字节 sha256 与存储时 artifact_sha256 一致
+    if let Some(pool) = state.pool.clone() {
+        let row: Option<(Option<String>, Option<String>)> = sqlx::query_as(
+            "SELECT artifact_path, artifact_sha256 FROM releases \
+             WHERE name = $1 AND version = $2 ORDER BY id DESC LIMIT 1",
+        )
+        .bind(&req.name)
+        .bind(&req.version)
+        .fetch_optional(&pool)
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+        if let Some((Some(artifact_path), Some(artifact_sha256))) = row {
+            use sha2::{Digest, Sha256};
+            let id = forge_core::ArtifactId::from(artifact_path);
+            let bytes = state.artifact_store.read(&id).await
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("artifact read: {e}")))?;
+            let mut h = Sha256::new();
+            h.update(&bytes);
+            let actual: String = h.finalize().iter().map(|b| format!("{b:02x}")).collect();
+            if actual != artifact_sha256 {
+                return Err((StatusCode::CONFLICT, "artifact hash mismatch".into()));
+            }
+        }
+        // artifact_path = None (旧兼容) 或无 release 行 → 跳过 hash 复核
+    }
+
     // MKT-101 R2 出站复验：存在 release 记录的 (name, version) 必须验签通过
     if let Some(pool) = state.pool.clone() {
         install_signature_recheck(&pool, &req.name, &req.version).await?;
@@ -517,4 +545,65 @@ pub(crate) async fn install_signature_recheck(
         return Err((StatusCode::FORBIDDEN, "install rejected: invalid release signature".into()));
     }
     Ok(())
+}
+
+/// DELETE /market/releases/{name}/{version} — 删除 release（制品字节 + 元数据同删）。
+///
+/// 鉴权: Publisher-Key 必须匹配 release 的 publisher_id。
+/// 制品字节通过 ArtifactStore::delete 清理（幂等）; PG 行通过 DELETE 清理。
+pub async fn delete_release(
+    State(state): State<AppState>,
+    axum::extract::Path((name, version)): axum::extract::Path<(String, String)>,
+    headers: HeaderMap,
+) -> Result<StatusCode, (StatusCode, String)> {
+    let Some(pool) = state.pool.clone() else {
+        return Err((StatusCode::SERVICE_UNAVAILABLE, "releases require PostgreSQL storage".into()));
+    };
+
+    let publisher_id = headers
+        .get("Publisher-Key")
+        .and_then(|v| v.to_str().ok())
+        .unwrap_or("")
+        .trim()
+        .to_string();
+    if publisher_id.is_empty() {
+        return Err((StatusCode::FORBIDDEN, "missing Publisher-Key".into()));
+    }
+
+    // 查询 release
+    let row: Option<(i64, String, Option<String>)> = sqlx::query_as(
+        "SELECT id, publisher_id, artifact_path FROM releases \
+         WHERE name = $1 AND version = $2 ORDER BY id DESC LIMIT 1",
+    )
+    .bind(&name)
+    .bind(&version)
+    .fetch_optional(&pool)
+    .await
+    .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let Some((release_id, row_publisher_id, artifact_path)) = row else {
+        return Err((StatusCode::NOT_FOUND, "release not found".into()));
+    };
+
+    // 鉴权: 只有发布者本人可删
+    if row_publisher_id != publisher_id {
+        return Err((StatusCode::FORBIDDEN, "not the release publisher".into()));
+    }
+
+    // 删制品文件（幂等; 失败不阻塞 PG 行删除——孤儿文件由 D9 清理策略兜底）
+    if let Some(path) = artifact_path {
+        let id = forge_core::ArtifactId::from(path);
+        if let Err(e) = state.artifact_store.delete(&id).await {
+            eprintln!("[market] artifact delete failed for {name}/{version}: {e}");
+        }
+    }
+
+    // 删 PG 行
+    let _ = sqlx::query("DELETE FROM releases WHERE id = $1")
+        .bind(release_id)
+        .execute(&pool)
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    Ok(StatusCode::NO_CONTENT)
 }

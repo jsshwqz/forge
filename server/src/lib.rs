@@ -27,7 +27,7 @@ use axum::{
         sse::{Event as SseEvent, Sse},
         Html, IntoResponse, Response,
     },
-    routing::{get, post},
+    routing::{delete, get, post},
     Json, Router,
 };
 use auth::AuthConfig;
@@ -1341,6 +1341,7 @@ pub fn app_with_state(st: AppState) -> Router {
         .route("/market/review", post(routes::market::review_release))
         .route("/market/releases", get(routes::market::list_releases))
         .route("/market/releases/:name/:version/download", get(routes::market::download_release))
+        .route("/market/releases/:name/:version", delete(routes::market::delete_release))
         .route("/admin/usage", get(admin_usage))
         .route("/admin/rates", post(admin_set_rate).get(admin_list_rates))
         .route("/admin/bills/generate", post(admin_generate_bill))

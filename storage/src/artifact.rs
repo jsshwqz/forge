@@ -164,6 +164,19 @@ impl ArtifactStore for FileArtifactStore {
         std::fs::read(&content_path)
             .map_err(|e| ForgeError::NotFound(format!("artifact content {}: {}", id, e)))
     }
+
+    async fn delete(&self, id: &ArtifactId) -> ForgeResult<()> {
+        // 先查索引拿 sha256；索引不存在视为已删（幂等）
+        let checksum = match self.lookup_checksum(id) {
+            Ok(c) => c,
+            Err(_) => return Ok(()),
+        };
+        // 删内容文件、sidecar、索引（个别文件缺失不报错——content-hash 去重时可能被其他 artifact 引用）
+        let _ = std::fs::remove_file(self.content_path(&checksum));
+        let _ = std::fs::remove_file(self.meta_path(&checksum));
+        let _ = std::fs::remove_file(self.index_path(id));
+        Ok(())
+    }
 }
 
 #[cfg(test)]
