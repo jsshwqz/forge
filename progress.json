@@ -982,5 +982,45 @@
     "owner": "GLM",
     "last_record": "2026-09-20",
     "commit": "a2a159c"
+  },
+  {
+    "task_id": "IMPROVE-1",
+    "name": "FileArtifactStore.delete 引用计数 + FORGE_WORKSPACE env 支持",
+    "status": "Completed",
+    "owner": "DeepSeek",
+    "last_record": "2026-09-21",
+    "commit": "0a6c958"
+  },
+  {
+    "task_id": "IMPROVE-2",
+    "name": "修复测试并行隔离——FORGE_PACKAGE_MAX_BYTES env var 竞态",
+    "status": "Completed",
+    "owner": "DeepSeek",
+    "last_record": "2026-09-21",
+    "commit": "5bc1106"
+  },
+  {
+    "task_id": "IMPROVE-3",
+    "name": "修正 spec S5 #3 期望码 409→500 + 失败语义说明",
+    "status": "Completed",
+    "owner": "DeepSeek",
+    "last_record": "2026-09-21",
+    "commit": "edef3b4"
+  },
+  {
+    "task_id": "IMPROVE-4",
+    "name": "补充 e2e 完整闭环测试 publish→download→install",
+    "status": "Completed",
+    "owner": "DeepSeek",
+    "last_record": "2026-09-21",
+    "commit": "5006682"
+  },
+  {
+    "task_id": "IMPROVE-5",
+    "name": "FileArtifactStore orphan cleanup — cleanup_orphans() + D9 构造点 hooks",
+    "status": "Completed",
+    "owner": "DeepSeek",
+    "last_record": "2026-09-21",
+    "commit": "120aa70"
   }
 ]
