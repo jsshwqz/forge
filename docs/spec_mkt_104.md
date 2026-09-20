@@ -24,6 +24,7 @@
 | 目录列表 | `server/src/routes/market.rs` L343 `list_releases` | GET /market/releases?name=, yanked 不可见 | ✅ 在位 |
 | 安装路由 | `server/src/routes/market.rs` L126 `install_capability` | POST /market/install, semver resolve + yanked 检查 + 签名复验 + set_status(Active) | ✅ 在位 |
 | 签名工具 | `capability/registry/src/signing.rs` L1-30 | ed25519 签名/验签, 私钥永不入库 | ✅ 在位 |
+| 制品存储 trait | `capability/artifact/src/store.rs` | `ArtifactStore` async trait + `Artifact`/`ArtifactKind` + sha256 checksum; 已有 impl: `InMemoryArtifactStore`, `PgArtifactStore`(BYTEA), `MinioArtifactStore`(S3 SigV4) | ✅ 在位 (MKT-104A 新增 `FileArtifactStore` 补文件系统方案) |
 
 ### 断裂的环 (缺口)
 

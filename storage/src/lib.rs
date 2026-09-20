@@ -14,17 +14,20 @@
 //! 集成测试：设置 `FORGE_PG_URL` 后运行（见 tests/pg.rs）；
 //! 未设置时测试自动跳过并打印说明（DoD 要求必须设置后跑绿）。
 
+pub mod artifact;
 pub mod pg_artifact;
 pub mod pg_evidence;
 pub mod pg_session;
 pub mod pg_task;
 pub mod s3;
 
+pub use artifact::FileArtifactStore;
 pub use pg_artifact::PgArtifactStore;
 pub use pg_evidence::PgEvidenceStore;
 pub use pg_session::PgSessionStore;
 pub use pg_task::PgTaskStore;
 pub use s3::{MinioArtifactStore, S3Config};
+pub use forge_artifact::{Artifact, ArtifactKind, ArtifactStore};
 
 use forge_core::{ForgeError, ForgeResult};
 use serde::de::DeserializeOwned;
@@ -272,6 +275,11 @@ CREATE TABLE IF NOT EXISTS bills (
     created_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
     UNIQUE (tenant_id, period_from, period_to)
 );
+
+-- MKT-104: 制品库引用列 (storage/migrations/0017 同款, D5=方案B 文件系统)
+ALTER TABLE releases ADD COLUMN IF NOT EXISTS artifact_path TEXT;
+ALTER TABLE releases ADD COLUMN IF NOT EXISTS artifact_size BIGINT;
+ALTER TABLE releases ADD COLUMN IF NOT EXISTS artifact_sha256 TEXT;
 "#;
 
 #[cfg(test)]
@@ -301,3 +309,4 @@ mod pool_bounds_tests {
         assert_eq!(parse_pool_bounds(Some("2"), Some("9")), (2, 2));
     }
 }
+

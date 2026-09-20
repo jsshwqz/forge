@@ -123,6 +123,8 @@ pub struct AppState {
     pub quotas: Arc<dyn quota::QuotaStore>,
     /// V6.0 FED-001：PG 连接池（内存模式为 None，队列路径由此门控）。
     pub pool: Option<sqlx::PgPool>,
+    /// MKT-104: 制品存储（D5=方案B 文件系统, FileArtifactStore 实现 ArtifactStore trait）。
+    pub artifact_store: Arc<dyn forge_storage::ArtifactStore>,
     /// 大模型运行时配置（支持页面热更新与持久化）。
     pub llm_config: Arc<tokio::sync::RwLock<routes::llm::LlmRuntimeConfig>>,
 }
@@ -149,6 +151,7 @@ impl AppState {
             auth: AuthConfig::from_env(),
             tenant_keys: Arc::new(auth::InMemoryTenantKeyStore::default()),
             quotas: Arc::new(quota::InMemoryQuotaStore::default()),
+            artifact_store: Arc::new(forge_storage::FileArtifactStore::with_default_dir()),
             pool: None,
             llm_config: Arc::new(tokio::sync::RwLock::new(routes::llm::LlmRuntimeConfig::from_env())),
         }
@@ -171,6 +174,7 @@ impl AppState {
             auth: AuthConfig::from_env(),
             tenant_keys: Arc::new(auth::InMemoryTenantKeyStore::default()),
             quotas: Arc::new(quota::InMemoryQuotaStore::default()),
+            artifact_store: Arc::new(forge_storage::FileArtifactStore::with_default_dir()),
             pool: None,
             llm_config: Arc::new(tokio::sync::RwLock::new(routes::llm::LlmRuntimeConfig::from_env())),
         }
@@ -1336,6 +1340,7 @@ pub fn app_with_state(st: AppState) -> Router {
         .route("/market/publish", post(routes::market::publish_release))
         .route("/market/review", post(routes::market::review_release))
         .route("/market/releases", get(routes::market::list_releases))
+        .route("/market/releases/:name/:version/download", get(routes::market::download_release))
         .route("/admin/usage", get(admin_usage))
         .route("/admin/rates", post(admin_set_rate).get(admin_list_rates))
         .route("/admin/bills/generate", post(admin_generate_bill))
@@ -1416,6 +1421,7 @@ pub async fn run_from_env() -> Result<(), Box<dyn std::error::Error>> {
                     // TEN-004 R1：PG 模式用 PG 实现（重启不丢）；内存模式保留内存实现
                     tenant_keys: Arc::new(auth::PgTenantKeyStore::new(pool.clone())),
                     quotas: Arc::new(quota::PgQuotaStore::new(pool.clone())),
+                    artifact_store: Arc::new(forge_storage::FileArtifactStore::with_default_dir()),
                     pool: Some(pool),
                     llm_config: Arc::new(tokio::sync::RwLock::new(routes::llm::LlmRuntimeConfig::from_env())),
                 }

@@ -221,6 +221,9 @@ pub struct PublishRequest {
     pub version: String,
     pub package_hash: String,
     pub signature: String,
+    /// MKT-104A: base64 编码的制品字节（可选；None 时保持旧元数据行为，向后兼容）。
+    #[serde(default)]
+    pub package_data: Option<String>,
 }
 
 /// POST /market/publish — 发布者提交 release（Publisher-Key 头 = publisher_id）。
@@ -263,15 +266,57 @@ pub async fn publish_release(
         return Err((StatusCode::FORBIDDEN, "signature verification failed".into()));
     }
 
+    // MKT-104A: 制品字节上传 + 服务端实测 hash 复核（D-5 缺口上游封堵）
+    // package_data = Some → 解码 → 限长 → ArtifactStore.put → 实测 sha256 与声称 package_hash 比对
+    // package_data = None → 旧元数据行为（三新列 NULL，向后兼容）
+    let (artifact_path, artifact_size, artifact_sha256): (Option<String>, Option<i64>, Option<String>) =
+        if let Some(data) = &req.package_data {
+            use base64::prelude::*;
+
+            let content = BASE64_STANDARD.decode(data)
+                .map_err(|e| (StatusCode::BAD_REQUEST, format!("base64 decode failed: {e}")))?;
+
+            // 限长：FORGE_PACKAGE_MAX_BYTES（缺省 16MB）
+            let max_bytes = std::env::var("FORGE_PACKAGE_MAX_BYTES")
+                .ok()
+                .and_then(|s| s.parse::<usize>().ok())
+                .unwrap_or(16_777_216);
+            if content.len() > max_bytes {
+                return Err((StatusCode::PAYLOAD_TOO_LARGE, "artifact exceeds FORGE_PACKAGE_MAX_BYTES".into()));
+            }
+
+            // ArtifactStore.put 内部计算 sha256（trait 契约：调用方不传 hash）
+            let artifact = state.artifact_store.put(
+                req.name.clone(),
+                forge_storage::ArtifactKind::Binary,
+                content,
+                serde_json::json!({}),
+            ).await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("artifact store: {e}")))?;
+
+            // D-5 修复：服务端实测 hash 与发布者声称 package_hash 比对
+            if artifact.checksum_sha256 != req.package_hash {
+                return Err((StatusCode::CONFLICT, "artifact hash mismatch".into()));
+            }
+
+            // artifact_path 存储 ArtifactId（通过 trait read 方法检索制品字节）
+            (Some(artifact.id.as_ref().to_string()), Some(artifact.size_bytes as i64), Some(artifact.checksum_sha256.clone()))
+        } else {
+            (None, None, None)
+        };
+
     let (release_id,): (i64,) = sqlx::query_as(
-        "INSERT INTO releases (name, version, publisher_id, package_hash, signature) \
-         VALUES ($1, $2, $3, $4, $5) RETURNING id",
+        "INSERT INTO releases (name, version, publisher_id, package_hash, signature, artifact_path, artifact_size, artifact_sha256) \
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id",
     )
     .bind(&req.name)
     .bind(&req.version)
     .bind(&publisher_id)
     .bind(&req.package_hash)
     .bind(&req.signature)
+    .bind(&artifact_path)
+    .bind(artifact_size)
+    .bind(&artifact_sha256)
     .fetch_one(&pool)
     .await
     .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
@@ -280,6 +325,73 @@ pub async fn publish_release(
         axum::http::StatusCode::ACCEPTED,
         Json(serde_json::json!({ "release_id": release_id, "review_status": "pending" })),
     ))
+}
+
+/// GET /market/releases/{name}/{version}/download — 制品下载（匿名允许, D7）。
+///
+/// 可见性过滤与 list_releases 同口径：yanked → 409。
+/// artifact_path 为 NULL → 410（无制品字节，仅元数据发布的旧 release）。
+/// 命中 → 200 application/octet-stream，响应前对读出资节再实测一次 sha256 与 artifact_sha256 比对（盘后读损坏防线）。
+pub async fn download_release(
+    State(state): State<AppState>,
+    axum::extract::Path((name, version)): axum::extract::Path<(String, String)>,
+) -> Result<axum::response::Response, (StatusCode, String)> {
+    use axum::body::Body;
+    use sha2::{Digest, Sha256};
+
+    let Some(pool) = state.pool.clone() else {
+        return Err((StatusCode::SERVICE_UNAVAILABLE, "releases require PostgreSQL storage".into()));
+    };
+
+    // 查询 release（与 list_releases 同口径：yanked 不可见 → 409）
+    type ReleaseRow = (Option<String>, Option<String>, Option<i64>, bool);
+    let row: Option<ReleaseRow> = sqlx::query_as(
+        "SELECT artifact_path, artifact_sha256, artifact_size, yanked FROM releases \
+         WHERE name = $1 AND version = $2 ORDER BY id DESC LIMIT 1",
+    )
+    .bind(&name)
+    .bind(&version)
+    .fetch_optional(&pool)
+    .await
+    .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let Some((artifact_path, artifact_sha256, _artifact_size, yanked)) = row else {
+        return Err((StatusCode::NOT_FOUND, "release not found".into()));
+    };
+
+    if yanked {
+        return Err((StatusCode::CONFLICT, "version yanked".into()));
+    }
+
+    let Some(path) = artifact_path else {
+        return Err((StatusCode::GONE, "artifact not found".into()));
+    };
+
+    // 通过 ArtifactStore::read 检索制品字节（trait 抽象, D5=方案B FileArtifactStore）
+    let id = forge_core::ArtifactId::from(path);
+    let bytes = state.artifact_store.read(&id).await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("artifact read: {e}")))?;
+
+    // 盘后读损坏防线：读出资节再实测 sha256
+    if let Some(expected_sha) = &artifact_sha256 {
+        let mut h = Sha256::new();
+        h.update(&bytes);
+        let actual: String = h.finalize().iter().map(|b| format!("{b:02x}")).collect();
+        if &actual != expected_sha {
+            eprintln!("[market] artifact sha256 mismatch on download: {name}/{version} expected={expected_sha} actual={actual}");
+            return Err((StatusCode::INTERNAL_SERVER_ERROR, "artifact integrity check failed".into()));
+        }
+    }
+
+    // 200 octet-stream
+    let content_length = bytes.len();
+    let response = axum::response::Response::builder()
+        .status(StatusCode::OK)
+        .header("content-type", "application/octet-stream")
+        .header("content-length", content_length.to_string())
+        .body(Body::from(bytes))
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("response build: {e}")))?;
+    Ok(response)
 }
 
 #[derive(serde::Deserialize)]
