@@ -16,9 +16,11 @@
 //!   forge-mcp-server
 //!   FORGE_TOOLS_BUILTIN=csv_parse,markdown_render forge-mcp-server
 //!
-//! 被 Forge MCP 客户端消费的配置示例：
+//! 被 Forge MCP 客户端消费时，client 侧的 FORGE_MCP_SERVERS 配置示例：
 //!   FORGE_MCP_SERVERS='[{"name":"forge","command":"forge-mcp-server","args":[],"env":{}}]'
-//!   FORGE_MCP_ALLOWLIST=forge_echo,forge_csv_parse
+//!
+//! 调用白名单（FORGE_MCP_ALLOWLIST）是 client 侧 mcp_tools.rs 的行为，
+//! 不在本 binary 侧——binary 会列出所有已注册工具，是否允许调用由 client 决定。
 
 use std::io::{BufRead, Write};
 
