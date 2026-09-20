@@ -53,45 +53,6 @@ async fn in_memory_ctor_still_uses_memory_kb() {
     assert_eq!(entries_after.len(), 1, "in_memory should see ingested entry");
 }
 
-// ── #2 env 门控判定 ──────────────────────────────────────────────
-
-#[test]
-fn persist_env_gate_reads_flag() {
-    // 临时清除 + 设置 env，测试两态判定。
-    // 判定逻辑：FORGE_KNOWLEDGE_PERSIST == "0" → false（逃生阀）；
-    //          未设或非 "0" → true（缺省持久）。
-
-    // 态 A: PERSIST=0 → 不持久
-    std::env::set_var("FORGE_KNOWLEDGE_PERSIST", "0");
-    assert!(
-        !knowledge_persist_check(),
-        "PERSIST=0 should disable persistence"
-    );
-
-    // 态 B: PERSIST 未设 → 缺省持久
-    std::env::remove_var("FORGE_KNOWLEDGE_PERSIST");
-    assert!(
-        knowledge_persist_check(),
-        "unset PERSIST should default to persistent"
-    );
-
-    // 态 C: PERSIST=1 → 持久（非 "0" 均持久）
-    std::env::set_var("FORGE_KNOWLEDGE_PERSIST", "1");
-    assert!(
-        knowledge_persist_check(),
-        "PERSIST=1 should enable persistence"
-    );
-
-    // 清理
-    std::env::remove_var("FORGE_KNOWLEDGE_PERSIST");
-}
-
-/// 复刻 server/src/lib.rs 的 knowledge_persist_enabled() 逻辑用于测试。
-/// 如果 server crate 未来 pub 导出该函数，应改为直接调用。
-fn knowledge_persist_check() -> bool {
-    std::env::var("FORGE_KNOWLEDGE_PERSIST").ok().as_deref() != Some("0")
-}
-
 // ── #3 路径 env 覆盖 ─────────────────────────────────────────────
 
 #[test]

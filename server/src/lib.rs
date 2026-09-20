@@ -274,7 +274,13 @@ fn default_codegen_flag() -> bool { true }
 /// `FORGE_KNOWLEDGE_PERSIST=0` ⇒ 保持旧内存行为（逃生阀）；
 /// 未设或非 "0" ⇒ 缺省持久（对齐 PG 分支 L1400 与 CLI main.rs:123）。
 fn knowledge_persist_enabled() -> bool {
-    std::env::var("FORGE_KNOWLEDGE_PERSIST").ok().as_deref() != Some("0")
+    persist_decision(std::env::var("FORGE_KNOWLEDGE_PERSIST").ok().as_deref())
+}
+
+/// FIX-001 票3: 纯判定函数（无 env 依赖，可直接单元测试）。
+/// 逻辑：flag == Some("0") → false（逃生阀）；否则 → true（缺省持久）。
+fn persist_decision(flag: Option<&str>) -> bool {
+    flag != Some("0")
 }
 
 /// 规划器选择结果：（MultiStep 时的）重规划器可选项。
@@ -1479,4 +1485,21 @@ Set FORGE_API_KEY or bind 127.0.0.1/localhost."
 /// `Box<dyn Error>`，其 Display 保留 "SEC-001:" 前缀，判定语义一致）。
 pub fn is_config_rejection(err: &dyn std::fmt::Display) -> bool {
     err.to_string().starts_with("SEC-001:")
+}
+
+#[cfg(test)]
+mod tests {
+    use super::persist_decision;
+
+    #[test]
+    fn knowledge_persist_enabled_three_states() {
+        // 态 A: PERSIST=0 → 不持久（逃生阀）
+        assert!(!persist_decision(Some("0")), "Some(0) => false");
+        // 态 B: PERSIST 未设 → 缺省持久
+        assert!(persist_decision(None), "None => true");
+        // 态 C: PERSIST=1 → 持久（非 "0" 均持久）
+        assert!(persist_decision(Some("1")), "Some(1) => true");
+        // 额外: 其他非 "0" 值也持久
+        assert!(persist_decision(Some("yes")), "Some(yes) => true");
+    }
 }

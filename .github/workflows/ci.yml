@@ -45,7 +45,7 @@ jobs:
         run: cargo check --workspace
 
       - name: cargo clippy --workspace --all-targets (零告警硬闸)
-        run: cargo clippy --workspace --all-targets -- -D warnings
+        run: cargo clippy --workspace --all-targets --features forge-mcp/server-bin -- -D warnings
 
       - name: cargo test --workspace (20 分钟超时兜底)
-        run: timeout 20m cargo test --workspace
+        run: timeout 20m cargo test --workspace --features forge-mcp/server-bin
