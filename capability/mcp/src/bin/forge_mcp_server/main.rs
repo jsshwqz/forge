@@ -168,8 +168,8 @@ async fn build_router() -> Arc<ToolRouter> {
                 rejected.push(name);
                 continue;
             }
-            if ORCHESTRATE_TOOLS.contains(&name) {
-                // MCP-002：编排工具由下方独立段注册，此处跳过避免 unknown 误报
+            if ORCHESTRATE_TOOLS.contains(&name) || WORKLOG_TOOLS.contains(&name) {
+                // MCP-002/003：编排/台账工具由下方独立段缺省注册，此处跳过
                 continue;
             }
             if router.route(name).is_ok() {
@@ -186,41 +186,28 @@ async fn build_router() -> Arc<ToolRouter> {
         }
     }
 
-    // MCP-002：白名单点名注册编排工具（缺省不注册，保持 MCP-001 零回归）
-    let want_orchestrate: Vec<&str> = builtin_raw
-        .split(',')
-        .map(|s| s.trim())
-        .filter(|s| ORCHESTRATE_TOOLS.contains(s))
-        .collect();
-    if !want_orchestrate.is_empty() {
-        let ctx = Arc::new(
-            OrchestrateContext::new().await.unwrap_or_else(|e| {
-                eprintln!("forge-mcp-server: orchestrate context unavailable: {e}");
-                std::process::exit(1);
-            }),
-        );
-        for name in want_orchestrate {
-            if router.route(name).is_ok() {
-                skipped.push(name);
-                continue;
-            }
-            match orchestrate_tools::construct_orchestrate_tool(name, &ctx) {
-                Some(tool) => match router.register(tool) {
-                    Ok(()) => registered.push(name),
-                    Err(_) => skipped.push(name),
-                },
-                None => unknown.push(name),
-            }
+    // MCP-002/003/005：编排+台账工具缺省全注册（任何 agent 一启动即用，
+    // 不限任务、不限白名单点名；worklog 工具根由 FORGE_PROJECT_ROOT 探测）
+    let ctx = Arc::new(
+        OrchestrateContext::new().await.unwrap_or_else(|e| {
+            eprintln!("forge-mcp-server: orchestrate context unavailable: {e}");
+            std::process::exit(1);
+        }),
+    );
+    for name in ORCHESTRATE_TOOLS {
+        if router.route(name).is_ok() {
+            skipped.push(name);
+            continue;
+        }
+        match orchestrate_tools::construct_orchestrate_tool(name, &ctx) {
+            Some(tool) => match router.register(tool) {
+                Ok(()) => registered.push(name),
+                Err(_) => skipped.push(name),
+            },
+            None => unknown.push(name),
         }
     }
-
-    // MCP-003 票3：白名单点名注册台账工具（forge_worklog_add/show, forge_export）
-    let want_worklog: Vec<&str> = builtin_raw
-        .split(',')
-        .map(|s| s.trim())
-        .filter(|s| WORKLOG_TOOLS.contains(s))
-        .collect();
-    for name in want_worklog {
+    for name in WORKLOG_TOOLS {
         if router.route(name).is_ok() {
             skipped.push(name);
             continue;

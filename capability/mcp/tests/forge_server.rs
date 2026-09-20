@@ -54,13 +54,13 @@ async fn mcp_server_initialize_handshake() {
 
 #[tokio::test]
 async fn mcp_server_default_tools_list_has_5_base() {
-    // 不设 FORGE_TOOLS_BUILTIN → 只有 5 个 BASE_TOOLS
+    // MCP-005：不设 FORGE_TOOLS_BUILTIN → 5 base + 4 编排 + 5 台账 = 14
     let ws = temp_workspace();
     let cfg = server_config(vec![("FORGE_WORKSPACE", ws.to_str().unwrap())]);
     let mut client = McpClient::connect(&cfg).await.unwrap();
 
     let tools = client.list_tools().await.unwrap();
-    assert_eq!(tools.len(), 5, "default should have exactly 5 base tools");
+    assert_eq!(tools.len(), 14, "default = 5 base + 4 orchestrate + 5 worklog");
 
     let names: Vec<&str> = tools.iter().map(|t| t.name.as_str()).collect();
     assert!(names.contains(&"echo"));
@@ -68,13 +68,18 @@ async fn mcp_server_default_tools_list_has_5_base() {
     assert!(names.contains(&"read_file"));
     assert!(names.contains(&"list_dir"));
     assert!(names.contains(&"edit_patch"));
+    // MCP-005：编排/台账工具缺省可见
+    assert!(names.contains(&"forge_task_create"));
+    assert!(names.contains(&"forge_orchestrate"));
+    assert!(names.contains(&"forge_worklog_add"));
+    assert!(names.contains(&"forge_export"));
 
     client.shutdown().await.unwrap();
 }
 
 #[tokio::test]
 async fn mcp_server_builtin_whitelist_adds_extra_tools() {
-    // 设 FORGE_TOOLS_BUILTIN=csv_parse,markdown_render → 5+2=7
+    // 设 FORGE_TOOLS_BUILTIN=csv_parse,markdown_render → 14+2=16
     let ws = temp_workspace();
     let cfg = server_config(vec![
         ("FORGE_WORKSPACE", ws.to_str().unwrap()),
@@ -83,7 +88,7 @@ async fn mcp_server_builtin_whitelist_adds_extra_tools() {
     let mut client = McpClient::connect(&cfg).await.unwrap();
 
     let tools = client.list_tools().await.unwrap();
-    assert_eq!(tools.len(), 7, "5 base + 2 whitelist = 7");
+    assert_eq!(tools.len(), 16, "14 default + 2 whitelist = 16");
 
     let names: Vec<&str> = tools.iter().map(|t| t.name.as_str()).collect();
     assert!(names.contains(&"csv_parse"));
@@ -103,8 +108,8 @@ async fn mcp_server_builtin_whitelist_shell_rejected() {
     let mut client = McpClient::connect(&cfg).await.unwrap();
 
     let tools = client.list_tools().await.unwrap();
-    // pdf_parse 被拒，csv_parse 注册成功 → 5+1=6
-    assert_eq!(tools.len(), 6);
+    // pdf_parse 被拒，csv_parse 注册成功 → 14+1=15
+    assert_eq!(tools.len(), 15);
 
     let names: Vec<&str> = tools.iter().map(|t| t.name.as_str()).collect();
     assert!(!names.contains(&"pdf_parse"), "shell tool must be rejected");
@@ -248,8 +253,8 @@ async fn mcp_server_unknown_whitelist_ignored() {
     let mut client = McpClient::connect(&cfg).await.unwrap();
 
     let tools = client.list_tools().await.unwrap();
-    // fake_tool 未知 → 5+2=7（csv_parse + markdown_render 注册成功，fake_tool 跳过）
-    assert_eq!(tools.len(), 7);
+    // fake_tool 未知被忽略；csv_parse + markdown_render 有效 → 14+2=16
+    assert_eq!(tools.len(), 16);
 
     client.shutdown().await.unwrap();
 }

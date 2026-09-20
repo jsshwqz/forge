@@ -41,8 +41,9 @@ async fn orchestrate_tools_registered_when_whitelisted() {
     let mut client = McpClient::connect(&cfg).await.unwrap();
 
     let tools = client.list_tools().await.unwrap();
-    // 5 base + 4 编排 = 9（编排工具经 FORGE_TOOLS_BUILTIN 点名注册）
-    assert_eq!(tools.len(), 9, "5 base + 4 orchestrate = 9");
+    // MCP-005：编排+台账工具缺省全注册。orch_server_config 白名单只含 4 编排名
+    // → 5 base + 4 编排 + 5 台账 = 14（for orchestrate_tools_registered_by_default 同理）
+    assert_eq!(tools.len(), 14, "5 base + 4 orchestrate + 5 worklog = 14");
 
     let names: Vec<&str> = tools.iter().map(|t| t.name.as_str()).collect();
     for expect in [
@@ -50,6 +51,11 @@ async fn orchestrate_tools_registered_when_whitelisted() {
         "forge_task_get",
         "forge_task_list",
         "forge_orchestrate",
+        "forge_worklog_add",
+        "forge_worklog_show",
+        "forge_progress_add",
+        "forge_progress_update",
+        "forge_export",
     ] {
         assert!(names.contains(&expect), "missing {expect}");
     }
@@ -58,8 +64,8 @@ async fn orchestrate_tools_registered_when_whitelisted() {
 }
 
 #[tokio::test]
-async fn orchestrate_tools_not_registered_by_default() {
-    // 不设 FORGE_TOOLS_BUILTIN → 编排工具不注册（MCP-001 零回归）
+async fn orchestrate_tools_registered_by_default() {
+    // MCP-005：不设 FORGE_TOOLS_BUILTIN 也缺省注册 5 base + 4 编排 + 4 台账 = 13
     let bin = env!("CARGO_BIN_EXE_forge-mcp-server");
     let mut env = HashMap::new();
     let ws = std::env::temp_dir().join(format!("forge-mcp-def-test-{}", std::process::id()));
@@ -72,7 +78,13 @@ async fn orchestrate_tools_not_registered_by_default() {
     };
     let mut client = McpClient::connect(&cfg).await.unwrap();
     let tools = client.list_tools().await.unwrap();
-    assert_eq!(tools.len(), 5, "default stays 5 base tools");
+    // 5 base + 4 orchestrate + 5 worklog = 14（无解析附加，因为未设 FORGE_TOOLS_BUILTIN）
+    assert_eq!(tools.len(), 14, "default = 5 base + 4 orchestrate + 5 worklog");
+
+    let names: Vec<&str> = tools.iter().map(|t| t.name.as_str()).collect();
+    for expect in ["forge_task_create", "forge_orchestrate", "forge_worklog_add", "forge_progress_update", "forge_export"] {
+        assert!(names.contains(&expect), "default must include {expect}");
+    }
 
     client.shutdown().await.unwrap();
 }
