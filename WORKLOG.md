@@ -1461,3 +1461,59 @@ D5=B文件系统拍板后实施。storage/migrations/0017: releases表加artifac
 
 ---
 
+## [R4-002] 📌 未完成 · 2026-09-20 · MCP-003 integration test
+
+- **任务 ID**：MCP-003
+practice test record
+
+---
+
+## [R4-003] 📌 未完成 · 2026-09-20 · MCP-003 integration test
+
+- **任务 ID**：MCP-003
+practice test record
+
+---
+
+## [R4-004] 📌 未完成 · 2026-09-20 · MCP-003 integration test
+
+- **任务 ID**：MCP-003
+practice test record
+
+---
+
+## [R4-005] 📌 未完成 · 2026-09-20 · MCP-003 integration test
+
+- **任务 ID**：MCP-003
+practice test record
+
+---
+
+## [R4-006] 📌 未完成 · 2026-09-20 · MCP-003 integration test
+
+- **任务 ID**：MCP-003
+practice test record
+
+---
+
+## [R4-007] 📌 未完成 · 2026-09-20 · MCP-003 integration test
+
+- **任务 ID**：MCP-003
+practice test record
+
+---
+
+## [R4-008] 📌 未完成 · 2026-09-20 · MCP-003 integration test
+
+- **任务 ID**：MCP-003
+practice test record
+
+---
+
+## [R1-107] ✅ 成功 · 2026-09-20 · MKT-104B 数据面完成: install 双校验 + DELETE 路由
+
+- **任务 ID**：MKT-104B
+ArtifactStore trait 加 delete 方法(默认 no-op, 幂等); InMemoryArtifactStore + FileArtifactStore 各 override 实际删除。install_capability 在 install_signature_recheck 之前插入制品 hash 复核(先快后慢: sha256 本地计算 → ed25519 验签), artifact_path 存在时必须盘上字节 sha256 与 artifact_sha256 一致, 不匹配 409。delete_release: DELETE /market/releases/:name/:version, Publisher-Key 鉴权(非本人 403), 制品+PG行同删(204), 制品删除失败不阻塞 PG 行删除(D9 兜底)。G1 clippy 0 warnings / G2 581 passed 0 failed / G3 artifact 5+signing 4+routes 6 / G4 artifacts 无泄漏. commit 5bcbd1d.
+
+---
+

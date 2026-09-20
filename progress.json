@@ -966,5 +966,13 @@
     "owner": "GLM",
     "last_record": "2026-09-20",
     "commit": "2c44965"
+  },
+  {
+    "task_id": "MKT-104B",
+    "name": "数据面: install 双校验 + DELETE 路由",
+    "status": "Completed",
+    "owner": "GLM",
+    "last_record": "2026-09-20",
+    "commit": "5bcbd1d"
   }
 ]
