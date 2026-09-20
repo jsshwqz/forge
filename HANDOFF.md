@@ -1,7 +1,7 @@
 # HANDOFF · 交接快照（由 forge-worklog 自动生成）
 
-- **更新时间**：2026-09-20 21:30
-- **当前状态**：MKT-104A 完成: FileArtifactStore(content-hash分片) + publish真hash复核 + download路由 + 5冻结测试全绿; G1 clippy 0 / G2 578 pass / G3 artifact 5+signing 4+routes 6 / G4 无泄漏; commit 2c44965. MKT-104S规格S1已补ArtifactStore trait行。
+- **更新时间**：2026-09-20 22:33
+- **当前状态**：MKT-104 系列全部完成(104S/A/B/C: 制品库FileArtifactStore+发布复核+安装双校验+验收11冻结测试), G6-SIGNOFF 已由项目所有人(行天)签核(commit 6fd2de7), MCP 线(MCP-002/003/003b)已交付并实践验证
 
 ## 🚧 阻塞项
 
@@ -9,9 +9,7 @@
 
 ## 🗓️ 下一步
 
-| 优先级 | 任务 ID | 名称 | 前置 | 动作 | 验收 |
-|---|---|---|---|---|---|
-| P2 | G6-SIGNOFF | G6 签名占位符补签 | 用户提供署名 | 用户给署名后一笔提交补签 artifacts/breal_e2e_20260919.json | signed_by 字段不再是占位符 |
+（无）
 
 ## ⚠️ 风险/偏差
 
@@ -27,4 +25,4 @@
 
 ## 🚀 建议
 
-下一步: MKT-104B(数据面: install双校验+删除路由)优先级最高; G6-SIGNOFF补签待办。
+当前无待办: MKT-104 全闭, G6 签名已签, MCP 工具链可用(编排/记账/进度/导出)。下一个方向: 新项目批次或 MCP 编排接 LLM 规划器。
