@@ -250,22 +250,25 @@ async fn practice1_file_exists_orchestrate_completes() {
 
 #[tokio::test]
 async fn worklog_add_and_export_via_mcp() {
-    // 台账工具：追加一条记录并导出（FORGE_PROJECT_ROOT 指向仓库根）
+    // 台账工具：追加一条记录并导出。FORGE_PROJECT_ROOT 必须指向隔离 tempdir，
+    // 且种入最小台账文件，避免污染仓库真实 worklog.json（曾犯：集成测试直写仓库根）。
     let bin = env!("CARGO_BIN_EXE_forge-mcp-server");
+    let tmp = tempfile::tempdir().unwrap();
+    let root = tmp.path().to_string_lossy().to_string();
+    std::fs::write(tmp.path().join("progress.json"), "[]").unwrap();
+    std::fs::write(tmp.path().join("worklog.json"), "[]").unwrap();
+    std::fs::write(
+        tmp.path().join("handoff.json"),
+        r#"{"updated_at":"2026-09-20 00:00","current_status":"test","blockers":[],"next_tasks":[],"risks":[],"files":{},"advice":""}"#,
+    ).unwrap();
+    std::fs::write(tmp.path().join("AI_WORKFLOW.md"), "# dw").unwrap();
+
     let mut env = HashMap::new();
     env.insert("FORGE_TOOLS_BUILTIN".to_string(), "forge_worklog_add,forge_worklog_show".to_string());
-    // 仓库根：从 CARGO_MANIFEST_DIR 向上找 AI_WORKFLOW.md
-    let mut root = std::env::var("CARGO_MANIFEST_DIR").unwrap_or_else(|_| ".".into());
-    let root_path = std::path::PathBuf::from(&root);
-    if !root_path.join("AI_WORKFLOW.md").exists() {
-        // capability/mcp → 上两级到仓库根
-        if let Some(parent) = root_path.parent().and_then(|p| p.parent()) {
-            root = parent.to_string_lossy().to_string();
-        }
-    }
     env.insert("FORGE_PROJECT_ROOT".to_string(), root);
-    let tmp = tempfile::tempdir().unwrap();
-    env.insert("FORGE_WORKSPACE".to_string(), tmp.path().to_string_lossy().to_string());
+    let ws = tmp.path().join("ws");
+    std::fs::create_dir_all(&ws).unwrap();
+    env.insert("FORGE_WORKSPACE".to_string(), ws.to_string_lossy().to_string());
     let cfg = McpServerConfig {
         name: "forge".into(),
         command: bin.into(),
