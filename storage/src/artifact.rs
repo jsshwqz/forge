@@ -113,6 +113,77 @@ impl FileArtifactStore {
         }
         count
     }
+
+    /// D9 孤儿文件清理：扫描 index/ 目录收集所有被引用的 checksum 集合，
+    /// 然后遍历内容文件目录（{sha[0..2]}/{sha[2..4]}/{sha256}），
+    /// 删掉不在引用集合里的内容文件和对应 .meta.json sidecar。
+    ///
+    /// 场景：delete_release 时 store.delete 失败、或手动删除 PG 行但文件残留。
+    /// 调用时机：server 启动时（run_from_env），不需要定时任务。
+    ///
+    /// 返回 (orphan_content_deleted, orphan_meta_deleted)。
+    pub fn cleanup_orphans(&self) -> (usize, usize) {
+        // 1. 收集所有被引用的 checksum
+        let index_dir = self.root.join("index");
+        let mut referenced: std::collections::HashSet<String> = std::collections::HashSet::new();
+        if let Ok(entries) = std::fs::read_dir(&index_dir) {
+            for entry in entries.flatten() {
+                if let Ok(checksum) = std::fs::read_to_string(entry.path()) {
+                    referenced.insert(checksum.trim().to_string());
+                }
+            }
+        }
+
+        // 2. 遍历内容文件，删孤儿
+        let mut content_deleted = 0;
+        let mut meta_deleted = 0;
+        self.cleanup_orphans_inner(&referenced, &self.root, 0, &mut content_deleted, &mut meta_deleted);
+
+        (content_deleted, meta_deleted)
+    }
+
+    /// 递归扫描目录，深度 0=第一级前缀(sha[0..2]), 1=第二级(sha[2..4]), 2=文件层
+    fn cleanup_orphans_inner(
+        &self,
+        referenced: &std::collections::HashSet<String>,
+        dir: &std::path::Path,
+        depth: usize,
+        content_deleted: &mut usize,
+        meta_deleted: &mut usize,
+    ) {
+        let entries = match std::fs::read_dir(dir) {
+            Ok(e) => e,
+            Err(_) => return,
+        };
+        for entry in entries.flatten() {
+            let path = entry.path();
+            if path.is_dir() {
+                // 递归进入子目录（跳过 index/ 目录）
+                if depth == 0 && entry.file_name() == "index" {
+                    continue;
+                }
+                self.cleanup_orphans_inner(referenced, &path, depth + 1, content_deleted, meta_deleted);
+            } else if depth == 2 {
+                // 文件层：文件名是 sha256 或 sha256.meta.json
+                let fname = entry.file_name().to_string_lossy().to_string();
+                let (is_meta, checksum) = if let Some(stripped) = fname.strip_suffix(".meta.json") {
+                    (true, stripped.to_string())
+                } else {
+                    (false, fname.clone())
+                };
+                if !referenced.contains(&checksum) {
+                    // 孤儿文件，删除
+                    if std::fs::remove_file(&path).is_ok() {
+                        if is_meta {
+                            *meta_deleted += 1;
+                        } else {
+                            *content_deleted += 1;
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
 
 #[async_trait]
@@ -349,3 +420,46 @@ mod tests {
         assert_eq!(meta.name, "second.txt");
     }
 }
+
+    /// IMPROVE-5 / D9: 孤儿文件清理——手动创建孤儿文件后 cleanup_orphans 删除它们，
+    /// 被引用的文件不受影响。
+    #[tokio::test]
+    async fn cleanup_orphans_removes_unreferenced_files() {
+    use std::time::Duration;
+    use tokio::time::timeout;
+        let tmp = tempfile::tempdir().unwrap();
+        let store = FileArtifactStore::new(tmp.path());
+
+        // 正常 put 两个 artifact（一个引用的 checksum）
+        let content = b"legit content".to_vec();
+        let art = timeout(Duration::from_secs(5), store.put(
+            "legit.txt".into(), ArtifactKind::Code, content, serde_json::json!({}),
+        ))
+        .await.unwrap().unwrap();
+
+        // 手动创建一个孤儿内容文件（不在 index 中）
+        let orphan_checksum = "deadbeef".repeat(8); // 64 hex chars
+        let orphan_path = store.content_path(&orphan_checksum);
+        if let Some(parent) = orphan_path.parent() {
+            std::fs::create_dir_all(parent).unwrap();
+        }
+        std::fs::write(&orphan_path, b"orphan content").unwrap();
+        // 孤儿 meta 文件
+        std::fs::write(store.meta_path(&orphan_checksum), "{}").unwrap();
+
+        // 确认孤儿文件存在
+        assert!(orphan_path.exists());
+
+        // 清理
+        let (content_deleted, meta_deleted) = store.cleanup_orphans();
+
+        // 孤儿被删
+        assert_eq!(content_deleted, 1, "one orphan content file should be deleted");
+        assert_eq!(meta_deleted, 1, "one orphan meta file should be deleted");
+        assert!(!orphan_path.exists(), "orphan content file should be gone");
+
+        // 被引用的文件不受影响
+        let read_back = timeout(Duration::from_secs(5), store.read(&art.id))
+            .await.unwrap().unwrap();
+        assert_eq!(read_back, b"legit content");
+    }

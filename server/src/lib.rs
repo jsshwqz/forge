@@ -1445,6 +1445,19 @@ pub async fn run_from_env() -> Result<(), Box<dyn std::error::Error>> {
             println!("queue worker started ({wid})");
             tokio::spawn(worker_loop(state.clone(), wid));
         }
+    // D9 孤儿文件清理：启动时扫描 artifact 目录，删除无索引引用的残留文件。
+    // 在 state 构造前清理——此时 FileArtifactStore 刚创建，还没有其他引用。
+    // 只对 FileArtifactStore 调用（in-memory 模式不需要）。
+    // 注意：cleanup 只扫文件系统，不依赖 PG——即使 PG 里有 release 行但文件不在也算孤儿。
+    // 安全性：被引用的文件（index/ 目录有对应条目）不会被删。
+    {
+        let file_store = forge_storage::FileArtifactStore::with_default_dir();
+        let (content_deleted, meta_deleted) = file_store.cleanup_orphans();
+        if content_deleted > 0 || meta_deleted > 0 {
+            eprintln!("artifact cleanup: removed {content_deleted} orphan content files, {meta_deleted} orphan meta files");
+        }
+    }
+
     let app = app_with_state(state);
     let addr = format!("{host}:{port}")
         .parse::<std::net::SocketAddr>()
