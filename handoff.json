@@ -1,6 +1,6 @@
 {
-  "updated_at": "2026-09-20 00:39",
-  "current_status": "MKT-104S 规格草案完成: docs/spec_mkt_104.md 入库, S1-S8 八章齐, D5 待项目所有人拍板",
+  "updated_at": "2026-09-20 20:10",
+  "current_status": "MCP-002 完成: forge-mcp-server 编排能力暴露为 MCP tool(forge_task_create/get/list/orchestrate) + binary侧调用闸 FORGE_MCP_ALLOWLIST; clippy零告警; forge-mcp 34 passed/0 failed; workspace feature 569 passed/0 failed(551基线+18新增); commit 6f79a0a. MKT-104S规格草案待D5拍板.",
   "blockers": [],
   "next_tasks": [
     {
@@ -10,14 +10,6 @@
       "prerequisites": "MKT-104S 已完成",
       "actions": "项目所有人阅读 spec_mkt_104.md S2 决策表后选择 A 或 B",
       "acceptance": "明确选择 A 或 B, 后续 104A/104B/104C 按选择实施"
-    },
-    {
-      "priority": "P1",
-      "task_id": "MCP-002",
-      "name": "MCP server 扩展: 编排能力暴露为 MCP tool",
-      "prerequisites": "MCP-001 已完成, HYGIENE-001 已完成",
-      "actions": "把 plan→execute→verify 链路封装为 MCP tool",
-      "acceptance": "集成测试覆盖编排全链路 + clippy 0 + 全量测试通过"
     },
     {
       "priority": "P2",
@@ -36,6 +28,5 @@
     "progress.json": "任务状态事实源",
     "worklog.json": "工作日志事实源"
   },
-  "advice": "G6已关账. 下一步: KNOW-001A(R7-015缺省serve持久化,P8已批待下发). 后续待办: ①多租户批(任务写归属/Session读隔离) ②MKT-104制品包体.",
-  "last_commit": "9bf961e"
+  "advice": "下一步: D5-DECISION(MKT-104S规格拍板)优先级最高; G6-SIGNOFF 补签待办."
 }

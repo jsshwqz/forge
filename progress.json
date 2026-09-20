@@ -950,5 +950,13 @@
     "owner": "GLM",
     "last_record": "2026-09-20",
     "commit": "9bf961e"
+  },
+  {
+    "task_id": "MCP-002",
+    "name": "MCP server 扩展: 编排能力暴露为 MCP tool + 调用级 allowlist",
+    "status": "Completed",
+    "owner": "GLM",
+    "last_record": "2026-09-20",
+    "commit": "6f79a0a"
   }
 ]

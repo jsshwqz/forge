@@ -1448,3 +1448,9 @@ run_from_env() Err 分支新增 FORGE_KNOWLEDGE_PERSIST 门控(缺省持久, PER
 
 ---
 
+## [R1-105] ✅ 成功 · 2026-09-20 · MCP-002 完成: 编排能力暴露为 MCP tool + 调用级 allowlist
+
+新增4编排工具(forge_task_create/get/list/orchestrate)封装run_end_to_end全链路; 真机Completed/gate.passed=true; binary侧FORGE_MCP_ALLOWLIST调用闸(未设置全放行); clippy零告警, forge-mcp 34 passed, workspace 569 passed(551+18); commit 6f79a0a
+
+---
+
