@@ -942,5 +942,13 @@
     "owner": "GLM",
     "last_record": "2026-09-20",
     "commit": "95b6f9a"
+  },
+  {
+    "task_id": "MKT-104S",
+    "name": "制品库与安装闭环规格草案(纯文档批, 零代码)",
+    "status": "Completed",
+    "owner": "GLM",
+    "last_record": "2026-09-20",
+    "commit": "9bf961e"
   }
 ]

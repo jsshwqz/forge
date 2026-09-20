@@ -1441,3 +1441,10 @@ run_from_env() Err 分支新增 FORGE_KNOWLEDGE_PERSIST 门控(缺省持久, PER
 
 ---
 
+## [R1-104] ✅ 成功 · 2026-09-20 · MKT-104S 规格草案完成: 制品库与安装闭环规格书 docs/spec_mkt_104.md
+
+- **任务 ID**：MKT-104S
+纯文档零代码批。产出 docs/spec_mkt_104.md, 含 S1-S8 八章: 现状断链盘点(D-1~D-6 六处缺口)、D5 存储后端对比决策表(方案A PG bytea vs 方案B 文件系统, 推荐B但标注待拍板)、接口冻结草案(上传JSON+base64/下载GET/安装双校验先hash后验签/删除)、数据模型(migration 0017加artifact_path/size/sha256三列)、测试矩阵(10用例名冻结)、门禁口径(HYGIENE-001升级feature)、拆单建议(104A装配/104B数据/104C验收)、风险待拍板清单(D5~D11)。所有行号引用在基线56fc3bd上实测核对。
+
+---
+

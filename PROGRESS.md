@@ -122,3 +122,4 @@
 | KNOW-001B | 知识持久化重启不丢 e2e(两实例共享文件路径, tempdir 隔离) | ✅ 完成 | executor | - | 9d34f0c |
 | MCP-001 | Forge MCP Server binary — 内置工具经 MCP stdio 对外暴露 | ✅ 完成 | GLM | 2026-09-20 | e0d6739 |
 | HYGIENE-001 | 卫生批三票: CI feature口径洞 + MCP注释修复(抢跑) + KNOW弱证点整改 | ✅ 完成 | GLM | 2026-09-20 | 95b6f9a |
+| MKT-104S | 制品库与安装闭环规格草案(纯文档批, 零代码) | ✅ 完成 | GLM | 2026-09-20 | 9bf961e |

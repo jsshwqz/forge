@@ -1,26 +1,26 @@
 {
   "updated_at": "2026-09-20 00:39",
-  "current_status": "FIX-001 卫生批完成: CI feature口径洞修复 + MCP注释修复(抢跑) + KNOW弱证点整改, 3票齐, commit 95b6f9a",
+  "current_status": "MKT-104S 规格草案完成: docs/spec_mkt_104.md 入库, S1-S8 八章齐, D5 待项目所有人拍板",
   "blockers": [],
   "next_tasks": [
+    {
+      "priority": "P0",
+      "task_id": "D5-DECISION",
+      "name": "D5 存储后端拍板: PG bytea (A) vs 文件系统 (B)",
+      "prerequisites": "MKT-104S 已完成",
+      "actions": "项目所有人阅读 spec_mkt_104.md S2 决策表后选择 A 或 B",
+      "acceptance": "明确选择 A 或 B, 后续 104A/104B/104C 按选择实施"
+    },
     {
       "priority": "P1",
       "task_id": "MCP-002",
       "name": "MCP server 扩展: 编排能力暴露为 MCP tool",
-      "prerequisites": "MCP-001 已完成, FIX-001 已完成",
-      "actions": "把 plan→execute→verify 链路封装为 MCP tool, 让外部 agent 可以驱动完整编排",
+      "prerequisites": "MCP-001 已完成, HYGIENE-001 已完成",
+      "actions": "把 plan→execute→verify 链路封装为 MCP tool",
       "acceptance": "集成测试覆盖编排全链路 + clippy 0 + 全量测试通过"
     },
     {
       "priority": "P2",
-      "task_id": "MKT-104",
-      "name": "制品包体(千问队列下一个)",
-      "prerequisites": "FIX-001 已完成",
-      "actions": "等待千问出单",
-      "acceptance": "按工单"
-    },
-    {
-      "priority": "P3",
       "task_id": "G6-SIGNOFF",
       "name": "G6 签名占位符补签",
       "prerequisites": "用户提供署名",
@@ -37,5 +37,5 @@
     "worklog.json": "工作日志事实源"
   },
   "advice": "G6已关账. 下一步: KNOW-001A(R7-015缺省serve持久化,P8已批待下发). 后续待办: ①多租户批(任务写归属/Session读隔离) ②MKT-104制品包体.",
-  "last_commit": "95b6f9a"
+  "last_commit": "9bf961e"
 }
