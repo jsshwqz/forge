@@ -16,6 +16,7 @@ use forge_recovery::BoundedRetryStrategy;
 use forge_sandbox::AllowListPolicy;
 use forge_sdk::{ForgeSdk, Orchestrator, OrchestratorDeps};
 use forge_task::{AcceptanceCriterion, TaskStatus};
+use crate::llm_wire;
 use crate::planner::AcceptanceDrivenPlanner;
 use forge_verify::{CommandVerifier, FileVerifier};
 use forge_workspace::WorkspaceManager;
@@ -91,10 +92,11 @@ impl OrchestrateContext {
     }
 
     /// 组装 OrchestratorDeps（每次调用新建，workdir 由调用方解析）。
-    fn make_deps_for(
+    fn make_deps_for_full(
         &self,
         workdir: &std::path::Path,
         planner: Option<Arc<dyn forge_planner::Planner>>,
+        replanner: Option<Arc<dyn forge_plan_llm::Replanner>>,
         max_replans: u32,
         workspace_task: Option<String>,
     ) -> OrchestratorDeps {
@@ -120,7 +122,7 @@ impl OrchestrateContext {
                 max_attempts: 1,
                 base_backoff_ms: 200,
             }),
-            replanner: None,
+            replanner,
             max_replans,
             planner,
             workspace_task,
@@ -365,10 +367,33 @@ impl Tool for ForgeOrchestrateTool {
             Some(prev) => self.ctx.workspace.create_for(prev.as_str())?,
             None => self.ctx.workspace.create_for(id.as_ref())?,
         };
-        // MCP-003 票1：验收驱动规划器——文件类验收前置 write_file，Command 保持 echo
-        let planner: Option<Arc<dyn forge_planner::Planner>> =
-            Some(Arc::new(AcceptanceDrivenPlanner::default()));
-        let deps = self.ctx.make_deps_for(&workdir, planner, max_replans, workspace_task);
+        // MCP-004：有 LLM 配置 → LLM 多步规划（按 goal 自然语言生成）；
+        // 无配置 → MCP-003 验收驱动规划器（离线零回归）
+        let exec_tools: Vec<String> = OrchestrateContext::exec_router_for(&workdir)
+            .list()
+            .iter()
+            .map(|d| d.name.clone())
+            .collect::<Vec<_>>();
+        let (planner, replanner): (
+            Option<Arc<dyn forge_planner::Planner>>,
+            Option<Arc<dyn forge_plan_llm::Replanner>>,
+        ) = if llm_wire::llm_configured() {
+            match llm_wire::wire_from_env(exec_tools) {
+                Some(w) => (Some(w.planner), Some(w.replanner)),
+                None => (
+                    Some(Arc::new(AcceptanceDrivenPlanner::default())),
+                    None,
+                ),
+            }
+        } else {
+            (
+                Some(Arc::new(AcceptanceDrivenPlanner::default())),
+                None,
+            )
+        };
+        let deps = self.ctx.make_deps_for_full(
+            &workdir, planner, replanner, max_replans, workspace_task
+        );
         let orch = Orchestrator {
             capability: "echo".into(),
             timeout: self.ctx.timeout,

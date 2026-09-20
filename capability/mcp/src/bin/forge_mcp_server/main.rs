@@ -29,6 +29,7 @@
 //! 两处同名 env 语义区分：client 侧 = 接入闸（注册哪些桥接工具）；
 //! binary 侧 = 服务端调用闸（tools/call 前置过滤）。
 
+mod llm_wire;
 mod orchestrate_tools;
 mod planner;
 mod worklog_tools;
