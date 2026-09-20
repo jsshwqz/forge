@@ -18,13 +18,21 @@ use forge_cap::signing;
 use forge_server::{app_with_state, AppState};
 use forge_storage::connect_and_migrate;
 use http_body_util::BodyExt;
-use std::sync::OnceLock;
+use std::sync::{Mutex, OnceLock};
 use tokio::time::timeout;
 use std::time::Duration;
 use tower::ServiceExt;
 
 /// tempfile 共享目录（同一测试进程内多个用例可共用，最后由 tempdir 析构清理）。
 static ARTIFACT_DIR: OnceLock<tempfile::TempDir> = OnceLock::new();
+
+/// IMPROVE-2: 互斥锁保护 FORGE_PACKAGE_MAX_BYTES env var，防止并行测试竞态。
+/// upload_exceeds_max_bytes_rejected 设 100 字节后如果另一个测试恰好跑到 publish，
+/// 会被误拒。这个锁确保 env var 的 set/restore 不会泄漏到其他测试。
+static ENV_GUARD: OnceLock<Mutex<()>> = OnceLock::new();
+fn env_guard() -> &'static Mutex<()> {
+    ENV_GUARD.get_or_init(|| Mutex::new(()))
+}
 
 fn artifact_dir() -> &'static tempfile::TempDir {
     ARTIFACT_DIR.get_or_init(|| {
@@ -171,8 +179,12 @@ async fn upload_exceeds_max_bytes_rejected() {
         .await
         .unwrap();
 
-    // 设置很小的 limit
-    std::env::set_var("FORGE_PACKAGE_MAX_BYTES", "100");
+    // IMPROVE-2: 用互斥锁保护 env var 的 set/restore，防止并行测试竞态。
+    // 只在 set/remove 时持锁，不跨 await 点（避免 clippy::await_holding_lock）。
+    {
+        let _g = env_guard().lock().unwrap();
+        std::env::set_var("FORGE_PACKAGE_MAX_BYTES", "100");
+    }
 
     let content = vec![0u8; 200]; // 200 bytes, exceeds limit
     let mut h = Sha256::new();
@@ -204,7 +216,10 @@ async fn upload_exceeds_max_bytes_rejected() {
     assert_eq!(status, StatusCode::PAYLOAD_TOO_LARGE, "oversized artifact must be 413: {}", String::from_utf8_lossy(&body));
 
     // 恢复默认
-    std::env::remove_var("FORGE_PACKAGE_MAX_BYTES");
+    {
+        let _g = env_guard().lock().unwrap();
+        std::env::remove_var("FORGE_PACKAGE_MAX_BYTES");
+    }
 }
 
 /// 冻结测试：package_data 的 sha256 与声称 package_hash 不一致 → 409。
