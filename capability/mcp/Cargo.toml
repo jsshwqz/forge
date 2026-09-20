@@ -10,11 +10,24 @@ forge-exec = { path = "../../execution/runtime" }
 forge-cap = { path = "../registry" }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
-tokio = { version = "1", features = ["process", "io-util", "time"] }
+tokio = { version = "1", features = ["process", "io-util", "time", "rt"] }
+
+# forge-mcp-server binary 专用（不构成循环：这些 crate 不依赖 forge-mcp）
+forge-tools-parsing = { path = "../../tools/parsing", optional = true }
+forge-tools-text = { path = "../../tools/text", optional = true }
+forge-tools-zl = { path = "../../tools/zl", optional = true }
 
 [[bin]]
 name = "mock-mcp-server"
 path = "src/bin/mock_mcp_server.rs"
+
+[[bin]]
+name = "forge-mcp-server"
+path = "src/bin/forge_mcp_server.rs"
+required-features = ["server-bin"]
+
+[features]
+server-bin = ["dep:forge-tools-parsing", "dep:forge-tools-text", "dep:forge-tools-zl"]
 
 [dev-dependencies]
 tokio = { version = "1", features = ["macros", "rt-multi-thread", "process", "io-util", "time"] }
