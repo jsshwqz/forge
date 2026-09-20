@@ -120,3 +120,4 @@
 | B-REAL-G6 | G6 真模型签核: SenseNova 多步编排 e2e 跑通(判据A/B/C全PASS)+人工签核关账 | ✅ 完成 | - | - | 7874673 |
 | KNOW-001A | 缺省单机 serve 知识库改文件持久(env 门控, 缺省持久, 测试零扰动) | ✅ 完成 | executor | - | 9d34f0c |
 | KNOW-001B | 知识持久化重启不丢 e2e(两实例共享文件路径, tempdir 隔离) | ✅ 完成 | executor | - | 9d34f0c |
+| MCP-001 | Forge MCP Server binary — 内置工具经 MCP stdio 对外暴露 | ✅ 完成 | GLM | 2026-09-20 | e0d6739 |

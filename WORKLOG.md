@@ -1427,3 +1427,10 @@ run_from_env() Err 分支新增 FORGE_KNOWLEDGE_PERSIST 门控(缺省持久, PER
 
 ---
 
+## [R1-102] ✅ 成功 · 2026-09-20 · Forge MCP Server binary 完成 — 内置工具经 MCP stdio 对外暴露
+
+- **任务 ID**：MCP-001
+新增 forge-mcp-server binary（feature 门控 server-bin, 缺省不编译零回归）。行分隔 JSON-RPC 2.0 over stdio, 协议 2024-11-05。支持 initialize/notifications/initialized/tools/list/tools/call/ping。工具注册: BASE_TOOLS(5) 恒注册 + FORGE_TOOLS_BUILTIN 白名单 + SHELL_TOOLS 拒绝。construct_tool 逻辑与 server/builtin_tools.rs 一致（避免循环依赖不依赖 forge-server）。10 个集成测试自环验证（McpClient→forge-mcp-server binary 全链路）。门禁: clippy 0 warnings / 561 passed / 0 failed（551 基线 + 10 新增）。
+
+---
+

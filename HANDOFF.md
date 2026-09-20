@@ -1,7 +1,7 @@
 # HANDOFF · 交接快照（由 forge-worklog 自动生成）
 
 - **更新时间**：2026-09-20 00:39
-- **当前状态**：KNOW批(KNOW-001A/001B)交付完毕: 缺省单机serve知识库改文件持久(env门控FORGE_KNOWLEDGE_PERSIST, 缺省持久, PERSIST=0逃生阀); know.rs 5测试全绿(含跨实例重启不丢e2e行为级证明); 全量551passed/0failed/clippy0warn(基线544+本批5+余量2); R7-015缺省serve分支持久化断链闭合(本批补全最后一处漏改). B-REAL批G1-G6全闭合.
+- **当前状态**：MCP-001 完成: forge-mcp-server binary 落地, 10 测试全绿, 已 commit e0d6739
 
 ## 🚧 阻塞项
 
@@ -11,7 +11,9 @@
 
 | 优先级 | 任务 ID | 名称 | 前置 | 动作 | 验收 |
 |---|---|---|---|---|---|
-| P0 | NEXT-* | 等待新指令或新规格 | - | - | - |
+| P1 | MCP-002 | MCP server 扩展: 编排能力暴露为 MCP tool | MCP-001 已完成 | 把 plan→execute→verify 链路封装为 MCP tool, 让外部 agent 可以驱动完整编排 | 集成测试覆盖编排全链路 + clippy 0 + 全量测试通过 |
+| P2 | KNOW-FIX-001 | 千问 KNOW 批弱证点整改: know.rs #2 测本体 | KNOW-001A 已批闭 | 在 lib.rs 加 #[cfg(test)] 单元测试测 knowledge_persist_enabled() 本体, 删掉测试侧复刻 | 本体被直接测试 + 复制品删除 + 全量测试不退步 |
+| P3 | G6-SIGNOFF | G6 签名占位符补签 | 用户提供署名 | 用户给署名后一笔提交补签 artifacts/breal_e2e_20260919.json | signed_by 字段不再是占位符 |
 
 ## ⚠️ 风险/偏差
 

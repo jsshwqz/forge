@@ -926,5 +926,13 @@
     "owner": "executor",
     "last_record": null,
     "commit": "9d34f0c"
+  },
+  {
+    "task_id": "MCP-001",
+    "name": "Forge MCP Server binary — 内置工具经 MCP stdio 对外暴露",
+    "status": "Completed",
+    "owner": "GLM",
+    "last_record": "2026-09-20",
+    "commit": "e0d6739"
   }
 ]

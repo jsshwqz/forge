@@ -1,15 +1,31 @@
 {
   "updated_at": "2026-09-20 00:39",
-  "current_status": "KNOW批(KNOW-001A/001B)交付完毕: 缺省单机serve知识库改文件持久(env门控FORGE_KNOWLEDGE_PERSIST, 缺省持久, PERSIST=0逃生阀); know.rs 5测试全绿(含跨实例重启不丢e2e行为级证明); 全量551passed/0failed/clippy0warn(基线544+本批5+余量2); R7-015缺省serve分支持久化断链闭合(本批补全最后一处漏改). B-REAL批G1-G6全闭合.",
+  "current_status": "MCP-001 完成: forge-mcp-server binary 落地, 10 测试全绿, 已 commit e0d6739",
   "blockers": [],
   "next_tasks": [
     {
-      "priority": "P0",
-      "task_id": "NEXT-*",
-      "name": "等待新指令或新规格",
-      "prerequisites": "-",
-      "actions": "-",
-      "acceptance": "-"
+      "priority": "P1",
+      "task_id": "MCP-002",
+      "name": "MCP server 扩展: 编排能力暴露为 MCP tool",
+      "prerequisites": "MCP-001 已完成",
+      "actions": "把 plan→execute→verify 链路封装为 MCP tool, 让外部 agent 可以驱动完整编排",
+      "acceptance": "集成测试覆盖编排全链路 + clippy 0 + 全量测试通过"
+    },
+    {
+      "priority": "P2",
+      "task_id": "KNOW-FIX-001",
+      "name": "千问 KNOW 批弱证点整改: know.rs #2 测本体",
+      "prerequisites": "KNOW-001A 已批闭",
+      "actions": "在 lib.rs 加 #[cfg(test)] 单元测试测 knowledge_persist_enabled() 本体, 删掉测试侧复刻",
+      "acceptance": "本体被直接测试 + 复制品删除 + 全量测试不退步"
+    },
+    {
+      "priority": "P3",
+      "task_id": "G6-SIGNOFF",
+      "name": "G6 签名占位符补签",
+      "prerequisites": "用户提供署名",
+      "actions": "用户给署名后一笔提交补签 artifacts/breal_e2e_20260919.json",
+      "acceptance": "signed_by 字段不再是占位符"
     }
   ],
   "risks": [],
@@ -20,5 +36,6 @@
     "progress.json": "任务状态事实源",
     "worklog.json": "工作日志事实源"
   },
-  "advice": "G6已关账. 下一步: KNOW-001A(R7-015缺省serve持久化,P8已批待下发). 后续待办: ①多租户批(任务写归属/Session读隔离) ②MKT-104制品包体."
+  "advice": "G6已关账. 下一步: KNOW-001A(R7-015缺省serve持久化,P8已批待下发). 后续待办: ①多租户批(任务写归属/Session读隔离) ②MKT-104制品包体.",
+  "last_commit": "e0d6739"
 }
