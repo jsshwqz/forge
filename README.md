@@ -34,6 +34,23 @@ curl localhost:8080/health
 
 或经 CLI：`cargo run -p forge-cli -- serve`
 
+### 启动 MCP server（stdio，供外部 agent 调用）
+
+```bash
+# 基础工具（echo/read_file/write_file/list_dir/edit_patch 5 个恒注册）
+cargo run -p forge-mcp --features server-bin --bin forge-mcp-server
+
+# 扩展: 内置白名单工具 + 编排工具(经 FORGE_TOOLS_BUILTIN 点名注册)
+FORGE_TOOLS_BUILTIN=csv_parse,markdown_render,forge_task_create,forge_orchestrate \
+  FORGE_WORKSPACE=/tmp/ws cargo run -p forge-mcp --features server-bin --bin forge-mcp-server
+```
+
+- 协议: MCP 2024-11-05, 行分隔 JSON-RPC 2.0 over stdio
+- 编排工具 `forge_orchestrate` 封装 plan→execute→verify→gate 全链路, 返回 OrchestratorReport
+- 服务端调用闸: `FORGE_MCP_ALLOWLIST`(逗号分隔) 设置后仅白名单工具可被 tools/call 调用, 未设置=全放行(与 client 侧 `server/src/mcp_tools.rs` 接入闸语义区分)
+- 存储后端跟随 `FORGE_PG_URL`, 缺省内存栈; 工作区根 `FORGE_WORKSPACE`(缺省 .)
+- 被 Forge 客户端消费时配置 `FORGE_MCP_SERVERS='[{"name":"forge","command":"forge-mcp-server","args":[],"env":{}}]'`
+
 ### 带基础设施的完整测试（可选）
 
 | 环境变量 | 用途 | 本地容器 |
