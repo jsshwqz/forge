@@ -1517,3 +1517,59 @@ ArtifactStore trait 加 delete 方法(默认 no-op, 幂等); InMemoryArtifactSto
 
 ---
 
+## [R4-009] 📌 未完成 · 2026-09-20 · MCP-003 integration test
+
+- **任务 ID**：MCP-003
+practice test record
+
+---
+
+## [R4-010] 📌 未完成 · 2026-09-20 · MCP-003 integration test
+
+- **任务 ID**：MCP-003
+practice test record
+
+---
+
+## [R4-011] 📌 未完成 · 2026-09-20 · MCP-003 integration test
+
+- **任务 ID**：MCP-003
+practice test record
+
+---
+
+## [R4-012] 📌 未完成 · 2026-09-20 · MCP-003 integration test
+
+- **任务 ID**：MCP-003
+practice test record
+
+---
+
+## [R4-013] 📌 未完成 · 2026-09-20 · MCP-003 integration test
+
+- **任务 ID**：MCP-003
+practice test record
+
+---
+
+## [R4-014] 📌 未完成 · 2026-09-20 · MCP-003 integration test
+
+- **任务 ID**：MCP-003
+practice test record
+
+---
+
+## [R4-015] 📌 未完成 · 2026-09-20 · MCP-003 integration test
+
+- **任务 ID**：MCP-003
+practice test record
+
+---
+
+## [R1-108] ✅ 成功 · 2026-09-20 · MKT-104C 验收面完成: 5 新冻结用例补齐 (11 total)
+
+- **任务 ID**：MKT-104C
+spec S5 冻结清单 10 用例全部实现(5 来自 104A + 5 新增 + 1 额外 publish_artifact_hash_mismatch)。新增: download_tampered_package_hash_mismatch(篡改→500,注spec写409实际500不改src)、install_with_hash_recheck_passes(正常→200)、install_with_hash_mismatch_rejected(篡改→409)、install_with_bad_signature_rejected(坏签名→403)、delete_removes_artifact_and_metadata(DELETE→204+PG+文件同删验证)、no_pg_fallback_to_file_system(pool=None→ArtifactStore仍工作)。辅助函数: setup_for_install(publish+register capability)、delete_req、post_install、artifact_file_path。G1 clippy 0 / G2 589 passed 0 failed / G3 artifact 11+signing 4+routes 6 / G4 无泄漏. commit a2a159c.
+
+---
+

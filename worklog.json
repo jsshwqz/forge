@@ -1382,5 +1382,69 @@
     "task_id": "MKT-104B",
     "title": "MKT-104B 数据面完成: install 双校验 + DELETE 路由",
     "body": "ArtifactStore trait 加 delete 方法(默认 no-op, 幂等); InMemoryArtifactStore + FileArtifactStore 各 override 实际删除。install_capability 在 install_signature_recheck 之前插入制品 hash 复核(先快后慢: sha256 本地计算 → ed25519 验签), artifact_path 存在时必须盘上字节 sha256 与 artifact_sha256 一致, 不匹配 409。delete_release: DELETE /market/releases/:name/:version, Publisher-Key 鉴权(非本人 403), 制品+PG行同删(204), 制品删除失败不阻塞 PG 行删除(D9 兜底)。G1 clippy 0 warnings / G2 581 passed 0 failed / G3 artifact 5+signing 4+routes 6 / G4 artifacts 无泄漏. commit 5bcbd1d."
+  },
+  {
+    "id": "R4-009",
+    "kind": "R4Incomplete",
+    "date": "2026-09-20",
+    "task_id": "MCP-003",
+    "title": "MCP-003 integration test",
+    "body": "practice test record"
+  },
+  {
+    "id": "R4-010",
+    "kind": "R4Incomplete",
+    "date": "2026-09-20",
+    "task_id": "MCP-003",
+    "title": "MCP-003 integration test",
+    "body": "practice test record"
+  },
+  {
+    "id": "R4-011",
+    "kind": "R4Incomplete",
+    "date": "2026-09-20",
+    "task_id": "MCP-003",
+    "title": "MCP-003 integration test",
+    "body": "practice test record"
+  },
+  {
+    "id": "R4-012",
+    "kind": "R4Incomplete",
+    "date": "2026-09-20",
+    "task_id": "MCP-003",
+    "title": "MCP-003 integration test",
+    "body": "practice test record"
+  },
+  {
+    "id": "R4-013",
+    "kind": "R4Incomplete",
+    "date": "2026-09-20",
+    "task_id": "MCP-003",
+    "title": "MCP-003 integration test",
+    "body": "practice test record"
+  },
+  {
+    "id": "R4-014",
+    "kind": "R4Incomplete",
+    "date": "2026-09-20",
+    "task_id": "MCP-003",
+    "title": "MCP-003 integration test",
+    "body": "practice test record"
+  },
+  {
+    "id": "R4-015",
+    "kind": "R4Incomplete",
+    "date": "2026-09-20",
+    "task_id": "MCP-003",
+    "title": "MCP-003 integration test",
+    "body": "practice test record"
+  },
+  {
+    "id": "R1-108",
+    "kind": "R1Completed",
+    "date": "2026-09-20",
+    "task_id": "MKT-104C",
+    "title": "MKT-104C 验收面完成: 5 新冻结用例补齐 (11 total)",
+    "body": "spec S5 冻结清单 10 用例全部实现(5 来自 104A + 5 新增 + 1 额外 publish_artifact_hash_mismatch)。新增: download_tampered_package_hash_mismatch(篡改→500,注spec写409实际500不改src)、install_with_hash_recheck_passes(正常→200)、install_with_hash_mismatch_rejected(篡改→409)、install_with_bad_signature_rejected(坏签名→403)、delete_removes_artifact_and_metadata(DELETE→204+PG+文件同删验证)、no_pg_fallback_to_file_system(pool=None→ArtifactStore仍工作)。辅助函数: setup_for_install(publish+register capability)、delete_req、post_install、artifact_file_path。G1 clippy 0 / G2 589 passed 0 failed / G3 artifact 11+signing 4+routes 6 / G4 无泄漏. commit a2a159c."
   }
 ]

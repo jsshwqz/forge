@@ -974,5 +974,13 @@
     "owner": "GLM",
     "last_record": "2026-09-20",
     "commit": "5bcbd1d"
+  },
+  {
+    "task_id": "MKT-104C",
+    "name": "验收面: 10 冻结用例测试矩阵 + 全量门禁",
+    "status": "Completed",
+    "owner": "GLM",
+    "last_record": "2026-09-20",
+    "commit": "a2a159c"
   }
 ]

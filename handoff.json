@@ -5,14 +5,6 @@
   "next_tasks": [
     {
       "priority": "P2",
-      "task_id": "MKT-104C",
-      "name": "制品库验收面: 端到端发布→下载→安装→运行 完整闭环验证",
-      "prerequisites": "MKT-104A + MKT-104B 已完成",
-      "actions": "真机 e2e: 发布者签名上传→安装者下载→hash复核→验签→注册→运行; 包含篡改检测负路径",
-      "acceptance": "e2e 闭环测试通过; 负路径(篡改制品)被拒绝"
-    },
-    {
-      "priority": "P2",
       "task_id": "G6-SIGNOFF",
       "name": "G6 签名占位符补签",
       "prerequisites": "用户提供署名",
@@ -29,13 +21,19 @@
     "worklog.json": "工作日志事实源"
   },
   "advice": "下一步: MKT-104B(数据面: install双校验+删除路由)优先级最高; G6-SIGNOFF补签待办。",
-  "current_task": "MKT-104C (验收面: 端到端测试矩阵 + e2e)",
+  "current_task": "G6-SIGNOFF (签名占位符补签) — 等待用户提供署名",
   "last_completed": [
     {
       "task_id": "MKT-104B",
       "commit": "5bcbd1d",
       "date": "2026-09-20",
       "summary": "install 双校验(hash先→验签后) + DELETE 路由(publisher鉴权, 制品+PG同删)"
+    },
+    {
+      "task_id": "MKT-104C",
+      "commit": "a2a159c",
+      "date": "2026-09-20",
+      "summary": "10 冻结用例测试矩阵全绿 (11 total), MKT-104 系列代码交付完毕"
     }
   ]
 }
