@@ -378,8 +378,41 @@ impl Tool for ForgeOrchestrateTool {
             Option<Arc<dyn forge_planner::Planner>>,
             Option<Arc<dyn forge_plan_llm::Replanner>>,
         ) = if llm_wire::llm_configured() {
-            match llm_wire::wire_from_env(exec_tools) {
-                Some(w) => (Some(w.planner), Some(w.replanner)),
+            // 有 LLM 配置：显式模型直接装配；未显式 → 自动探测模型（list_models+偏好）
+            match llm_wire::wire_from_env(exec_tools.clone()) {
+                Some(llm_wire::LlmPlannerWire::Ready { planner, replanner }) => {
+                    (Some(planner), Some(replanner))
+                }
+                Some(llm_wire::LlmPlannerWire::AutoDetect { base_url, api_key, tools }) => {
+                    match llm_wire::auto_model(&base_url, &api_key).await {
+                        Ok(model) => {
+                            if let Some(llm_wire::LlmPlannerWire::Ready { planner, replanner }) =
+                                llm_wire::wire_from_parts(
+                                    base_url.clone(),
+                                    api_key.clone(),
+                                    model,
+                                    tools.clone(),
+                                )
+                            {
+                                (Some(planner), Some(replanner))
+                            } else {
+                                (
+                                    Some(Arc::new(AcceptanceDrivenPlanner::default())),
+                                    None,
+                                )
+                            }
+                        }
+                        Err(e) => {
+                            eprintln!(
+                                "forge-mcp-server: LLM model auto-detect failed ({e}), falling back to acceptance planner"
+                            );
+                            (
+                                Some(Arc::new(AcceptanceDrivenPlanner::default())),
+                                None,
+                            )
+                        }
+                    }
+                }
                 None => (
                     Some(Arc::new(AcceptanceDrivenPlanner::default())),
                     None,

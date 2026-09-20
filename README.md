@@ -49,7 +49,7 @@ FORGE_TOOLS_BUILTIN=csv_parse,markdown_render,forge_task_create,forge_orchestrat
 - 编排工具 `forge_orchestrate` 封装 plan→execute→verify→gate 全链路, 返回 OrchestratorReport
 - 服务端调用闸: `FORGE_MCP_ALLOWLIST`(逗号分隔) 设置后仅白名单工具可被 tools/call 调用, 未设置=全放行(与 client 侧 `server/src/mcp_tools.rs` 接入闸语义区分)
 - 存储后端跟随 `FORGE_PG_URL`, 缺省内存栈; 工作区根 `FORGE_WORKSPACE`(缺省 .)
-- 编排规划器二选一: 配置 `FORGE_LLM_BASE_URL`+`FORGE_LLM_API_KEY` → LLM 多步规划(按 goal 自然语言生成, 模型取 `FORGE_TIER_HIGH_MODEL`/`FORGE_LLM_MODEL`/默认 deepseek-chat); 未配置 → 验收驱动规划器(离线零依赖, FileExists/FileContains 前置 write_file)
+- 编排规划器二选一: 配置 `FORGE_LLM_BASE_URL`+`FORGE_LLM_API_KEY` → LLM 多步规划(按 goal 自然语言生成; 模型取 `FORGE_TIER_HIGH_MODEL`/`FORGE_LLM_MODEL` 显式指定, 未指定则自动探测 `/models` + 商汤官方偏好序 6.8→6.7→glm→chat); 未配置 → 验收驱动规划器(离线零依赖, FileExists/FileContains 前置 write_file)。商汤预设见 server/src/routes/llm.rs, key 存 gitignored `.env`
 - 被 Forge 客户端消费时配置 `FORGE_MCP_SERVERS='[{"name":"forge","command":"forge-mcp-server","args":[],"env":{}}]'`
 
 ### 带基础设施的完整测试（可选）
