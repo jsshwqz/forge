@@ -99,9 +99,16 @@ impl forge_scheduler::StepExecutor for EngineStepExecutor {
                 };
                 let result = self.engine.execute(req).await?;
                 if result.status != forge_exec::ExecutionStatus::Success {
+                    // IMPROVE-6: 透传 result.output (失败时为 {"error":"..."}) 到错误信息,
+                    // 使重规划器和日志能看到具体失败原因, 而非仅状态名.
+                    let detail = if result.output.is_object() {
+                        serde_json::to_string(&result.output).unwrap_or_default()
+                    } else {
+                        result.output.to_string()
+                    };
                     return Err(ForgeError::InvalidState(format!(
-                        "step {step_id} execution failed: {:?}",
-                        result.status
+                        "step {step_id} execution failed: {:?} — {}",
+                        result.status, detail
                     )));
                 }
                 // B-REAL-001C R5：成功后才入 done 表
@@ -815,4 +822,32 @@ mod replan_tests {
         // 重试 3 次 + 首轮 = 4 轮执行，每轮 1 步
         assert_eq!(calls.load(Ordering::SeqCst), 4);
     }
+
+    #[tokio::test]
+    async fn error_message_contains_output_detail() {
+        // IMPROVE-6: 验证 Tool invoke 失败时, result.output ({"error": "..."})
+        // 被透传到 ForgeError message, 而非仅返回状态名.
+        let calls = Arc::new(AtomicU64::new(0));
+        let sdk = ForgeSdk::in_memory();
+        let task_id = failing_then_fixable_task(&sdk).await;
+        let (deps, _tmp) = make_deps(
+            VersionGateTool::new(calls.clone()),
+            Arc::new(AlwaysEscalate),
+            None,
+            0, // 无 replan 预算, 失败直接升级
+        );
+
+        let report = sdk.run_end_to_end(&task_id, &deps, &vgate_orch()).await.unwrap();
+
+        assert_eq!(report.final_status, TaskStatus::Failed);
+        assert!(report.escalated_to_human);
+
+        // 失败原因字符串应包含 VersionGateTool 的错误文案 "attempt too low"
+        let (_, reason) = report.execution.failed.expect("task should have failed");
+        assert!(
+            reason.contains("attempt too low"),
+            "failure reason should contain tool error detail, got: {reason}"
+        );
+    }
+
 }

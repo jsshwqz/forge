@@ -98,9 +98,15 @@ impl forge_scheduler::StepExecutor for EngineStepBridge {
                 };
                 let result = self.engine.execute(req).await?;
                 if result.status != forge_exec::ExecutionStatus::Success {
+                    // IMPROVE-6: 透传 result.output (失败时为 {"error":"..."}) 到错误信息.
+                    let detail = if result.output.is_object() {
+                        serde_json::to_string(&result.output).unwrap_or_default()
+                    } else {
+                        result.output.to_string()
+                    };
                     return Err(ForgeError::InvalidState(format!(
-                        "step {step_id} execution failed: {:?}",
-                        result.status
+                        "step {step_id} execution failed: {:?} — {}",
+                        result.status, detail
                     )));
                 }
                 Ok(result.output)
