@@ -637,3 +637,55 @@ async fn no_pg_fallback_to_file_system() {
     assert_eq!(read_content, content, "bytes must match without PG");
     assert_eq!(artifact.size_bytes, content.len() as u64);
 }
+
+/// IMPROVE-4: e2e 完整闭环——publish → download 字节一致 → install 成功。
+/// 覆盖单元测试无法抓到的接线问题（publish 的 artifact_path 能否被 download 和 install 正确使用）。
+#[tokio::test]
+async fn e2e_publish_download_install_roundtrip() {
+    let Some(_app) = app().await else { return; };
+
+    // 1. publish 带制品的 release（同时注册 capability，为 install 做准备）
+    let content = b"e2e roundtrip content v1";
+    let (app, name, version, _content, _pool) = timeout(
+        Duration::from_secs(30),
+        setup_for_install(content, "cap-e2e-roundtrip", "1.0.0"),
+    )
+    .await
+    .unwrap();
+
+    // 2. download → 验证字节与上传内容一致
+    let (dl_status, dl_body) = timeout(
+        Duration::from_secs(15),
+        send(app.clone(), get_req(&format!(
+            "/market/releases/{name}/{version}/download"
+        ))),
+    )
+    .await
+    .unwrap();
+    assert_eq!(
+        dl_status, StatusCode::OK,
+        "download must return 200: {}", String::from_utf8_lossy(&dl_body)
+    );
+    assert_eq!(
+        dl_body, content,
+        "downloaded bytes must match original content"
+    );
+
+    // 3. install → hash 复核通过 → 验签通过 → 200 {installed: true}
+    let (inst_status, inst_body) = timeout(
+        Duration::from_secs(15),
+        send(app, post_install(&name, &version)),
+    )
+    .await
+    .unwrap();
+    assert_eq!(
+        inst_status, StatusCode::OK,
+        "install must succeed: {}", String::from_utf8_lossy(&inst_body)
+    );
+
+    let resp: serde_json::Value = serde_json::from_slice(&inst_body).unwrap();
+    assert_eq!(
+        resp["installed"], true,
+        "installed must be true in e2e roundtrip"
+    );
+}
