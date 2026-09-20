@@ -141,7 +141,7 @@ impl AppState {
         Self {
             sdk: ForgeSdk::from_stores(tasks, sessions),
             evidence: Arc::new(InMemoryEvidenceStore::default()),
-            workspaces: Arc::new(WorkspaceManager::new(std::env::temp_dir().join("forge-ws")).unwrap()),
+            workspaces: Arc::new(WorkspaceManager::new(std::env::var("FORGE_WORKSPACE").map(std::path::PathBuf::from).unwrap_or_else(|_| std::env::temp_dir().join("forge-ws"))).unwrap()),
             event_bus,
             instances: Arc::new(Default::default()),
             templates: Arc::new(Default::default()),
@@ -164,7 +164,7 @@ impl AppState {
         Self {
             sdk: ForgeSdk::from_stores(tasks, sessions),
             evidence: Arc::new(InMemoryEvidenceStore::default()),
-            workspaces: Arc::new(WorkspaceManager::new(std::env::temp_dir().join("forge-ws")).unwrap()),
+            workspaces: Arc::new(WorkspaceManager::new(std::env::var("FORGE_WORKSPACE").map(std::path::PathBuf::from).unwrap_or_else(|_| std::env::temp_dir().join("forge-ws"))).unwrap()),
             event_bus,
             instances: Arc::new(Default::default()),
             templates: Arc::new(Default::default()),
@@ -1411,7 +1411,7 @@ pub async fn run_from_env() -> Result<(), Box<dyn std::error::Error>> {
                         sessions,
                     ),
                     evidence: Arc::new(forge_storage::PgEvidenceStore::new(pool.clone())),
-                    workspaces: Arc::new(WorkspaceManager::new(std::env::temp_dir().join("forge-ws")).unwrap()),
+                    workspaces: Arc::new(WorkspaceManager::new(std::env::var("FORGE_WORKSPACE").map(std::path::PathBuf::from).unwrap_or_else(|_| std::env::temp_dir().join("forge-ws"))).unwrap()),
                     event_bus,
                     instances: Arc::new(Default::default()),
                     templates: Arc::new(Default::default()),

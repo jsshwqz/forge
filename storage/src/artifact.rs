@@ -92,6 +92,27 @@ impl FileArtifactStore {
         std::fs::read_to_string(&idx)
             .map_err(|e| ForgeError::NotFound(format!("artifact index {}: {}", id, e)))
     }
+
+    /// 引用计数：扫描 index/ 目录，统计指向同一 checksum 的索引条目数
+    /// （排除当前正在删除的 artifact_id）。
+    fn count_checksum_refs(&self, checksum: &str, exclude: &ArtifactId) -> usize {
+        let index_dir = self.root.join("index");
+        let mut count = 0;
+        if let Ok(entries) = std::fs::read_dir(&index_dir) {
+            for entry in entries.flatten() {
+                // 跳过当前正在删除的条目
+                if entry.file_name().to_string_lossy() == exclude.as_ref() {
+                    continue;
+                }
+                if let Ok(content) = std::fs::read_to_string(entry.path()) {
+                    if content == checksum {
+                        count += 1;
+                    }
+                }
+            }
+        }
+        count
+    }
 }
 
 #[async_trait]
@@ -171,10 +192,20 @@ impl ArtifactStore for FileArtifactStore {
             Ok(c) => c,
             Err(_) => return Ok(()),
         };
-        // 删内容文件、sidecar、索引（个别文件缺失不报错——content-hash 去重时可能被其他 artifact 引用）
-        let _ = std::fs::remove_file(self.content_path(&checksum));
-        let _ = std::fs::remove_file(self.meta_path(&checksum));
+
+        // 引用计数：扫描 index/ 目录，统计有多少索引文件指向同一 checksum。
+        // 如果除了当前 artifact 还有其他条目引用同一 checksum（content-hash 去重），
+        // 则只删当前索引条目，不删内容文件和 meta——否则会把其他 artifact 的数据删掉。
+        let other_refs = self.count_checksum_refs(&checksum, id);
+
+        // 先删索引（无论引用计数如何，当前 artifact 的索引总是要删的）
         let _ = std::fs::remove_file(self.index_path(id));
+
+        if other_refs == 0 {
+            // 没有其他引用，安全删除内容文件和 sidecar
+            let _ = std::fs::remove_file(self.content_path(&checksum));
+            let _ = std::fs::remove_file(self.meta_path(&checksum));
+        }
         Ok(())
     }
 }
@@ -278,5 +309,43 @@ mod tests {
             .await
             .unwrap()
             .is_err());
+    }
+
+    /// IMPROVE-1: 两个 artifact 共享同一 checksum（相同内容去重），
+    /// 删第一个后第二个仍可读——引用计数防止数据丢失。
+    #[tokio::test]
+    async fn delete_shared_checksum_preserves_other() {
+        let tmp = tempfile::tempdir().unwrap();
+        let store = FileArtifactStore::new(tmp.path());
+
+        let content = b"shared dedup content".to_vec();
+        let art1 = timeout(Duration::from_secs(5), store.put(
+            "first.txt".into(), ArtifactKind::Code, content.clone(), serde_json::json!({}),
+        ))
+        .await.unwrap().unwrap();
+        let art2 = timeout(Duration::from_secs(5), store.put(
+            "second.txt".into(), ArtifactKind::Code, content, serde_json::json!({}),
+        ))
+        .await.unwrap().unwrap();
+
+        assert_eq!(art1.checksum_sha256, art2.checksum_sha256);
+
+        // 删第一个——内容文件不应被删除，因为 art2 仍引用它
+        timeout(Duration::from_secs(5), store.delete(&art1.id))
+            .await.unwrap().unwrap();
+
+        // art1 已删，get_meta 应失败
+        assert!(timeout(Duration::from_secs(5), store.get_meta(&art1.id))
+            .await.unwrap().is_err());
+
+        // art2 仍可读——这是核心断言
+        let read_back = timeout(Duration::from_secs(5), store.read(&art2.id))
+            .await.unwrap().unwrap();
+        assert_eq!(read_back, b"shared dedup content");
+
+        // art2 的 meta 也可读
+        let meta = timeout(Duration::from_secs(5), store.get_meta(&art2.id))
+            .await.unwrap().unwrap();
+        assert_eq!(meta.name, "second.txt");
     }
 }
