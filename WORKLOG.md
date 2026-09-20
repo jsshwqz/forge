@@ -1475,3 +1475,9 @@ spec S5 冻结清单 10 用例全部实现(5 来自 104A + 5 新增 + 1 额外 p
 
 ---
 
+## [R6-036] ⚖️ 决策 · 2026-09-20 · R6-036: MCP server 通用化定案(MCP-005)——各 agent 经 stdio 标准接入, 缺省全注册, 不限任务
+
+Forge MCP 线交付至 MCP-005, forge-mcp-server 已是通用基础设施, 任何支持 MCP 的 agent 均可接入: (1) 缺省全注册 14 工具: 5 base(echo/read/write/list_dir/edit_patch) + 4 编排(forge_task_create/get/list/orchestrate) + 5 台账(forge_worklog_add/show, forge_progress_add/update, forge_export), 无需白名单 env; FORGE_TOOLS_BUILTIN 仅作解析类扩展(csv_parse/markdown_render 等). (2) 编排规划: 配 FORGE_LLM_BASE_URL+FORGE_LLM_API_KEY 走 LLM 多步规划(模型自动探测 6.8→6.7→glm→chat, 可 FORGE_TIER_HIGH_MODEL 显式指定), 未配置回退验收驱动(离线可用). (3) 接入方式见 docs/MCP_GUIDE.md: 独立 MCP host config 指向 target/debug/forge-mcp-server; Forge 自身消费设 FORGE_MCP_SERVERS; 项目根 FORGE_PROJECT_ROOT(有 AI_WORKFLOW.md), 工作区 FORGE_WORKSPACE. (4) 台账跨 agent 共享(JSON 事实源), 编排任务进程内存(配 FORGE_PG_URL 持久). 各 AI 开工对 Forge 状态操作请优先走 MCP 工具, 禁止绕过直接手改 JSON(forge-worklog CLI 或 MCP 均可).
+
+---
+
