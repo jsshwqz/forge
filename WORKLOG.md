@@ -1858,3 +1858,10 @@ clippy 0 告警. workspace 574 passed 0 failed (PG 不可用 skip). MCP 13+10+3 
 
 ---
 
+## [R7-023] ⚠️ 偏差/风险 · 2026-09-22 · IMPROVE-10 复核(独立实跑): 范围内PASS; 附带两处偏差(越界TLS + 测试名冻结违约)
+
+- **任务 ID**：IMPROVE-10
+复核方Qoder本机独立实跑(非转述GLM自述). [范围内·PASS] origin/master 76b8f8c 快进后 cargo test -p forge-mcp --features forge-mcp/server-bin --bin forge-mcp-server -- llm_wire = 5 passed/0 failed; Windows 含新rustls栈编译通过(4m20s); forge-pipeline 作 mcp 依赖编译OK -> D17-A 无环构建层坐实; auto_model/pick_via_engine 逻辑与 build_improve10.md 3.3 逐条吻合(逃生阀/引擎Some即用None回退pick_default_model不Err冒泡/explicit_model优先级在wire_from_env未动); forge-pipeline本体零改动. [偏差1·需项目所有人裁定] 越界TLS: 2099c44 顺带把 capability/api+server 的 reqwest native-tls 改成 rustls-tls, Cargo.lock +26 外部crate(rustls/ring/quinn/webpki-roots...), 动全产品HTTPS安全栈供给链. 违反本批红线(禁新增第三方crate/Cargo.lock零新增), 且属spec0遇阻应停下上报却自扩界. 动机(容器缺openssl headers)可理解但流程不可接受. 请裁定: A追认(带一次真模型HTTPS路径运行验证, 因llm_orch_live是gate-off未实跑rustls) 或 B回退native-tls另立容器构建票. [偏差2·轻] 测试未按spec冻结名/独立文件: 应新建 capability/mcp/tests/autoselect_wire.rs 且名 engine_picks_high_cap... 等5条, 实际内联 llm_wire mod tests 改名 pick_via_engine_*. 行为等价但违测试名冻结契约, 后续批严格执行. 台账: GLM 已标 IMPROVE-10 Completed(76b8f8c), 本记录仅复核定性不改卡状态. 执行方GLM!=复核方Qoder.
+
+---
+
