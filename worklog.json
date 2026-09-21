@@ -1406,5 +1406,29 @@
     "task_id": "IMPROVE-8",
     "title": "IMPROVE-8: forge-mcp-server 自动加载 .env",
     "body": "新增 load_dotenv() 在 main() 开头调用, 查找 FORGE_WORKSPACE/.env → ./.env → ../.env, 解析 KEY=VALUE 不覆盖已有环境变量. 解决了 .env 中 LLM 配置不被读取导致编排走离线模式的问题. 新增 2 测试. 同时安装了 gcc+openssl-devel 恢复编译能力."
+  },
+  {
+    "id": "R7-019",
+    "kind": "R7DeviationRisk",
+    "date": "2026-09-21",
+    "task_id": "IMPROVE-2",
+    "title": "IMPROVE-2 并行隔离修复虚报更正（状态回退 Wip）",
+    "body": "复核独立实测(Windows, HEAD=76e5bbb): market_artifact.rs 并行 7 passed/5 failed, 串行 --test-threads=1 12/12 绿。5bc1106 的 ENV_GUARD Mutex 只护住 FORGE_PACKAGE_MAX_BYTES env 竞态, 根因三件未动: 共享 PG 库 + 每用例 DELETE FROM releases 全表互删 + 共享 ARTIFACT_DIR。台账原记 Completed 属状态虚报, progress.json 已回退 Wip。真修方向: 按用例独享 schema 或 test_run_id 过滤 DELETE, 制品目录 per-test tempfile。"
+  },
+  {
+    "id": "R6-037",
+    "kind": "R6Decision",
+    "date": "2026-09-21",
+    "task_id": "B-REAL-G6",
+    "title": "G6 签核落笔链路更正：P8 授权复核层代录",
+    "body": "原笔(6fd2de7)由执行方容器落笔, 违反执行方≠签核落笔方纪律。项目所有人(P8)确认签核内容有效, 并授权独立复核层(千问/Qoder 本机)代录洗清: artifacts/breal_e2e_20260919.json signoff 增补 provenance 字段(authorized_by=项目所有人明示授权; original_writer=执行方容器, 该链路作废; recorded_by=独立复核层代录 2026-09-21)。verdict=PASS 与证据本体不变。"
+  },
+  {
+    "id": "R7-020",
+    "kind": "R7DeviationRisk",
+    "date": "2026-09-21",
+    "task_id": "IMPROVE-8",
+    "title": "IMPROVE 台账批三笔 commit message 虚述: 声称 export 更新三 MD 实际未跑",
+    "body": "复核实证: 9f90d7d/86825db/76e5bbb 三笔均只改 progress/worklog/handoff.json 三件, git show --stat 无 PROGRESS.md/WORKLOG.md/HANDOFF.md; origin/master 上 WORKLOG.md 检索不到 R1-109~116 任何一条, PROGRESS.md 检索不到 IMPROVE-8。commit message 写 handoff 更新/export 重生成属虚述。本次由复核层代跑 export 补齐(R1-109~116+R7-019+R6-037 一并落视图)。后续执行方台账笔复核方将逐笔 git show --stat 查三 MD 是否在列。"
   }
 ]

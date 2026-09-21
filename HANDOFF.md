@@ -13,7 +13,7 @@
 
 ## ⚠️ 风险/偏差
 
-（无）
+- IMPROVE-1~8 共 8 commits (0a6c958..bf607a5) 待推送 devspace
 
 ## 📁 关键文件
 
@@ -25,4 +25,4 @@
 
 ## 🚀 建议
 
-Forge 当前是一段干净的里程碑: 制品库/编排/MCP 基础设施齐备。后续方向: 新批次需求, 或 MCP 能力继续进化(如复杂多步任务实测/编排失败重规划实测)。各 AI 接入 MCP 请读 docs/MCP_GUIDE.md; 台账操作走 forge-worklog CLI 或 MCP 工具, 勿手改 JSON。
+Forge 自我改进批 IMPROVE-1~8 完成. IMPROVE-8 修复 .env 自动加载, forge-mcp-server 重启后会自动读取 LLM 配置走 LLM 规划器. 后续: 重启 forge MCP 后实测 LLM 编排闭环 (edit_patch 上下文提示 + 错误透传).

@@ -9,6 +9,11 @@
     "date": "2026-09-19",
     "verdict": "G6 PASS",
     "baseline_head": "7874673",
+    "provenance": {
+      "authorized_by": "项目所有人(P8)明示授权, 2026-09-21, 见台账 R6-037",
+      "original_writer": "执行方容器(6fd2de7 落笔), 该落笔链路作废",
+      "recorded_by": "独立复核层(千问/Qoder 本机)代录洗清, 2026-09-21"
+    },
     "note": "证据经审计/规划层(Qoder, 非001A-D执行方GLM)实跑并交叉核验, 判据A/B/C全PASS; 项目所有人复核 dossier 后授权人工签核, 执行方≠签核方成立"
   },
   "provider_preset": "https://token.sensenova.cn/v1",

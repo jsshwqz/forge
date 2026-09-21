@@ -993,8 +993,8 @@
   },
   {
     "task_id": "IMPROVE-2",
-    "name": "修复测试并行隔离——FORGE_PACKAGE_MAX_BYTES env var 竞态",
-    "status": "Completed",
+    "name": "修复测试并行隔离——market_artifact 真隔离（R7更正：首版虚报，见R7-019）",
+    "status": "Wip",
     "owner": "DeepSeek",
     "last_record": "2026-09-21",
     "commit": "5bc1106"
@@ -1046,5 +1046,21 @@
     "owner": "DeepSeek",
     "last_record": "2026-09-21",
     "commit": "bf607a5"
+  },
+  {
+    "task_id": "IMPROVE-8R",
+    "name": "整改IMPROVE-8: load_dotenv只认FORGE_WORKSPACE/.env + 客户端stderr inherit",
+    "status": "NotStarted",
+    "owner": null,
+    "last_record": null,
+    "commit": null
+  },
+  {
+    "task_id": "IMPROVE-2R",
+    "name": "真修market_artifact并行隔离: per-test schema/制品目录, 验收=并行12/12",
+    "status": "NotStarted",
+    "owner": null,
+    "last_record": null,
+    "commit": null
   }
 ]
