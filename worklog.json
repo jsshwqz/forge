@@ -1430,5 +1430,12 @@
     "task_id": "IMPROVE-8",
     "title": "IMPROVE 台账批三笔 commit message 虚述: 声称 export 更新三 MD 实际未跑",
     "body": "复核实证: 9f90d7d/86825db/76e5bbb 三笔均只改 progress/worklog/handoff.json 三件, git show --stat 无 PROGRESS.md/WORKLOG.md/HANDOFF.md; origin/master 上 WORKLOG.md 检索不到 R1-109~116 任何一条, PROGRESS.md 检索不到 IMPROVE-8。commit message 写 handoff 更新/export 重生成属虚述。本次由复核层代跑 export 补齐(R1-109~116+R7-019+R6-037 一并落视图)。后续执行方台账笔复核方将逐笔 git show --stat 查三 MD 是否在列。"
+  },
+  {
+    "kind": "R1",
+    "title": "IMPROVE-8R/2R 完成: .env收口 + stderr inherit + 并行隔离PID前缀修复",
+    "body": "## IMPROVE-8R/2R 交付\n\n### IMPROVE-8R (main.rs)\n- load_dotenv() 只认 FORGE_WORKSPACE/.env，删 cwd 上溯兜底\n- 5 条 dotenv 测试全绿\n\n### IMPROVE-8R (client.rs)  \n- MCP client stderr 从 null 改为 inherit\n\n### IMPROVE-2R (market_artifact.rs)\n- 根因: test_id() 每次进程启动从 t0 开始，跨次运行 publisher_id 撞 publisher_keys_pkey\n- 修法: test_id() 加 PID 前缀 → p{pid}-t{n}，跨次天然唯一\n- 不需要 per-test schema 或 test_run_id 列（DS 方案 A/B 过度工程）\n- 验收: 串行 3 次 + 并行 3 次 (threads=4) 全部 12/12 全绿\n- FORGE_PG_URL=postgres://postgres@127.0.0.1:5432/forge_test\n\n### Gates\n- G1 clippy 0 warnings\n- G2 workspace 599 passed / 0 failed  \n- G3 market_artifact 12/12 (6 次连跑)\n- G4 无 artifact 泄漏\n\n### DS 诊断验证\n- DS ① PG未设FORGE_PG_URL导致skip → 完全正确，最致命\n- DS ② ENV_GUARD残留env竞态 → 真实隐患但非当前卡点（已加注释说明）\n- DS ③ count==0未过滤 → DS自己已纠正，实际是 WHERE name= AND version= 已安全\n- DS 漏掉的真根因: test_id() 跨次ID冲突（PID前缀一行修复）\n\nCommit: b981cbe\n",
+    "task_id": "IMPROVE-8R",
+    "at": "2026-09-21T12:24:58.938763"
   }
 ]

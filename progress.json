@@ -1050,17 +1050,17 @@
   {
     "task_id": "IMPROVE-8R",
     "name": "整改IMPROVE-8: load_dotenv只认FORGE_WORKSPACE/.env + 客户端stderr inherit",
-    "status": "NotStarted",
-    "owner": null,
+    "status": "Completed",
+    "owner": "GLM",
     "last_record": null,
-    "commit": null
+    "commit": "b981cbe"
   },
   {
     "task_id": "IMPROVE-2R",
     "name": "真修market_artifact并行隔离: per-test schema/制品目录, 验收=并行12/12",
-    "status": "NotStarted",
-    "owner": null,
+    "status": "Completed",
+    "owner": "GLM",
     "last_record": null,
-    "commit": null
+    "commit": "b981cbe"
   }
 ]
