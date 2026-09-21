@@ -197,15 +197,9 @@ async fn upload_exceeds_max_bytes_rejected() {
         .await
         .unwrap();
 
-    // IMPROVE-2R: env var 竞态已通过 per-test tempdir 消除（FORGE_PACKAGE_MAX_BYTES
-    // 是全局 env，但本测试 set/restore 之间不跨 await 点，且其他测试不读此 env）。
-    // 保留局部锁以防 set/remove 期间被其他测试读到中间态。
-    {
-        let _g = ENV_GUARD.lock().unwrap();
-        std::env::set_var("FORGE_PACKAGE_MAX_BYTES", "100");
-    }
-
-    let content = vec![0u8; 200]; // 200 bytes, exceeds limit
+    // IMPROVE-2R: 不再设 FORGE_PACKAGE_MAX_BYTES env（进程级 env 在并行测试中是竞态源）。
+    // 直接构造超过默认 16MB 限制的 payload 触发 413——不碰 env、不需要 Mutex、并行安全。
+    let content = vec![0u8; 16_777_217]; // 16MB + 1 byte, exceeds default max
     let mut h = Sha256::new();
     h.update(&content);
     let checksum: String = h.finalize().iter().map(|b| format!("{b:02x}")).collect();
@@ -233,12 +227,6 @@ async fn upload_exceeds_max_bytes_rejected() {
     .await
     .unwrap();
     assert_eq!(status, StatusCode::PAYLOAD_TOO_LARGE, "oversized artifact must be 413: {}", String::from_utf8_lossy(&body));
-
-    // 恢复默认
-    {
-        let _g = ENV_GUARD.lock().unwrap();
-        std::env::remove_var("FORGE_PACKAGE_MAX_BYTES");
-    }
 }
 
 /// 冻结测试：package_data 的 sha256 与声称 package_hash 不一致 → 409。
@@ -462,10 +450,7 @@ fn artifact_file_path(root: &std::path::Path, content: &[u8]) -> std::path::Path
     root.join(&sha[0..2]).join(&sha[2..4]).join(&sha)
 }
 
-/// IMPROVE-2R: 保留 ENV_GUARD 仅用于 FORGE_PACKAGE_MAX_BYTES 的 set/restore。
-/// 其他并行隔离已通过 per-test tempdir + 唯一 name 解决。
-use std::sync::Mutex;
-static ENV_GUARD: Mutex<()> = Mutex::new(());
+
 
 /// 冻结测试 #3：篡改制品文件 → 下载 hash 复核 → 失败。
 ///
