@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-09-21 22:59",
+  "updated_at": "2026-09-21 23:25",
   "current_status": "MCP 线全交付(MCP-002/003/003b/004/004b/005): forge-mcp-server 通用化, 缺省注册 14 工具(5 base+4 编排+5 台账), 编排支持 LLM 多步规划(商汤 sensenova 自动选模)与离线验收驱动双模式, 台账工具链跨 agent 共享; 各 agent 接入见 docs/MCP_GUIDE.md。MKT-104 系列 + G6 签名此前已全闭。",
   "blockers": [],
   "next_tasks": [],
@@ -11,8 +11,8 @@
     "progress.json": "任务状态事实源",
     "worklog.json": "工作日志事实源"
   },
-  "advice": "所有已知欠账已清零: MCP-003/004/005 补卡, main.rs 注释修复, CI PG-backed, progress_update commit 校验, market_signing 并行隔离补修. 后续: IMPROVE-9 (agent model 桥接) 或用户指定新任务.",
+  "advice": "所有 DS 发现的 P0-P3 已清零: P0 market_signing 并行隔离, P1 LLM e2e 实证, P2 PG 租户态接入, P3 handoff 清理. 后续: IMPROVE-9 或用户指定新任务.",
   "head": "b981cbe",
-  "status": "FIX-002 完成 + market_signing 并行隔离补修(R7-023). 136卡全 Completed. clippy 0告警. workspace 599 passed (PG-backed).",
+  "status": "P1+P2 完成: LLM 编排闭环真模型 e2e (IMPROVE-6/7 验证通过) + 缺省单机租户态 PG 接入 (new_with_pg). 138卡全 Completed. clippy 0告警. workspace 603 passed.",
   "next": "IMPROVE-9: bridge agent model as forge LLM provider (path B) — 未开工"
 }

@@ -22,9 +22,10 @@ async fn task_survives_storage_restart() {
 
     // —— 实例 A：经 HTTP 创建任务 ——
     let pool_a = connect_and_migrate(&url).await.unwrap();
-    let state_a = AppState::new(
+    let state_a = AppState::new_with_pg(
         Arc::new(PgTaskStore::new(pool_a.clone())),
-        Arc::new(PgSessionStore::new(pool_a)),
+        Arc::new(PgSessionStore::new(pool_a.clone())),
+        pool_a,
     );
     let res = app_with_state(state_a)
         .oneshot(
@@ -53,9 +54,10 @@ async fn task_survives_storage_restart() {
 
     // —— 实例 B：全新连接池 = "重启后" ——
     let pool_b = connect_and_migrate(&url).await.unwrap();
-    let state_b = AppState::new(
+    let state_b = AppState::new_with_pg(
         Arc::new(PgTaskStore::new(pool_b.clone())),
-        Arc::new(PgSessionStore::new(pool_b)),
+        Arc::new(PgSessionStore::new(pool_b.clone())),
+        pool_b,
     );
     let res = app_with_state(state_b)
         .oneshot(Request::get(format!("/tasks/{id}")).body(Body::empty()).unwrap())

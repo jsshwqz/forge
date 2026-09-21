@@ -21,9 +21,10 @@ async fn full_lifecycle_over_http_with_pg() {
         return;
     };
     let pool = connect_and_migrate(&url).await.unwrap();
-    let state = AppState::new(
+    let state = AppState::new_with_pg(
         Arc::new(PgTaskStore::new(pool.clone())),
-        Arc::new(PgSessionStore::new(pool)),
+        Arc::new(PgSessionStore::new(pool.clone())),
+        pool,
     );
     let app = app_with_state(state.clone());
 

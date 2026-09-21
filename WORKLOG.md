@@ -1738,3 +1738,65 @@ R7-022 给 CI 加了 PG service 后, 这个竞态从'离线 skip 掩盖'变成'C
 
 ---
 
+## [R1-123] ✅ 成功 · 2026-09-21 · R1-123: P1 LLM 编排闭环 e2e 实证 — IMPROVE-6/7 真模型验证通过
+
+- **任务 ID**：MKT-P1-LIVE
+## 背景
+DS P1 发现: IMPROVE-6 (错误透传) 和 IMPROVE-7 (edit_patch 上下文提示) 只有单测级证据,
+没有真模型 e2e 验证。handoff advice 写了'重启 forge MCP 后实测 LLM 编排闭环'但一直未做。
+
+## 交付
+新增 server/tests/llm_orch_live.rs (2 个 #[tokio::test]):
+1. live_edit_patch_context_hint_in_orchestration — 真模型规划含 edit_patch 步骤的任务
+2. live_edit_patch_mismatch_error_transparency — 预写文件不含 find 字符串, 逼出 IMPROVE-7
+
+双重开关: FORGE_LLM_LIVE=1 + FORGE_LLM_* 齐备才跑, 否则 skip (同 orchestrator_replan_live.rs)
+
+## 真模型验证结果
+模型: sensenova-6.8-flash-lite
+- 测试 1 (mismatch): LLM 规划 read_file→edit_patch, find 不命中 →
+  错误信息含 'find not found' + 'Hint: closest matching lines: >>> L1: def hello():' + 'read_file'
+  + IMPROVE-6 透传 'execution failed: Failed — {error:...}' → ✅ 验证通过
+- 测试 2 (context hint): LLM 规划 4 步成功完成 → Completed → ✅ 验证通过
+
+cargo test -p forge-server --test llm_orch_live: 2 passed; 0 failed (11s)
+
+---
+
+## [R1-124] ✅ 成功 · 2026-09-21 · R1-124: P2 缺省单机租户态 PG 接入 — new_with_pg 构造器
+
+- **任务 ID**：MKT-P2-TENANT
+## 背景
+DS P2 发现: server/src/lib.rs 的 new() 构造器硬编码 InMemoryTenantKeyStore/InMemoryQuotaStore,
+即使 pg_persistence.rs / full_lifecycle.rs 测试用 PG pool 构造 AppState, 租户钥和配额仍是内存版,
+重启即丢。
+
+## 修复
+1. 新增 AppState::new_with_pg(tasks, sessions, pool) 构造器:
+   - tenant_keys = PgTenantKeyStore(pool)
+   - quotas = PgQuotaStore(pool)
+   - evidence = PgEvidenceStore(pool)
+   - knowledge = FileKnowledgeBase (对齐 from_env PG 分支)
+   - pool = Some(pool)
+
+2. from_env() PG 分支改用 new_with_pg() (消除 30 行重复构造代码)
+
+3. pg_persistence.rs / full_lifecycle.rs 改用 new_with_pg() (让 PG 测试真正测 PG tenant/quotas)
+
+4. in_memory() 保持不变 (29 个测试调用点依赖内存态)
+
+5. new() 保持不变 (向后兼容, 仍用 InMemory)
+
+## 新增测试
+server/tests/tenant_pg_live.rs (2 个 #[tokio::test]):
+1. tenant_keys_and_quotas_survive_restart_via_new_with_pg — 双实例重启持久化验证
+2. in_memory_state_uses_in_memory_tenant_and_quota — 确保 in_memory() 仍用 InMemory
+
+PG 不可用时 skip (同 pg_persistence.rs 约定)
+
+## 门禁
+clippy 零告警 | workspace 603 passed 0 failed (PG 不可用, PG 测试全 skip)
+之前 341 passed 2 failed → 现在 603 passed 0 failed (new_with_pg 让 PG 测试正确 skip)
+
+---
+

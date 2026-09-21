@@ -179,6 +179,36 @@ impl AppState {
             llm_config: Arc::new(tokio::sync::RwLock::new(routes::llm::LlmRuntimeConfig::from_env())),
         }
     }
+
+    /// PG 模式构造器：tenant_keys/quotas 用 PG 实现（重启不丢）。
+    /// P2 修复：new() 硬编码 InMemory，PG 测试和 serve 路径需要 PG 版本。
+    pub fn new_with_pg(
+        tasks: Arc<dyn TaskStore>,
+        sessions: Arc<dyn SessionStore>,
+        pool: sqlx::PgPool,
+    ) -> Self {
+        let event_bus = Arc::new(InMemoryEventBus::with_buffer(sse_buffer()));
+        let sessions: Arc<dyn SessionStore> =
+            Arc::new(progress::BusProgressStore::new(sessions, event_bus.clone()));
+        Self {
+            sdk: ForgeSdk::from_stores(tasks, sessions),
+            evidence: Arc::new(forge_storage::PgEvidenceStore::new(pool.clone())),
+            workspaces: Arc::new(WorkspaceManager::new(std::env::var("FORGE_WORKSPACE").map(std::path::PathBuf::from).unwrap_or_else(|_| std::env::temp_dir().join("forge-ws"))).unwrap()),
+            event_bus,
+            instances: Arc::new(Default::default()),
+            templates: Arc::new(Default::default()),
+            metrics: Arc::new(Metrics::default()),
+            knowledge: Arc::new(FileKnowledgeBase::new(knowledge_file())),
+            capabilities: Arc::new(Default::default()),
+            auth: AuthConfig::from_env(),
+            // TEN-004 R1 + P2：PG 模式用 PG 实现（重启不丢）
+            tenant_keys: Arc::new(auth::PgTenantKeyStore::new(pool.clone())),
+            quotas: Arc::new(quota::PgQuotaStore::new(pool.clone())),
+            artifact_store: Arc::new(forge_storage::FileArtifactStore::with_default_dir()),
+            pool: Some(pool),
+            llm_config: Arc::new(tokio::sync::RwLock::new(routes::llm::LlmRuntimeConfig::from_env())),
+        }
+    }
 }
 
 // ==================== 错误 ====================
@@ -1394,38 +1424,18 @@ pub async fn run_from_env() -> Result<(), Box<dyn std::error::Error>> {
                 println!("storage: PostgreSQL ({url})");
                 // FED-001：显式建池（含 DEP-001 env 参数化），AppState 持有以支撑队列路径
                 let pool = forge_storage::connect_and_migrate(&url).await?;
-                // V8 STREAM-001 R2：PG 分支同样 event_bus 先建 → sessions 包 BusProgressStore。
-                let event_bus = Arc::new(InMemoryEventBus::with_buffer(sse_buffer()));
                 // FED-002：会话事件追加后转发到跨副本总线（失败不阻断写入）
                 // 进度流：RelaySessionStore 再包 BusProgressStore，本地进度事件入总线。
-                let sessions: Arc<dyn SessionStore> = Arc::new(progress::BusProgressStore::new(
-                    Arc::new(sse_relay::RelaySessionStore::new(
-                        Arc::new(forge_storage::PgSessionStore::new(pool.clone())),
-                        Arc::new(sse_relay::PgRelay::new(pool.clone())),
-                    )),
-                    event_bus.clone(),
+                let sessions: Arc<dyn SessionStore> = Arc::new(sse_relay::RelaySessionStore::new(
+                    Arc::new(forge_storage::PgSessionStore::new(pool.clone())),
+                    Arc::new(sse_relay::PgRelay::new(pool.clone())),
                 ));
-                AppState {
-                    sdk: ForgeSdk::from_stores(
-                        Arc::new(forge_storage::PgTaskStore::new(pool.clone())),
-                        sessions,
-                    ),
-                    evidence: Arc::new(forge_storage::PgEvidenceStore::new(pool.clone())),
-                    workspaces: Arc::new(WorkspaceManager::new(std::env::var("FORGE_WORKSPACE").map(std::path::PathBuf::from).unwrap_or_else(|_| std::env::temp_dir().join("forge-ws"))).unwrap()),
-                    event_bus,
-                    instances: Arc::new(Default::default()),
-                    templates: Arc::new(Default::default()),
-                    metrics: Arc::new(Metrics::default()),
-                    knowledge: Arc::new(FileKnowledgeBase::new(knowledge_file())),
-                    capabilities: Arc::new(Default::default()),
-                    auth: AuthConfig::from_env(),
-                    // TEN-004 R1：PG 模式用 PG 实现（重启不丢）；内存模式保留内存实现
-                    tenant_keys: Arc::new(auth::PgTenantKeyStore::new(pool.clone())),
-                    quotas: Arc::new(quota::PgQuotaStore::new(pool.clone())),
-                    artifact_store: Arc::new(forge_storage::FileArtifactStore::with_default_dir()),
-                    pool: Some(pool),
-                    llm_config: Arc::new(tokio::sync::RwLock::new(routes::llm::LlmRuntimeConfig::from_env())),
-                }
+                // P2：用 new_with_pg 统一 PG 构造路径 (tenant_keys/quotas 用 PG 实现)
+                AppState::new_with_pg(
+                    Arc::new(forge_storage::PgTaskStore::new(pool.clone())),
+                    sessions,
+                    pool,
+                )
             }
             Err(_) => {
                 println!("storage: in-memory");

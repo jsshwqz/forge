@@ -1086,5 +1086,21 @@
     "owner": "GLM",
     "last_record": null,
     "commit": "f6b640b"
+  },
+  {
+    "task_id": "MKT-P1-LIVE",
+    "name": "P1: LLM 编排闭环 e2e 实证 (IMPROVE-6/7 真模型验证)",
+    "status": "Completed",
+    "owner": "GLM",
+    "last_record": null,
+    "commit": null
+  },
+  {
+    "task_id": "MKT-P2-TENANT",
+    "name": "P2: 缺省单机租户态 PG 接入 (new_with_pg 构造器)",
+    "status": "Completed",
+    "owner": "GLM",
+    "last_record": null,
+    "commit": null
   }
 ]

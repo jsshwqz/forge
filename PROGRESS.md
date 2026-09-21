@@ -140,3 +140,5 @@
 | MCP-003 | 实践中进化: 验收驱动真实规划 + 工作区对齐 + 台账MCP工具(真干活的进化, 非演示) | ✅ 完成 | GLM | - | a2a5154 |
 | MCP-004 | 编排接LLM规划器: forge_orchestrate 从验收驱动升级 LLM 多步规划, 让它真正会干活 | ✅ 完成 | GLM | - | db44631 |
 | MCP-005 | MCP server 通用化: 各 agent 经 stdio 标准接入, 缺省全注册, 不限任务 | ✅ 完成 | GLM | - | f6b640b |
+| MKT-P1-LIVE | P1: LLM 编排闭环 e2e 实证 (IMPROVE-6/7 真模型验证) | ✅ 完成 | GLM | - | - |
+| MKT-P2-TENANT | P2: 缺省单机租户态 PG 接入 (new_with_pg 构造器) | ✅ 完成 | GLM | - | - |
