@@ -1542,5 +1542,13 @@
     "task_id": "IMPROVE-10",
     "title": "IMPROVE-10 复核(独立实跑): 范围内PASS; 附带两处偏差(越界TLS + 测试名冻结违约)",
     "body": "复核方Qoder本机独立实跑(非转述GLM自述). [范围内·PASS] origin/master 76b8f8c 快进后 cargo test -p forge-mcp --features forge-mcp/server-bin --bin forge-mcp-server -- llm_wire = 5 passed/0 failed; Windows 含新rustls栈编译通过(4m20s); forge-pipeline 作 mcp 依赖编译OK -> D17-A 无环构建层坐实; auto_model/pick_via_engine 逻辑与 build_improve10.md 3.3 逐条吻合(逃生阀/引擎Some即用None回退pick_default_model不Err冒泡/explicit_model优先级在wire_from_env未动); forge-pipeline本体零改动. [偏差1·需项目所有人裁定] 越界TLS: 2099c44 顺带把 capability/api+server 的 reqwest native-tls 改成 rustls-tls, Cargo.lock +26 外部crate(rustls/ring/quinn/webpki-roots...), 动全产品HTTPS安全栈供给链. 违反本批红线(禁新增第三方crate/Cargo.lock零新增), 且属spec0遇阻应停下上报却自扩界. 动机(容器缺openssl headers)可理解但流程不可接受. 请裁定: A追认(带一次真模型HTTPS路径运行验证, 因llm_orch_live是gate-off未实跑rustls) 或 B回退native-tls另立容器构建票. [偏差2·轻] 测试未按spec冻结名/独立文件: 应新建 capability/mcp/tests/autoselect_wire.rs 且名 engine_picks_high_cap... 等5条, 实际内联 llm_wire mod tests 改名 pick_via_engine_*. 行为等价但违测试名冻结契约, 后续批严格执行. 台账: GLM 已标 IMPROVE-10 Completed(76b8f8c), 本记录仅复核定性不改卡状态. 执行方GLM!=复核方Qoder."
+  },
+  {
+    "id": "R6-040",
+    "kind": "R6Decision",
+    "date": "2026-09-22",
+    "task_id": "IMPROVE-10",
+    "title": "R6-0XX: 项目所有人裁定A追认rustls迁移; 复核方真机HTTPS验证PASS收口R7-023越界项",
+    "body": "裁定A(追认): 项目所有人批准 2099c44 顺带的 reqwest native-tls->rustls-tls 迁移保留(收益: 去 openssl 原生依赖, 跨平台更便携, 本容器无 openssl-dev headers 即为其由). 真机验证(复核方Qoder本机实跑, 非转述): 灌 .env(FORGE_LLM_BASE_URL/API_KEY)+FORGE_LLM_LIVE=1, cargo test -p forge-api --test live live_list_models_and_auto_pick -> 编译链接 hyper-rustls v0.27.10, 真 HTTPS GET sensenova /models 返回 9 模型(deepseek-v4-flash/glm-5.2/sensenova-6.8-flash-lite...), 1 passed. 证明 rustls 证书链/TLS握手对真实生产端点工作正常(唯一实质风险点已排除). 补全路径由 llm_orch_live.rs(578ae0a GLM 2/2)覆盖, 未重复耗配额. 残余低风险: storage crate(S3/MinIO) reqwest HTTPS 未单独验证(default-features=false 无显式 tls, 靠 feature 统一获 rustls; 该后端缺省不启用), 若日后启用对象存储需补一次 HTTPS 探活. 纪律重申: 后续批执行方遇构建阻塞应停下上报另立基建票, 禁在功能批内顺手动产品安全栈(本例流程不可接受, 仅因结果可用且已补验而追认). R7-023 偏差1 就此收口; 偏差2(测试名冻结)保持记录, 下批严格. 执行方GLM!=复核方Qoder."
   }
 ]

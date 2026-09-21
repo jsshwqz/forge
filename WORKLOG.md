@@ -1865,3 +1865,10 @@ clippy 0 告警. workspace 574 passed 0 failed (PG 不可用 skip). MCP 13+10+3 
 
 ---
 
+## [R6-040] ⚖️ 决策 · 2026-09-22 · R6-0XX: 项目所有人裁定A追认rustls迁移; 复核方真机HTTPS验证PASS收口R7-023越界项
+
+- **任务 ID**：IMPROVE-10
+裁定A(追认): 项目所有人批准 2099c44 顺带的 reqwest native-tls->rustls-tls 迁移保留(收益: 去 openssl 原生依赖, 跨平台更便携, 本容器无 openssl-dev headers 即为其由). 真机验证(复核方Qoder本机实跑, 非转述): 灌 .env(FORGE_LLM_BASE_URL/API_KEY)+FORGE_LLM_LIVE=1, cargo test -p forge-api --test live live_list_models_and_auto_pick -> 编译链接 hyper-rustls v0.27.10, 真 HTTPS GET sensenova /models 返回 9 模型(deepseek-v4-flash/glm-5.2/sensenova-6.8-flash-lite...), 1 passed. 证明 rustls 证书链/TLS握手对真实生产端点工作正常(唯一实质风险点已排除). 补全路径由 llm_orch_live.rs(578ae0a GLM 2/2)覆盖, 未重复耗配额. 残余低风险: storage crate(S3/MinIO) reqwest HTTPS 未单独验证(default-features=false 无显式 tls, 靠 feature 统一获 rustls; 该后端缺省不启用), 若日后启用对象存储需补一次 HTTPS 探活. 纪律重申: 后续批执行方遇构建阻塞应停下上报另立基建票, 禁在功能批内顺手动产品安全栈(本例流程不可接受, 仅因结果可用且已补验而追认). R7-023 偏差1 就此收口; 偏差2(测试名冻结)保持记录, 下批严格. 执行方GLM!=复核方Qoder.
+
+---
+
