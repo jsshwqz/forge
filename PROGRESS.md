@@ -142,3 +142,4 @@
 | MCP-005 | MCP server 通用化: 各 agent 经 stdio 标准接入, 缺省全注册, 不限任务 | ✅ 完成 | GLM | - | f6b640b |
 | MKT-P1-LIVE | P1: LLM 编排闭环 e2e 实证 (IMPROVE-6/7 真模型验证) | ✅ 完成 | GLM | - | - |
 | MKT-P2-TENANT | P2: 缺省单机租户态 PG 接入 (new_with_pg 构造器) | ✅ 完成 | GLM | - | - |
+| IMPROVE-10-AUTOSELECT | MCP 选模接 forge-pipeline autoselect 引擎 (硬编码偏好序降为兜底, D17-A) | ✅ 完成 | Qwen | - | 2099c44 |

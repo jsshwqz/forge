@@ -1845,3 +1845,16 @@ GLM/复核方提出红旗: 是否真回归? R7-019 虚报就出在 signing 上�
 
 ---
 
+## [R1-125] ✅ 成功 · 2026-09-22 · IMPROVE-10 完成: MCP 选模接 autoselect 引擎
+
+- **任务 ID**：IMPROVE-10-AUTOSELECT
+commit 2099c44. 四块改动:
+1. Cargo.toml: forge-pipeline optional dep + server-bin feature
+2. llm_wire.rs: AutoDetect 增 goal/constraints/acceptance; wire_from_env 新签名; pick_via_engine 纯函数接 autoselect 引擎 (ModelSelector+AutoContext+infer_risk+estimate_prompt_tokens); auto_model 优先引擎, FORGE_MODEL_AUTOSELECT=0 逃生阀, 引擎无解回退 pick_default_model
+3. orchestrate_tools.rs: invoke 从 task store 取 goal/constraints/acceptance 传 wire_from_env
+4. 5 单测全绿: assembly/no_overlap/with_overlap/high_risk_downgrades/empty_ids
+clippy 0 告警. workspace 574 passed 0 failed (PG 不可用 skip). MCP 13+10+3 tests 全绿.
+附带: reqwest native-tls→rustls-tls (容器无 openssl-dev headers, 缓存 fingerprint 过期后无法重编)
+
+---
+

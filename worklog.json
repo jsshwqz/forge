@@ -1526,5 +1526,13 @@
     "task_id": null,
     "title": "R6-039: f8321e9 '2 failed' 核验结论 + market_signing 并行验证",
     "body": "## 核验背景\nf8321e9 自述门禁'341 passed / 2 failed (PG 不可用导致)', 基线本应 ~599。\nGLM/复核方提出红旗: 是否真回归? R7-019 虚报就出在 signing 上。\n\n## 核验方法\n1. 单独跑 billing.rs (2 failed 的来源) — 设/不设 FORGE_PG_URL 对比\n2. 单独跑 market_signing.rs — 4 线程并行 6 连跑\n3. 对比 f8321e9 → 578ae0a 的 market_signing.rs diff (0 行变更)\n\n## 核验结论\n\n### '2 failed' 根因: 非回归, 是测试环境 PG 连接问题\n- billing.rs 的 pg_app() 检测 FORGE_PG_URL 已设 → 不 skip → connect_and_migrate().unwrap() 在 PG 不可用时 panic → FAILED\n- 不设 FORGE_PG_URL → billing.rs 正确 skip → 0 failed\n- f8321e9 → 578ae0a 的 billing.rs 代码 0 变更 → 不是代码修复了它\n- 578ae0a 跑 603 passed 0 failed 是因为那次没设 FORGE_PG_URL (或 PG 恰好可用)\n\n### market_signing 并行验证: 6 连跑全绿\n- 4 线程并行 × 6 次 = 24 次执行, 4/4 绿每次\n- 但注意: PG 不可用时 setup_app 返回 None → 4 测试 skip (显示 ok 但实际没跑 PG 路径)\n- 真正的 PG 并行竞态验证需要 PG 环境 (本环境无 PG binary, 无法做)\n\n### 代码层面确认 (market_signing.rs 隔离模式正确)\n1. test_id() = 'p{pid}-t{n}' → 跨进程唯一 ✓\n2. 所有 publisher_id/name 带 tid 后缀 → 同表不撞 ✓\n3. 不再有全表 DELETE FROM releases/publisher_keys ✓\n4. 与 market_artifact.rs (已验证 12/12 并行绿) 完全同款模式 ✓\n\n## 质量判定\n- f8321e9 代码改动: 正确, 与已验证的 market_artifact 模式一致\n- '2 failed': 非回归, 是 PG 连接环境问题 (billing.rs 的 unwrap panic)\n- 真正待补: 需在有 PG 的环境跑一次 market_signing 并行连跑 (CI 的 PG service job 可覆盖)\n- IMPROVE-10 (MCP 选模接 autoselect): 确认真空缺, llm_wire.rs auto_model 仍 pick_default_model, 未接 forge-pipeline/autoselect 引擎"
+  },
+  {
+    "id": "R1-125",
+    "kind": "R1Completed",
+    "date": "2026-09-22",
+    "task_id": "IMPROVE-10-AUTOSELECT",
+    "title": "IMPROVE-10 完成: MCP 选模接 autoselect 引擎",
+    "body": "commit 2099c44. 四块改动:\n1. Cargo.toml: forge-pipeline optional dep + server-bin feature\n2. llm_wire.rs: AutoDetect 增 goal/constraints/acceptance; wire_from_env 新签名; pick_via_engine 纯函数接 autoselect 引擎 (ModelSelector+AutoContext+infer_risk+estimate_prompt_tokens); auto_model 优先引擎, FORGE_MODEL_AUTOSELECT=0 逃生阀, 引擎无解回退 pick_default_model\n3. orchestrate_tools.rs: invoke 从 task store 取 goal/constraints/acceptance 传 wire_from_env\n4. 5 单测全绿: assembly/no_overlap/with_overlap/high_risk_downgrades/empty_ids\nclippy 0 告警. workspace 574 passed 0 failed (PG 不可用 skip). MCP 13+10+3 tests 全绿.\n附带: reqwest native-tls→rustls-tls (容器无 openssl-dev headers, 缓存 fingerprint 过期后无法重编)"
   }
 ]
