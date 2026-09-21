@@ -1038,5 +1038,13 @@
     "owner": "DeepSeek",
     "last_record": "2026-09-21",
     "commit": "9b9236d"
+  },
+  {
+    "task_id": "IMPROVE-8",
+    "name": "forge-mcp-server 启动时自动加载 .env 文件",
+    "status": "Completed",
+    "owner": "DeepSeek",
+    "last_record": "2026-09-21",
+    "commit": "bf607a5"
   }
 ]
