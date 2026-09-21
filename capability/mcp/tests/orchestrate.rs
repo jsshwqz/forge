@@ -323,6 +323,13 @@ async fn progress_update_via_mcp() {
     ).unwrap();
     // AI_WORKFLOW.md 占位，让 detect_project_root 认可
     std::fs::write(tmp.path().join("AI_WORKFLOW.md"), "# dw").unwrap();
+    // git init + 空提交，让 commit 校验可通过 (R7-022)
+    std::process::Command::new("git").args(["init"]).current_dir(tmp.path()).output().unwrap();
+    std::process::Command::new("git").args(["config", "user.email", "t@t"]).current_dir(tmp.path()).output().unwrap();
+    std::process::Command::new("git").args(["config", "user.name", "t"]).current_dir(tmp.path()).output().unwrap();
+    std::process::Command::new("git").args(["commit", "--allow-empty", "-m", "init"]).current_dir(tmp.path()).output().unwrap();
+    let rev_out = std::process::Command::new("git").args(["rev-parse", "HEAD"]).current_dir(tmp.path()).output().unwrap();
+    let real_commit = String::from_utf8_lossy(&rev_out.stdout).trim().to_string();
 
     let mut env = HashMap::new();
     env.insert("FORGE_TOOLS_BUILTIN".to_string(), "forge_progress_update".to_string());
@@ -336,7 +343,7 @@ async fn progress_update_via_mcp() {
     let upd = client
         .call_tool(
             "forge_progress_update",
-            serde_json::json!({"task_id":"DEMO-001","status":"Completed","owner":"GLM","commit":"abc123"}),
+            serde_json::json!({"task_id":"DEMO-001","status":"Completed","owner":"GLM","commit":&real_commit}),
         )
         .await
         .unwrap();
@@ -344,7 +351,7 @@ async fn progress_update_via_mcp() {
 
     // 验证落盘
     let raw = std::fs::read_to_string(tmp.path().join("progress.json")).unwrap();
-    assert!(raw.contains("Completed") && raw.contains("abc123") && raw.contains("GLM"));
+    assert!(raw.contains("Completed") && raw.contains(&real_commit) && raw.contains("GLM"));
 
     // 不存在的任务 → 错误
     let err = client

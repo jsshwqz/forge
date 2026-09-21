@@ -398,7 +398,7 @@ impl Tool for ForgeProgressUpdateTool {
         };
 
         let root = detect_project_root()?;
-        let store = Store::new(root);
+        let store = Store::new(root.clone());
         let guard = store.lock().map_err(map_store_err)?;
         let mut entries = store.load_progress().map_err(map_store_err)?;
         let entry = entries
@@ -414,7 +414,27 @@ impl Tool for ForgeProgressUpdateTool {
             entry.owner = Some(o);
         }
         if let Some(c) = commit {
-            entry.commit = Some(c);
+            // R7-022: commit 校验——必须真实存在于 git 仓库
+            let output = std::process::Command::new("git")
+                .args(["cat-file", "-e", &c])
+                .current_dir(&root)
+                .output();
+            match output {
+                Ok(o) if o.status.success() => {
+                    entry.commit = Some(c);
+                }
+                Ok(o) => {
+                    let stderr = String::from_utf8_lossy(&o.stderr);
+                    return Err(ForgeError::InvalidState(format!(
+                        "forge_progress_update: commit {c} not found in git: {stderr}"
+                    )));
+                }
+                Err(e) => {
+                    // git 不可用时降级: 记录但警告
+                    eprintln!("[warn] forge_progress_update: git unavailable, skipping commit validation: {e}");
+                    entry.commit = Some(c);
+                }
+            }
         }
         store.save_progress(&entries).map_err(map_store_err)?;
         drop(guard);

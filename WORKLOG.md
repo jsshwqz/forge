@@ -1653,3 +1653,63 @@ GLM 因 MCP forge_worklog 工具遇非 ASCII 路径"新forge"找不到项目根,
 
 ---
 
+## [R1-119] ✅ 成功 · 2026-09-21 · MCP-003 补建卡: 验收驱动规划 + 工作区对齐 + 台账MCP工具 (commit a2a5154)
+
+- **任务 ID**：MCP-003
+代码早已实现并交付(commit a2a5154 + 81038e4 + 189444d), 但 progress.json 一直未建卡——DS 验收时发现零卡。
+
+实现内容:
+- AcceptanceDrivenPlanner: 按 task.acceptance 的 CheckSpec 派生规划步骤
+- 工作区对齐: 文件类工具 root 与 OrchestratorDeps.workspace.create_for 一致
+- 台账 MCP 工具: forge_worklog_add / forge_progress_update / forge_progress_add / forge_export
+
+本次仅补台账(建卡+Completed), 无代码变更。
+
+---
+
+## [R1-120] ✅ 成功 · 2026-09-21 · MCP-004 补建卡: forge_orchestrate 接入 LLM 规划器 (commit db44631)
+
+- **任务 ID**：MCP-004
+代码早已实现并交付(commit db44631 + 86f90a1), 但 progress.json 一直未建卡。
+
+实现内容:
+- LlmPlannerWire: 有 FORGE_LLM_BASE_URL+API_KEY 时注入 LlmPlanner+LlmReplanner
+- 无配置时回退 AcceptanceDrivenPlanner (离线零回归)
+- MCP-004b: 未显式指定模型时 list_models + 商汤官方偏好序选模型
+
+本次仅补台账(建卡+Completed), 无代码变更。
+
+---
+
+## [R1-121] ✅ 成功 · 2026-09-21 · MCP-005 补建卡: MCP server 通用化——缺省全注册 (commit f6b640b)
+
+- **任务 ID**：MCP-005
+代码早已实现并交付(commit f6b640b), 但 progress.json 一直未建卡。
+
+实现内容:
+- 缺省全注册 14 工具: 5 base + 4 编排 + 5 台账
+- FORGE_TOOLS_BUILTIN 仅作解析类扩展(csv_parse/markdown_render 等)
+- docs/MCP_GUIDE.md: 各 agent 经 stdio 标准接入指引
+
+本次仅补台账(建卡+Completed), 无代码变更。
+
+---
+
+## [R7-022] ⚠️ 偏差/风险 · 2026-09-21 · R7-022: 悬置项清零——MCP-003/004/005 补建卡 + main.rs 注释修复 + CI PG + progress_update commit 校验
+
+## 背景
+DS 验收指出四项悬置: MCP-003/004/005 零卡 + main.rs 注释矛盾 + CI 无 PG (假绿) + progress_update 不校验 commit。
+
+## 修复
+1. MCP-003/004/005: 代码早已实现(a2a5154/db44631/f6b640b), 补 progress.json 建卡(Completed + commit hash) + worklog R1
+2. main.rs:13 注释: 从"白名单点名注册, 缺省零回归"改为"MCP-005 缺省全注册 14 工具"
+3. CI (.github/workflows/ci.yml): 加 postgres:16 service container + FORGE_PG_URL env, PG 测试不再 skip
+4. progress_update commit 校验: 用 git cat-file -e 验证 commit hash 真实存在; git 不可用时降级
+
+## 门禁
+- clippy 零告警
+- 全量 599 passed / 0 failed (PG-backed)
+- MCP orchestrate 10/10 绿
+
+---
+

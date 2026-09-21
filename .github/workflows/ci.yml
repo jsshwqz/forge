@@ -3,6 +3,7 @@ name: CI
 # 门禁三命令硬闸：check / clippy(零告警) / test(带超时)。
 # 教训（R1-094 progress 时序 bug）：测试挂起比 fail 更隐蔽，会吞掉整个 CI 时限，
 # 因此 test 用 `timeout` 命令兜底——挂起即非零退出，绝不静默放行。
+# 教训（R7-022 CI 假绿）：PG 测试缺 PG service 时全 skip = 假绿，必须挂 PG container。
 
 on:
   push:
@@ -14,9 +15,29 @@ env:
 
 jobs:
   gate:
-    name: check + clippy + test (timeout-gated)
+    name: check + clippy + test (timeout-gated, PG-backed)
     runs-on: ubuntu-latest
     timeout-minutes: 30
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: forge_test
+          POSTGRES_HOST_AUTH_METHOD: trust
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      FORGE_PG_URL: postgres://postgres:postgres@localhost:5432/forge_test
+
     steps:
       - uses: actions/checkout@v4
 
@@ -47,5 +68,5 @@ jobs:
       - name: cargo clippy --workspace --all-targets (零告警硬闸)
         run: cargo clippy --workspace --all-targets --features forge-mcp/server-bin -- -D warnings
 
-      - name: cargo test --workspace (20 分钟超时兜底)
+      - name: cargo test --workspace (20 分钟超时兜底, PG-backed)
         run: timeout 20m cargo test --workspace --features forge-mcp/server-bin

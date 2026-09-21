@@ -9,15 +9,16 @@
 //! - tools/list → 返回 ToolRouter 中所有已注册工具
 //! - tools/call → 路由到对应 Tool::invoke
 //!
-//! 工具注册：启动时注册 BASE_TOOLS(5)（恒注册），内置白名单工具与编排工具
-//! （MCP-002）由 FORGE_TOOLS_BUILTIN 白名单点名注册，缺省零回归。
-//! 工具构造逻辑与 server/src/builtin_tools.rs 的 construct_tool 保持一致。
+//! 工具注册（MCP-005 缺省全注册）：
+//! - BASE_TOOLS(5)（恒注册）
+//! - 编排工具(4) + 台账工具(5) = 9（缺省全注册，任何 agent 一启动即用）
+//! - FORGE_TOOLS_BUILTIN 仅作解析类扩展（csv_parse, markdown_render 等）按 env 注册
+//!
+//! 共 14 工具缺省可用；工具构造逻辑与 server/src/builtin_tools.rs 的 construct_tool 保持一致。
 //!
 //! 用法：
 //!   forge-mcp-server
 //!   FORGE_TOOLS_BUILTIN=csv_parse,markdown_render forge-mcp-server
-//!   FORGE_TOOLS_BUILTIN=forge_task_create,forge_task_get,forge_task_list,forge_orchestrate \
-//!     FORGE_WORKSPACE=/tmp/ws forge-mcp-server
 //!
 //! 被 Forge MCP 客户端消费时，client 侧的 FORGE_MCP_SERVERS 配置示例：
 //!   FORGE_MCP_SERVERS='[{"name":"forge","command":"forge-mcp-server","args":[],"env":{}}]'
