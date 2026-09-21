@@ -57,7 +57,7 @@ impl McpClient {
             .envs(&cfg.env)
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
-            .stderr(Stdio::null())
+            .stderr(Stdio::inherit())
             .spawn()?;
         let stdin = child
             .stdin

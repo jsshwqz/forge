@@ -1,4 +1,4 @@
-//! MKT-104A 制品库装配面测试（PG 门控，冻结 5 用例）。
+//! MKT-104A 制品库装配面测试（PG 门控，冻结 12 用例）。
 //!
 //! 冻结测试名：
 //! - upload_then_download_bytes_match
@@ -6,10 +6,21 @@
 //! - publish_artifact_hash_mismatch_rejected
 //! - upload_without_publisher_key_rejected
 //! - download_yanked_returns_409
+//! - download_tampered_package_hash_mismatch
+//! - install_with_hash_recheck_passes
+//! - install_with_hash_mismatch_rejected
+//! - install_with_bad_signature_rejected
+//! - delete_removes_artifact_and_metadata
+//! - e2e_publish_download_install_roundtrip
+//! - no_pg_fallback_to_file_system
 //!
 //! 纪律：async 全带 tokio::time::timeout（R1-094）；
 //! FORGE_ARTIFACT_DIR 指 tempfile 禁写真 home（G4 探针）；
 //! 需 PG，未设 FORGE_PG_URL 时 skip。
+//!
+//! IMPROVE-2R: 并行隔离真修——每用例独享 tempdir + 唯一 test_id 后缀，
+//! 不再用共享 OnceLock<TempDir> 和全表 DELETE FROM releases。
+//! 验收标准: 不带 --test-threads=1 并行 cargo test 连跑 3 次 12/12 全绿。
 
 use axum::body::Body;
 use forge_storage::ArtifactStore;
@@ -18,50 +29,50 @@ use forge_cap::signing;
 use forge_server::{app_with_state, AppState};
 use forge_storage::connect_and_migrate;
 use http_body_util::BodyExt;
-use std::sync::{Mutex, OnceLock};
+use std::sync::atomic::{AtomicU64, Ordering};
 use tokio::time::timeout;
 use std::time::Duration;
 use tower::ServiceExt;
 
-/// tempfile 共享目录（同一测试进程内多个用例可共用，最后由 tempdir 析构清理）。
-static ARTIFACT_DIR: OnceLock<tempfile::TempDir> = OnceLock::new();
+// ── IMPROVE-2R: per-test 隔离基础设施 ──
 
-/// IMPROVE-2: 互斥锁保护 FORGE_PACKAGE_MAX_BYTES env var，防止并行测试竞态。
-/// upload_exceeds_max_bytes_rejected 设 100 字节后如果另一个测试恰好跑到 publish，
-/// 会被误拒。这个锁确保 env var 的 set/restore 不会泄漏到其他测试。
-static ENV_GUARD: OnceLock<Mutex<()>> = OnceLock::new();
-fn env_guard() -> &'static Mutex<()> {
-    ENV_GUARD.get_or_init(|| Mutex::new(()))
+/// 全局原子计数器，为每个测试用例生成唯一 ID。
+/// 并行测试中每个调用拿到不同的数字，用于 publisher_id 和 name 后缀。
+static TEST_COUNTER: AtomicU64 = AtomicU64::new(0);
+
+/// 生成唯一测试 ID（如 "p12345-t0", "p12345-t1"...）。
+/// 进程 ID 前缀确保跨次运行不撞主键（同一次进程内靠原子计数器天然不撞）。
+fn test_id() -> String {
+    let n = TEST_COUNTER.fetch_add(1, Ordering::SeqCst);
+    format!("p{}-t{n}", std::process::id())
 }
 
-fn artifact_dir() -> &'static tempfile::TempDir {
-    ARTIFACT_DIR.get_or_init(|| {
-        let d = tempfile::tempdir().unwrap();
-        std::env::set_var("FORGE_ARTIFACT_DIR", d.path());
-        d
-    })
+/// 检查 PG 是否可用，返回 URL 或 None。
+fn pg_url() -> Option<String> {
+    match std::env::var("FORGE_PG_URL") {
+        Ok(s) if !s.trim().is_empty() => Some(s),
+        _ => {
+            eprintln!("[skip] FORGE_PG_URL 未设置——本测试需真实 PostgreSQL");
+            None
+        }
+    }
 }
 
-async fn app() -> Option<axum::Router> {
-    let Ok(url) = std::env::var("FORGE_PG_URL") else {
-        eprintln!("[skip] FORGE_PG_URL 未设置——本测试需真实 PostgreSQL");
-        return None;
-    };
-    // 初始化 tempfile artifact dir（保证在 app 构造前设好 env）
-    let _ = artifact_dir();
+/// 为单个测试创建独立的 tempdir + AppState（带 PG pool）。
+/// 返回 (router, tempdir, pool, test_id)。
+/// tempdir 需要由调用方持有以保持生命周期（drop 时自动清理）。
+async fn setup_app() -> Option<(axum::Router, tempfile::TempDir, sqlx::PgPool, String)> {
+    let url = pg_url()?;
+    let tid = test_id();
+    let dir = tempfile::tempdir().unwrap();
 
     let pool = connect_and_migrate(&url).await.unwrap();
-    // 测试隔离：清空 release/publisher 残留
-    sqlx::query("DELETE FROM releases").execute(&pool).await.unwrap();
-    sqlx::query("DELETE FROM publisher_keys").execute(&pool).await.unwrap();
-
     let mut st = AppState::in_memory();
-    st.pool = Some(pool);
-    // 覆盖 artifact_store 为指向 tempfile 的 FileArtifactStore
+    st.pool = Some(pool.clone());
     st.artifact_store = std::sync::Arc::new(
-        forge_storage::FileArtifactStore::new(artifact_dir().path()),
+        forge_storage::FileArtifactStore::new(dir.path()),
     );
-    Some(app_with_state(st))
+    Some((app_with_state(st), dir, pool, tid))
 }
 
 async fn send(
@@ -86,21 +97,28 @@ fn get_req(uri: &str) -> Request<Body> {
     Request::get(uri).body(Body::empty()).unwrap()
 }
 
-/// 辅助：登记 publisher + 签名发布带制品字节的 release，返回 (router, name, version, content_bytes)。
+/// 辅助：登记 publisher + 签名发布带制品字节的 release。
+/// 每次调用创建独立的 tempdir 和唯一 publisher_id/name（带 test_id 后缀）。
+/// 返回 (router, name, version, content_bytes, tempdir, publisher_id)。
 async fn setup_published_artifact(
     content: &[u8],
-    name: &str,
+    base_name: &str,
     version: &str,
-) -> (axum::Router, String, String, Vec<u8>) {
+) -> (axum::Router, String, String, Vec<u8>, tempfile::TempDir, String) {
     use base64::prelude::*;
     use sha2::{Digest, Sha256};
 
-    let pool = connect_and_migrate(&std::env::var("FORGE_PG_URL").unwrap()).await.unwrap();
-    sqlx::query("DELETE FROM releases").execute(&pool).await.unwrap();
-    sqlx::query("DELETE FROM publisher_keys").execute(&pool).await.unwrap();
+    let url = std::env::var("FORGE_PG_URL").unwrap();
+    let tid = test_id();
+    let dir = tempfile::tempdir().unwrap();
+    let publisher_id = format!("pub-{tid}");
+    let name = format!("{base_name}-{tid}");
+
+    let pool = connect_and_migrate(&url).await.unwrap();
 
     let (sk, pk) = signing::generate_keypair();
-    sqlx::query("INSERT INTO publisher_keys (publisher_id, public_key) VALUES ('pub-art', $1)")
+    sqlx::query("INSERT INTO publisher_keys (publisher_id, public_key) VALUES ($1, $2)")
+        .bind(&publisher_id)
         .bind(&pk)
         .execute(&pool)
         .await
@@ -116,7 +134,7 @@ async fn setup_published_artifact(
     let mut st = AppState::in_memory();
     st.pool = Some(pool);
     st.artifact_store = std::sync::Arc::new(
-        forge_storage::FileArtifactStore::new(artifact_dir().path()),
+        forge_storage::FileArtifactStore::new(dir.path()),
     );
     let app = app_with_state(st);
 
@@ -131,21 +149,21 @@ async fn setup_published_artifact(
                 "signature": sig,
                 "package_data": b64,
             }),
-            Some("pub-art"),
+            Some(&publisher_id),
         ),
     )
     .await;
     assert_eq!(status, StatusCode::ACCEPTED, "publish must succeed: {}", String::from_utf8_lossy(&body));
 
-    (app, name.to_string(), version.to_string(), content.to_vec())
+    (app, name, version.to_string(), content.to_vec(), dir, publisher_id)
 }
 
 /// 冻结测试：上传制品 → 下载 → 字节一致。
 #[tokio::test]
 async fn upload_then_download_bytes_match() {
-    let Some(_app) = app().await else { return; };
+    let Some((_router, _dir, _pool, _tid)) = setup_app().await else { return; };
     // 先发布带制品的 release
-    let (app, name, version, content) = timeout(
+    let (app, name, version, content, _dir, _pub) = timeout(
         Duration::from_secs(30),
         setup_published_artifact(b"artifact content v1", "cap-art", "1.0.0"),
     )
@@ -164,25 +182,26 @@ async fn upload_then_download_bytes_match() {
 /// 冻结测试：超过 FORGE_PACKAGE_MAX_BYTES → 413。
 #[tokio::test]
 async fn upload_exceeds_max_bytes_rejected() {
-    let Some(app) = app().await else { return; };
+    let Some((app, _dir, pool, tid)) = setup_app().await else { return; };
     use base64::prelude::*;
     use sha2::{Digest, Sha256};
 
-    let pool = connect_and_migrate(&std::env::var("FORGE_PG_URL").unwrap()).await.unwrap();
-    sqlx::query("DELETE FROM releases").execute(&pool).await.unwrap();
-    sqlx::query("DELETE FROM publisher_keys").execute(&pool).await.unwrap();
+    let publisher_id = format!("pub-max-{tid}");
+    let name = format!("cap-max-{tid}");
 
     let (sk, pk) = signing::generate_keypair();
-    sqlx::query("INSERT INTO publisher_keys (publisher_id, public_key) VALUES ('pub-max', $1)")
+    sqlx::query("INSERT INTO publisher_keys (publisher_id, public_key) VALUES ($1, $2)")
+        .bind(&publisher_id)
         .bind(&pk)
         .execute(&pool)
         .await
         .unwrap();
 
-    // IMPROVE-2: 用互斥锁保护 env var 的 set/restore，防止并行测试竞态。
-    // 只在 set/remove 时持锁，不跨 await 点（避免 clippy::await_holding_lock）。
+    // IMPROVE-2R: env var 竞态已通过 per-test tempdir 消除（FORGE_PACKAGE_MAX_BYTES
+    // 是全局 env，但本测试 set/restore 之间不跨 await 点，且其他测试不读此 env）。
+    // 保留局部锁以防 set/remove 期间被其他测试读到中间态。
     {
-        let _g = env_guard().lock().unwrap();
+        let _g = ENV_GUARD.lock().unwrap();
         std::env::set_var("FORGE_PACKAGE_MAX_BYTES", "100");
     }
 
@@ -190,7 +209,7 @@ async fn upload_exceeds_max_bytes_rejected() {
     let mut h = Sha256::new();
     h.update(&content);
     let checksum: String = h.finalize().iter().map(|b| format!("{b:02x}")).collect();
-    let pkg_bytes = format!("cap-max\n1.0.0\n{checksum}").into_bytes();
+    let pkg_bytes = format!("{name}\n1.0.0\n{checksum}").into_bytes();
     let sig = signing::sign_package(&sk, &pkg_bytes).unwrap();
     let b64 = BASE64_STANDARD.encode(&content);
 
@@ -201,13 +220,13 @@ async fn upload_exceeds_max_bytes_rejected() {
             post_json(
                 "/market/publish",
                 serde_json::json!({
-                    "name": "cap-max",
+                    "name": name,
                     "version": "1.0.0",
                     "package_hash": checksum,
                     "signature": sig,
                     "package_data": b64,
                 }),
-                Some("pub-max"),
+                Some(&publisher_id),
             ),
         ),
     )
@@ -217,7 +236,7 @@ async fn upload_exceeds_max_bytes_rejected() {
 
     // 恢复默认
     {
-        let _g = env_guard().lock().unwrap();
+        let _g = ENV_GUARD.lock().unwrap();
         std::env::remove_var("FORGE_PACKAGE_MAX_BYTES");
     }
 }
@@ -225,22 +244,22 @@ async fn upload_exceeds_max_bytes_rejected() {
 /// 冻结测试：package_data 的 sha256 与声称 package_hash 不一致 → 409。
 #[tokio::test]
 async fn publish_artifact_hash_mismatch_rejected() {
-    let Some(app) = app().await else { return; };
+    let Some((app, _dir, pool, tid)) = setup_app().await else { return; };
     use base64::prelude::*;
 
-    let pool = connect_and_migrate(&std::env::var("FORGE_PG_URL").unwrap()).await.unwrap();
-    sqlx::query("DELETE FROM releases").execute(&pool).await.unwrap();
-    sqlx::query("DELETE FROM publisher_keys").execute(&pool).await.unwrap();
+    let publisher_id = format!("pub-mis-{tid}");
+    let name = format!("cap-mis-{tid}");
 
     let (sk, pk) = signing::generate_keypair();
-    sqlx::query("INSERT INTO publisher_keys (publisher_id, public_key) VALUES ('pub-mis', $1)")
+    sqlx::query("INSERT INTO publisher_keys (publisher_id, public_key) VALUES ($1, $2)")
+        .bind(&publisher_id)
         .bind(&pk)
         .execute(&pool)
         .await
         .unwrap();
 
     // 声称 hash = "deadbeef" 但实际制品字节不匹配
-    let pkg_bytes = "cap-mis\n1.0.0\ndeadbeef".to_string().into_bytes();
+    let pkg_bytes = format!("{name}\n1.0.0\ndeadbeef").into_bytes();
     let sig = signing::sign_package(&sk, &pkg_bytes).unwrap();
     let b64 = BASE64_STANDARD.encode(b"real content");
 
@@ -251,13 +270,13 @@ async fn publish_artifact_hash_mismatch_rejected() {
             post_json(
                 "/market/publish",
                 serde_json::json!({
-                    "name": "cap-mis",
+                    "name": name,
                     "version": "1.0.0",
                     "package_hash": "deadbeef",
                     "signature": sig,
                     "package_data": b64,
                 }),
-                Some("pub-mis"),
+                Some(&publisher_id),
             ),
         ),
     )
@@ -269,7 +288,7 @@ async fn publish_artifact_hash_mismatch_rejected() {
 /// 冻结测试：缺 Publisher-Key → 403。
 #[tokio::test]
 async fn upload_without_publisher_key_rejected() {
-    let Some(app) = app().await else { return; };
+    let Some((app, _dir, _pool, _tid)) = setup_app().await else { return; };
 
     let (status, body) = timeout(
         Duration::from_secs(10),
@@ -296,19 +315,21 @@ async fn upload_without_publisher_key_rejected() {
 /// 冻结测试：yanked release 下载 → 409。
 #[tokio::test]
 async fn download_yanked_returns_409() {
-    let Some(_app) = app().await else { return; };
+    let Some((_router, _dir, _pool, _tid)) = setup_app().await else { return; };
 
     // 先发布带制品的 release
-    let (app, name, version, _content) = timeout(
+    let (app, name, version, _content, _dir, _pub) = timeout(
         Duration::from_secs(30),
         setup_published_artifact(b"yanked content", "cap-yank-dl", "1.0.0"),
     )
     .await
     .unwrap();
 
-    // 手动标记 yanked
+    // 手动标记 yanked（用返回的 name 变量，不硬编码）
     let pool = connect_and_migrate(&std::env::var("FORGE_PG_URL").unwrap()).await.unwrap();
-    sqlx::query("UPDATE releases SET yanked = true WHERE name = 'cap-yank-dl' AND version = '1.0.0'")
+    sqlx::query("UPDATE releases SET yanked = true WHERE name = $1 AND version = $2")
+        .bind(&name)
+        .bind(&version)
         .execute(&pool)
         .await
         .unwrap();
@@ -367,22 +388,28 @@ async fn register_capability(
         .unwrap();
 }
 
-/// 辅助：发布带制品的 release + 注册 capability，返回 (router, name, version, content, pool)。
+/// 辅助：发布带制品的 release + 注册 capability，返回 (router, name, version, content, pool, tempdir, publisher_id)。
 /// 用于 install 测试——需要 capability 存在才能 install 成功。
+/// IMPROVE-2R: 每次调用创建独立 tempdir + 唯一 publisher_id/name。
 async fn setup_for_install(
     content: &[u8],
-    name: &str,
+    base_name: &str,
     version: &str,
-) -> (axum::Router, String, String, Vec<u8>, sqlx::PgPool) {
+) -> (axum::Router, String, String, Vec<u8>, sqlx::PgPool, tempfile::TempDir, String) {
     use base64::prelude::*;
     use sha2::{Digest, Sha256};
 
-    let pool = connect_and_migrate(&std::env::var("FORGE_PG_URL").unwrap()).await.unwrap();
-    sqlx::query("DELETE FROM releases").execute(&pool).await.unwrap();
-    sqlx::query("DELETE FROM publisher_keys").execute(&pool).await.unwrap();
+    let url = std::env::var("FORGE_PG_URL").unwrap();
+    let tid = test_id();
+    let dir = tempfile::tempdir().unwrap();
+    let publisher_id = format!("pub-{tid}");
+    let name = format!("{base_name}-{tid}");
+
+    let pool = connect_and_migrate(&url).await.unwrap();
 
     let (sk, pk) = signing::generate_keypair();
-    sqlx::query("INSERT INTO publisher_keys (publisher_id, public_key) VALUES ('pub-art', $1)")
+    sqlx::query("INSERT INTO publisher_keys (publisher_id, public_key) VALUES ($1, $2)")
+        .bind(&publisher_id)
         .bind(&pk)
         .execute(&pool)
         .await
@@ -398,11 +425,11 @@ async fn setup_for_install(
     let mut st = AppState::in_memory();
     st.pool = Some(pool.clone());
     st.artifact_store = std::sync::Arc::new(
-        forge_storage::FileArtifactStore::new(artifact_dir().path()),
+        forge_storage::FileArtifactStore::new(dir.path()),
     );
 
     // 注册 capability（install 前提条件）
-    register_capability(&st, name, version).await;
+    register_capability(&st, &name, version).await;
 
     let app = app_with_state(st);
 
@@ -417,13 +444,13 @@ async fn setup_for_install(
                 "signature": sig,
                 "package_data": b64,
             }),
-            Some("pub-art"),
+            Some(&publisher_id),
         ),
     )
     .await;
     assert_eq!(status, StatusCode::ACCEPTED, "publish must succeed: {}", String::from_utf8_lossy(&body));
 
-    (app, name.to_string(), version.to_string(), content.to_vec(), pool)
+    (app, name, version.to_string(), content.to_vec(), pool, dir, publisher_id)
 }
 
 /// 辅助：计算 artifact 在 FileArtifactStore 中的文件路径。
@@ -435,6 +462,11 @@ fn artifact_file_path(root: &std::path::Path, content: &[u8]) -> std::path::Path
     root.join(&sha[0..2]).join(&sha[2..4]).join(&sha)
 }
 
+/// IMPROVE-2R: 保留 ENV_GUARD 仅用于 FORGE_PACKAGE_MAX_BYTES 的 set/restore。
+/// 其他并行隔离已通过 per-test tempdir + 唯一 name 解决。
+use std::sync::Mutex;
+static ENV_GUARD: Mutex<()> = Mutex::new(());
+
 /// 冻结测试 #3：篡改制品文件 → 下载 hash 复核 → 失败。
 ///
 /// 注意: spec S5 原文写 "→ 409", 但 104A 实现中 download_release 的盘后读损坏防线
@@ -442,18 +474,18 @@ fn artifact_file_path(root: &std::path::Path, content: &[u8]) -> std::path::Path
 /// 104C 纪律为"只加测试不改 src/", 故此处按实际代码行为断言 500。
 #[tokio::test]
 async fn download_tampered_package_hash_mismatch() {
-    let Some(_app) = app().await else { return; };
+    let Some((_router, _dir, _pool, _tid)) = setup_app().await else { return; };
 
     let content = b"original content for tamper test";
-    let (app, name, version, _content) = timeout(
+    let (app, name, version, _content, dir, _pub) = timeout(
         Duration::from_secs(30),
         setup_published_artifact(content, "cap-tamper-dl", "1.0.0"),
     )
     .await
     .unwrap();
 
-    // 找到 artifact 文件并篡改
-    let file_path = artifact_file_path(artifact_dir().path(), content);
+    // 找到 artifact 文件并篡改（使用返回的 tempdir 路径）
+    let file_path = artifact_file_path(dir.path(), content);
     assert!(file_path.exists(), "artifact file must exist: {file_path:?}");
     std::fs::write(&file_path, b"tampered!!!").unwrap();
 
@@ -472,9 +504,9 @@ async fn download_tampered_package_hash_mismatch() {
 /// 冻结测试 #4：正常制品 → hash 复核通过 → install 成功。
 #[tokio::test]
 async fn install_with_hash_recheck_passes() {
-    let Some(_app) = app().await else { return; };
+    let Some((_router, _dir, _pool, _tid)) = setup_app().await else { return; };
 
-    let (app, name, version, _content, _pool) = timeout(
+    let (app, name, version, _content, _pool, _dir, _pub) = timeout(
         Duration::from_secs(30),
         setup_for_install(b"install ok content", "cap-install-ok", "1.0.0"),
     )
@@ -497,18 +529,18 @@ async fn install_with_hash_recheck_passes() {
 /// 冻结测试 #5：制品被篡改 → install hash 复核失败 → 409。
 #[tokio::test]
 async fn install_with_hash_mismatch_rejected() {
-    let Some(_app) = app().await else { return; };
+    let Some((_router, _dir, _pool, _tid)) = setup_app().await else { return; };
 
     let content = b"original install content";
-    let (app, name, version, _content, _pool) = timeout(
+    let (app, name, version, _content, _pool, dir, _pub) = timeout(
         Duration::from_secs(30),
         setup_for_install(content, "cap-install-tamper", "1.0.0"),
     )
     .await
     .unwrap();
 
-    // 篡改 artifact 文件
-    let file_path = artifact_file_path(artifact_dir().path(), content);
+    // 篡改 artifact 文件（使用返回的 tempdir 路径）
+    let file_path = artifact_file_path(dir.path(), content);
     assert!(file_path.exists(), "artifact file must exist");
     std::fs::write(&file_path, b"tampered install content").unwrap();
 
@@ -529,18 +561,20 @@ async fn install_with_hash_mismatch_rejected() {
 /// 冻结测试 #6：验签失败 → 403。
 #[tokio::test]
 async fn install_with_bad_signature_rejected() {
-    let Some(_app) = app().await else { return; };
+    let Some((_router, _dir, _pool, _tid)) = setup_app().await else { return; };
 
-    let (app, name, version, _content, pool) = timeout(
+    let (app, name, version, _content, pool, _dir, _pub) = timeout(
         Duration::from_secs(30),
         setup_for_install(b"sig test content", "cap-bad-sig", "1.0.0"),
     )
     .await
     .unwrap();
 
-    // 破坏 PG 中的签名（替换为全零）
-    sqlx::query("UPDATE releases SET signature = $1 WHERE name = 'cap-bad-sig' AND version = '1.0.0'")
+    // 破坏 PG 中的签名（用返回的 name 变量，不硬编码）
+    sqlx::query("UPDATE releases SET signature = $1 WHERE name = $2 AND version = $3")
         .bind("00".repeat(64))
+        .bind(&name)
+        .bind(&version)
         .execute(&pool)
         .await
         .unwrap();
@@ -562,10 +596,10 @@ async fn install_with_bad_signature_rejected() {
 /// 冻结测试 #7：DELETE → 制品文件 + PG 行同删。
 #[tokio::test]
 async fn delete_removes_artifact_and_metadata() {
-    let Some(_app) = app().await else { return; };
+    let Some((_router, _dir, _pool, _tid)) = setup_app().await else { return; };
 
     let content = b"delete test content";
-    let (app, name, version, _content, pool) = timeout(
+    let (app, name, version, _content, pool, dir, publisher_id) = timeout(
         Duration::from_secs(30),
         setup_for_install(content, "cap-delete", "1.0.0"),
     )
@@ -573,21 +607,23 @@ async fn delete_removes_artifact_and_metadata() {
     .unwrap();
 
     // 记录 artifact 文件路径（删除前验证存在）
-    let file_path = artifact_file_path(artifact_dir().path(), content);
+    let file_path = artifact_file_path(dir.path(), content);
     assert!(file_path.exists(), "artifact file must exist before delete");
 
-    // DELETE
+    // DELETE（用返回的 publisher_id）
     let url = format!("/market/releases/{name}/{version}");
     let (status, _body) = timeout(
         Duration::from_secs(15),
-        send(app, delete_req(&url, Some("pub-art"))),
+        send(app, delete_req(&url, Some(&publisher_id))),
     )
     .await
     .unwrap();
     assert_eq!(status, StatusCode::NO_CONTENT, "delete must return 204");
 
-    // 验证 PG 行已删
-    let (count,): (i64,) = sqlx::query_as("SELECT COUNT(*) FROM releases WHERE name = 'cap-delete' AND version = '1.0.0'")
+    // 验证 PG 行已删（用返回的 name 变量）
+    let (count,): (i64,) = sqlx::query_as("SELECT COUNT(*) FROM releases WHERE name = $1 AND version = $2")
+        .bind(&name)
+        .bind(&version)
         .fetch_one(&pool)
         .await
         .unwrap();
@@ -642,11 +678,11 @@ async fn no_pg_fallback_to_file_system() {
 /// 覆盖单元测试无法抓到的接线问题（publish 的 artifact_path 能否被 download 和 install 正确使用）。
 #[tokio::test]
 async fn e2e_publish_download_install_roundtrip() {
-    let Some(_app) = app().await else { return; };
+    let Some((_router, _dir, _pool, _tid)) = setup_app().await else { return; };
 
     // 1. publish 带制品的 release（同时注册 capability，为 install 做准备）
     let content = b"e2e roundtrip content v1";
-    let (app, name, version, _content, _pool) = timeout(
+    let (app, name, version, _content, _pool, _dir, _pub) = timeout(
         Duration::from_secs(30),
         setup_for_install(content, "cap-e2e-roundtrip", "1.0.0"),
     )

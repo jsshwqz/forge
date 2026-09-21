@@ -6,3 +6,4 @@
 
 artifacts/
 deploy/local/forge.env
+ws-task_*/
