@@ -1518,5 +1518,13 @@
     "task_id": "IMPROVE-10",
     "title": "P8双包并行规划落地订正: PACK-1已被R7-023吸收(仅PACK-2继续)",
     "body": "并发对齐: 规划期(基线d9223b3)出的PACK-1 signing并行隔离与PACK-4/G-MCP-LLM, 在推送前已被 origin 578ae0a 一线吸收- f8321e9(R7-023)已按 PID test_id+tid后缀+过滤删真修 market_signing.rs(代码核验: 无全表DELETE, 与market_artifact IMPROVE-2R同型且更稳), 故 PACK-1 撤销不下发; 578ae0a 已交 LLM编排e2e(llm_orch_live.rs 真模型2/2)与租户PG接入(new_with_pg). 仍成立: PACK-2 IMPROVE-10- 核验 origin llm_wire.rs auto_model 仍走 pick_default_model 硬编码偏好序, 未接 autoselect 引擎, 真空缺. 已改基线为 578ae0a 单独下发 improve10_kickoff.json(build_improve10.md 规格). 遗留观察: 578ae0a 只接 PG分支租户, no-PG缺省单机 tenant 仍 InMemory -> PACK-4 TENANT-001 缺口大概率仍在, 待后续独立立项. D17=A(依赖边无环已验). 执行方GLM!=复核方Qoder."
+  },
+  {
+    "id": "R6-039",
+    "kind": "R6Decision",
+    "date": "2026-09-22",
+    "task_id": null,
+    "title": "R6-039: f8321e9 '2 failed' 核验结论 + market_signing 并行验证",
+    "body": "## 核验背景\nf8321e9 自述门禁'341 passed / 2 failed (PG 不可用导致)', 基线本应 ~599。\nGLM/复核方提出红旗: 是否真回归? R7-019 虚报就出在 signing 上。\n\n## 核验方法\n1. 单独跑 billing.rs (2 failed 的来源) — 设/不设 FORGE_PG_URL 对比\n2. 单独跑 market_signing.rs — 4 线程并行 6 连跑\n3. 对比 f8321e9 → 578ae0a 的 market_signing.rs diff (0 行变更)\n\n## 核验结论\n\n### '2 failed' 根因: 非回归, 是测试环境 PG 连接问题\n- billing.rs 的 pg_app() 检测 FORGE_PG_URL 已设 → 不 skip → connect_and_migrate().unwrap() 在 PG 不可用时 panic → FAILED\n- 不设 FORGE_PG_URL → billing.rs 正确 skip → 0 failed\n- f8321e9 → 578ae0a 的 billing.rs 代码 0 变更 → 不是代码修复了它\n- 578ae0a 跑 603 passed 0 failed 是因为那次没设 FORGE_PG_URL (或 PG 恰好可用)\n\n### market_signing 并行验证: 6 连跑全绿\n- 4 线程并行 × 6 次 = 24 次执行, 4/4 绿每次\n- 但注意: PG 不可用时 setup_app 返回 None → 4 测试 skip (显示 ok 但实际没跑 PG 路径)\n- 真正的 PG 并行竞态验证需要 PG 环境 (本环境无 PG binary, 无法做)\n\n### 代码层面确认 (market_signing.rs 隔离模式正确)\n1. test_id() = 'p{pid}-t{n}' → 跨进程唯一 ✓\n2. 所有 publisher_id/name 带 tid 后缀 → 同表不撞 ✓\n3. 不再有全表 DELETE FROM releases/publisher_keys ✓\n4. 与 market_artifact.rs (已验证 12/12 并行绿) 完全同款模式 ✓\n\n## 质量判定\n- f8321e9 代码改动: 正确, 与已验证的 market_artifact 模式一致\n- '2 failed': 非回归, 是 PG 连接环境问题 (billing.rs 的 unwrap panic)\n- 真正待补: 需在有 PG 的环境跑一次 market_signing 并行连跑 (CI 的 PG service job 可覆盖)\n- IMPROVE-10 (MCP 选模接 autoselect): 确认真空缺, llm_wire.rs auto_model 仍 pick_default_model, 未接 forge-pipeline/autoselect 引擎"
   }
 ]

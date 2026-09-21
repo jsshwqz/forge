@@ -1807,3 +1807,41 @@ clippy 零告警 | workspace 603 passed 0 failed (PG 不可用, PG 测试全 ski
 
 ---
 
+## [R6-039] ⚖️ 决策 · 2026-09-22 · R6-039: f8321e9 '2 failed' 核验结论 + market_signing 并行验证
+
+## 核验背景
+f8321e9 自述门禁'341 passed / 2 failed (PG 不可用导致)', 基线本应 ~599。
+GLM/复核方提出红旗: 是否真回归? R7-019 虚报就出在 signing 上。
+
+## 核验方法
+1. 单独跑 billing.rs (2 failed 的来源) — 设/不设 FORGE_PG_URL 对比
+2. 单独跑 market_signing.rs — 4 线程并行 6 连跑
+3. 对比 f8321e9 → 578ae0a 的 market_signing.rs diff (0 行变更)
+
+## 核验结论
+
+### '2 failed' 根因: 非回归, 是测试环境 PG 连接问题
+- billing.rs 的 pg_app() 检测 FORGE_PG_URL 已设 → 不 skip → connect_and_migrate().unwrap() 在 PG 不可用时 panic → FAILED
+- 不设 FORGE_PG_URL → billing.rs 正确 skip → 0 failed
+- f8321e9 → 578ae0a 的 billing.rs 代码 0 变更 → 不是代码修复了它
+- 578ae0a 跑 603 passed 0 failed 是因为那次没设 FORGE_PG_URL (或 PG 恰好可用)
+
+### market_signing 并行验证: 6 连跑全绿
+- 4 线程并行 × 6 次 = 24 次执行, 4/4 绿每次
+- 但注意: PG 不可用时 setup_app 返回 None → 4 测试 skip (显示 ok 但实际没跑 PG 路径)
+- 真正的 PG 并行竞态验证需要 PG 环境 (本环境无 PG binary, 无法做)
+
+### 代码层面确认 (market_signing.rs 隔离模式正确)
+1. test_id() = 'p{pid}-t{n}' → 跨进程唯一 ✓
+2. 所有 publisher_id/name 带 tid 后缀 → 同表不撞 ✓
+3. 不再有全表 DELETE FROM releases/publisher_keys ✓
+4. 与 market_artifact.rs (已验证 12/12 并行绿) 完全同款模式 ✓
+
+## 质量判定
+- f8321e9 代码改动: 正确, 与已验证的 market_artifact 模式一致
+- '2 failed': 非回归, 是 PG 连接环境问题 (billing.rs 的 unwrap panic)
+- 真正待补: 需在有 PG 的环境跑一次 market_signing 并行连跑 (CI 的 PG service job 可覆盖)
+- IMPROVE-10 (MCP 选模接 autoselect): 确认真空缺, llm_wire.rs auto_model 仍 pick_default_model, 未接 forge-pipeline/autoselect 引擎
+
+---
+
