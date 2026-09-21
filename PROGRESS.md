@@ -128,12 +128,12 @@
 | MKT-104B | 数据面: install 双校验 + DELETE 路由 | ✅ 完成 | GLM | 2026-09-20 | 5bcbd1d |
 | MKT-104C | 验收面: 10 冻结用例测试矩阵 + 全量门禁 | ✅ 完成 | GLM | 2026-09-20 | a2a159c |
 | IMPROVE-1 | FileArtifactStore.delete 引用计数 + FORGE_WORKSPACE env 支持 | ✅ 完成 | DeepSeek | 2026-09-21 | 0a6c958 |
-| IMPROVE-2 | 修复测试并行隔离——market_artifact 真隔离（R7更正：首版虚报，见R7-019） | 📌 WIP | DeepSeek | 2026-09-21 | 5bc1106 |
+| IMPROVE-2 | 修复测试并行隔离——market_artifact 真隔离（R7更正：首版虚报，见R7-019） [由 IMPROVE-2R 承接] | ✅ 完成 | DeepSeek | 2026-09-21 | b981cbe |
 | IMPROVE-3 | 修正 spec S5 #3 期望码 409→500 + 失败语义说明 | ✅ 完成 | DeepSeek | 2026-09-21 | edef3b4 |
 | IMPROVE-4 | 补充 e2e 完整闭环测试 publish→download→install | ✅ 完成 | DeepSeek | 2026-09-21 | 5006682 |
 | IMPROVE-5 | FileArtifactStore orphan cleanup — cleanup_orphans() + D9 构造点 hooks | ✅ 完成 | DeepSeek | 2026-09-21 | 120aa70 |
 | IMPROVE-6 | 编排错误信息透传 — result.output 注入 ForgeError message | ✅ 完成 | DeepSeek | 2026-09-21 | 095c341 |
 | IMPROVE-7 | edit_patch find 未命中时返回上下文提示, 助 LLM 自我修正 | ✅ 完成 | DeepSeek | 2026-09-21 | 9b9236d |
 | IMPROVE-8 | forge-mcp-server 启动时自动加载 .env 文件 | ✅ 完成 | DeepSeek | 2026-09-21 | bf607a5 |
-| IMPROVE-8R | 整改IMPROVE-8: load_dotenv只认FORGE_WORKSPACE/.env + 客户端stderr inherit | ⬜ 未开始 | - | - | - |
-| IMPROVE-2R | 真修market_artifact并行隔离: per-test schema/制品目录, 验收=并行12/12 | ⬜ 未开始 | - | - | - |
+| IMPROVE-8R | 整改IMPROVE-8: load_dotenv只认FORGE_WORKSPACE/.env + 客户端stderr inherit | ✅ 完成 | GLM | - | b981cbe |
+| IMPROVE-2R | 真修market_artifact并行隔离: per-test schema/制品目录, 验收=并行12/12 | ✅ 完成 | GLM | - | b981cbe |

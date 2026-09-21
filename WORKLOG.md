@@ -1558,3 +1558,98 @@ EngineStepExecutor.execute() 和 EngineStepBridge.execute() 在 ExecutionResult.
 
 ---
 
+## [R1-117] ✅ 成功 · 2026-09-21 · IMPROVE-8R/2R 完成: .env收口 + stderr inherit + 并行隔离PID前缀修复
+
+- **任务 ID**：IMPROVE-8R
+## IMPROVE-8R/2R 交付
+
+### IMPROVE-8R (main.rs)
+- load_dotenv() 只认 FORGE_WORKSPACE/.env，删 cwd 上溯兜底
+- 5 条 dotenv 测试全绿
+
+### IMPROVE-8R (client.rs)  
+- MCP client stderr 从 null 改为 inherit
+
+### IMPROVE-2R (market_artifact.rs)
+- 根因: test_id() 每次进程启动从 t0 开始，跨次运行 publisher_id 撞 publisher_keys_pkey
+- 修法: test_id() 加 PID 前缀 → p{pid}-t{n}，跨次天然唯一
+- 不需要 per-test schema 或 test_run_id 列（DS 方案 A/B 过度工程）
+- 验收: 串行 3 次 + 并行 3 次 (threads=4) 全部 12/12 全绿
+- FORGE_PG_URL=postgres://postgres@127.0.0.1:5432/forge_test
+
+### Gates
+- G1 clippy 0 warnings
+- G2 workspace 599 passed / 0 failed  
+- G3 market_artifact 12/12 (6 次连跑)
+- G4 无 artifact 泄漏
+
+### DS 诊断验证
+- DS ① PG未设FORGE_PG_URL导致skip → 完全正确，最致命
+- DS ② ENV_GUARD残留env竞态 → 真实隐患但非当前卡点（已加注释说明）
+- DS ③ count==0未过滤 → DS自己已纠正，实际是 WHERE name= AND version= 已安全
+- DS 漏掉的真根因: test_id() 跨次ID冲突（PID前缀一行修复）
+
+Commit: b981cbe
+
+
+---
+
+## [R1-118] ✅ 成功 · 2026-09-21 · IMPROVE-2R 补完: ENV_GUARD 彻底消除 (commit 86a2385)
+
+- **任务 ID**：IMPROVE-2R
+## ENV_GUARD 残留竞态彻底消除
+
+### 修法
+upload_exceeds_max_bytes_rejected 不再设 FORGE_PACKAGE_MAX_BYTES env:
+- 直接构造 vec![0u8; 16_777_217] (16MB+1) 触发默认限制 413
+- 删除 ENV_GUARD Mutex 定义和所有引用 (净删 19 行)
+- 不碰 env、不需要 Mutex、并行安全
+
+### 为什么这是更优解
+- 不降性能升性能: 从 Mutex 串行化变为完全并行无锁
+- 不碰 routes/market.rs (红线内)
+- 用默认限制边界值测试, 比 set 100 字节更贴近真实场景
+- 代价仅单次 2.7s (16MB 内存分配), 完全可接受
+
+### 台账修复
+- IMPROVE-2 卡漏关 → Completed (由 IMPROVE-2R 承接)
+- worklog R1-117 id=None → 补编号 R1-117
+
+Commit: 86a2385
+
+
+---
+
+## [R7-021] ⚠️ 偏差/风险 · 2026-09-21 · Export 纪律二次重犯: 台账提交未跑 forge-worklog export (R7-020 同类)
+
+## 问题
+
+提交 a655e57 (台账: IMPROVE-8R/2R Completed) 的 message 声称"handoff 更新",
+但实际三笔提交 (b981cbe/a655e57/86a2385) 零个 .md 文件变更。
+PROGRESS.md / WORKLOG.md / HANDOFF.md 未同步 JSON 变更。
+
+R7-020 已对同类问题警告过, 本次为第二次重犯。
+
+## 根因
+
+GLM 因 MCP forge_worklog 工具遇非 ASCII 路径"新forge"找不到项目根,
+改用 Python 直接操作 JSON, 绕过了 CLI 的:
+1. 编号防撞逻辑 (导致 id=None)
+2. kind 枚举校验 (导致 R1 而非 R1Completed)
+3. export 渲染逻辑 (导致 MD 未同步)
+
+## 修复
+
+本次提交:
+1. worklog.json kind: R1→R1Completed, 补 date 字段
+2. 跑 forge-worklog export 重新生成三张 MD
+3. IMPROVE-2 卡漏关 → Completed
+
+## 措施
+
+后续台账操作必须通过 forge-worklog CLI 执行, 禁止 Python 直写 JSON。
+如遇路径问题, 修复 detect_project_root 的非 ASCII 支持, 而非绕过 CLI。
+
+
+---
+
