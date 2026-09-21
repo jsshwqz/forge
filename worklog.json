@@ -1510,5 +1510,13 @@
     "task_id": "MKT-P2-TENANT",
     "title": "R1-124: P2 缺省单机租户态 PG 接入 — new_with_pg 构造器",
     "body": "## 背景\nDS P2 发现: server/src/lib.rs 的 new() 构造器硬编码 InMemoryTenantKeyStore/InMemoryQuotaStore,\n即使 pg_persistence.rs / full_lifecycle.rs 测试用 PG pool 构造 AppState, 租户钥和配额仍是内存版,\n重启即丢。\n\n## 修复\n1. 新增 AppState::new_with_pg(tasks, sessions, pool) 构造器:\n   - tenant_keys = PgTenantKeyStore(pool)\n   - quotas = PgQuotaStore(pool)\n   - evidence = PgEvidenceStore(pool)\n   - knowledge = FileKnowledgeBase (对齐 from_env PG 分支)\n   - pool = Some(pool)\n\n2. from_env() PG 分支改用 new_with_pg() (消除 30 行重复构造代码)\n\n3. pg_persistence.rs / full_lifecycle.rs 改用 new_with_pg() (让 PG 测试真正测 PG tenant/quotas)\n\n4. in_memory() 保持不变 (29 个测试调用点依赖内存态)\n\n5. new() 保持不变 (向后兼容, 仍用 InMemory)\n\n## 新增测试\nserver/tests/tenant_pg_live.rs (2 个 #[tokio::test]):\n1. tenant_keys_and_quotas_survive_restart_via_new_with_pg — 双实例重启持久化验证\n2. in_memory_state_uses_in_memory_tenant_and_quota — 确保 in_memory() 仍用 InMemory\n\nPG 不可用时 skip (同 pg_persistence.rs 约定)\n\n## 门禁\nclippy 零告警 | workspace 603 passed 0 failed (PG 不可用, PG 测试全 skip)\n之前 341 passed 2 failed → 现在 603 passed 0 failed (new_with_pg 让 PG 测试正确 skip)"
+  },
+  {
+    "id": "R6-038",
+    "kind": "R6Decision",
+    "date": "2026-09-21",
+    "task_id": "IMPROVE-10",
+    "title": "P8双包并行规划落地订正: PACK-1已被R7-023吸收(仅PACK-2继续)",
+    "body": "并发对齐: 规划期(基线d9223b3)出的PACK-1 signing并行隔离与PACK-4/G-MCP-LLM, 在推送前已被 origin 578ae0a 一线吸收- f8321e9(R7-023)已按 PID test_id+tid后缀+过滤删真修 market_signing.rs(代码核验: 无全表DELETE, 与market_artifact IMPROVE-2R同型且更稳), 故 PACK-1 撤销不下发; 578ae0a 已交 LLM编排e2e(llm_orch_live.rs 真模型2/2)与租户PG接入(new_with_pg). 仍成立: PACK-2 IMPROVE-10- 核验 origin llm_wire.rs auto_model 仍走 pick_default_model 硬编码偏好序, 未接 autoselect 引擎, 真空缺. 已改基线为 578ae0a 单独下发 improve10_kickoff.json(build_improve10.md 规格). 遗留观察: 578ae0a 只接 PG分支租户, no-PG缺省单机 tenant 仍 InMemory -> PACK-4 TENANT-001 缺口大概率仍在, 待后续独立立项. D17=A(依赖边无环已验). 执行方GLM!=复核方Qoder."
   }
 ]

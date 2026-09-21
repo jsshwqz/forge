@@ -1800,3 +1800,10 @@ clippy 零告警 | workspace 603 passed 0 failed (PG 不可用, PG 测试全 ski
 
 ---
 
+## [R6-038] ⚖️ 决策 · 2026-09-21 · P8双包并行规划落地订正: PACK-1已被R7-023吸收(仅PACK-2继续)
+
+- **任务 ID**：IMPROVE-10
+并发对齐: 规划期(基线d9223b3)出的PACK-1 signing并行隔离与PACK-4/G-MCP-LLM, 在推送前已被 origin 578ae0a 一线吸收- f8321e9(R7-023)已按 PID test_id+tid后缀+过滤删真修 market_signing.rs(代码核验: 无全表DELETE, 与market_artifact IMPROVE-2R同型且更稳), 故 PACK-1 撤销不下发; 578ae0a 已交 LLM编排e2e(llm_orch_live.rs 真模型2/2)与租户PG接入(new_with_pg). 仍成立: PACK-2 IMPROVE-10- 核验 origin llm_wire.rs auto_model 仍走 pick_default_model 硬编码偏好序, 未接 autoselect 引擎, 真空缺. 已改基线为 578ae0a 单独下发 improve10_kickoff.json(build_improve10.md 规格). 遗留观察: 578ae0a 只接 PG分支租户, no-PG缺省单机 tenant 仍 InMemory -> PACK-4 TENANT-001 缺口大概率仍在, 待后续独立立项. D17=A(依赖边无环已验). 执行方GLM!=复核方Qoder.
+
+---
+
