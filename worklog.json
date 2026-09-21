@@ -1486,5 +1486,13 @@
     "task_id": null,
     "title": "R7-022: 悬置项清零——MCP-003/004/005 补建卡 + main.rs 注释修复 + CI PG + progress_update commit 校验",
     "body": "## 背景\nDS 验收指出四项悬置: MCP-003/004/005 零卡 + main.rs 注释矛盾 + CI 无 PG (假绿) + progress_update 不校验 commit。\n\n## 修复\n1. MCP-003/004/005: 代码早已实现(a2a5154/db44631/f6b640b), 补 progress.json 建卡(Completed + commit hash) + worklog R1\n2. main.rs:13 注释: 从\"白名单点名注册, 缺省零回归\"改为\"MCP-005 缺省全注册 14 工具\"\n3. CI (.github/workflows/ci.yml): 加 postgres:16 service container + FORGE_PG_URL env, PG 测试不再 skip\n4. progress_update commit 校验: 用 git cat-file -e 验证 commit hash 真实存在; git 不可用时降级\n\n## 门禁\n- clippy 零告警\n- 全量 599 passed / 0 failed (PG-backed)\n- MCP orchestrate 10/10 绿"
+  },
+  {
+    "id": "R1-122",
+    "kind": "R1Completed",
+    "date": "2026-09-21",
+    "task_id": null,
+    "title": "R7-023: market_signing.rs 并行隔离补修 (IMPROVE-2R 同款, DS P0 发现)",
+    "body": "## 背景\nDS 代码级核验发现: market_signing.rs 残留与 market_artifact.rs 修前同款反模式——\n全表 DELETE FROM releases/publisher_keys + 共享 PG pool + 4 个 #[tokio::test] 无隔离。\nR7-022 给 CI 加了 PG service 后, 这个竞态从'离线 skip 掩盖'变成'CI 并行活暴露'。\n\n## 修复\n照搬 market_artifact.rs 的 IMPROVE-2R 模式:\n1. test_id(): PID 前缀 + AtomicU64 计数器 → 跨进程/跨用例唯一\n2. setup_app() 替代 app(): 不再全表 DELETE, 每测试用唯一 tid 后缀的 publisher_id/name\n3. 所有硬编码 ID (pub-a/pub-bad/pub-y/cap-mkt/cap-signed/cap-yank) 加 tid 后缀\n4. pinned_to_yanked_conflict_409 的内联全表 DELETE 也删除, 复用 setup_app()\n\n## 验证\n- clippy 零告警\n- 编译链接通过 (libssl.so 符号链接已建)\n- PG 不可用无法实跑, 但代码隔离模式与 market_artifact.rs (已验证 12/12 并行绿) 完全一致\n\n## handoff 清理\n- risks 清空 (原'IMPROVE-1~8 待推送 devspace'已过期: devspace 推送已完成)\n- status 更新为当前实况"
   }
 ]

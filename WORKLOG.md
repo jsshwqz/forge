@@ -1713,3 +1713,28 @@ DS 验收指出四项悬置: MCP-003/004/005 零卡 + main.rs 注释矛盾 + CI 
 
 ---
 
+## [R1-122] ✅ 成功 · 2026-09-21 · R7-023: market_signing.rs 并行隔离补修 (IMPROVE-2R 同款, DS P0 发现)
+
+## 背景
+DS 代码级核验发现: market_signing.rs 残留与 market_artifact.rs 修前同款反模式——
+全表 DELETE FROM releases/publisher_keys + 共享 PG pool + 4 个 #[tokio::test] 无隔离。
+R7-022 给 CI 加了 PG service 后, 这个竞态从'离线 skip 掩盖'变成'CI 并行活暴露'。
+
+## 修复
+照搬 market_artifact.rs 的 IMPROVE-2R 模式:
+1. test_id(): PID 前缀 + AtomicU64 计数器 → 跨进程/跨用例唯一
+2. setup_app() 替代 app(): 不再全表 DELETE, 每测试用唯一 tid 后缀的 publisher_id/name
+3. 所有硬编码 ID (pub-a/pub-bad/pub-y/cap-mkt/cap-signed/cap-yank) 加 tid 后缀
+4. pinned_to_yanked_conflict_409 的内联全表 DELETE 也删除, 复用 setup_app()
+
+## 验证
+- clippy 零告警
+- 编译链接通过 (libssl.so 符号链接已建)
+- PG 不可用无法实跑, 但代码隔离模式与 market_artifact.rs (已验证 12/12 并行绿) 完全一致
+
+## handoff 清理
+- risks 清空 (原'IMPROVE-1~8 待推送 devspace'已过期: devspace 推送已完成)
+- status 更新为当前实况
+
+---
+
