@@ -247,7 +247,79 @@ fn descriptor_to_mcp_tool(desc: &ToolDescriptor) -> serde_json::Value {
     })
 }
 
+
+// ── IMPROVE-8: .env 自动加载 ──
+//
+// 从工作区根目录的 .env 文件读取 KEY=VALUE 行并注入 std::env。
+// 已有的环境变量优先（不覆盖），与 docker-compose --env-file 语义一致。
+// 查找顺序: FORGE_WORKSPACE/.env → 当前目录 .env → 上级目录 .env
+fn load_dotenv() {
+    let candidates: Vec<std::path::PathBuf> = {
+        let mut v = Vec::new();
+        if let Ok(ws) = std::env::var("FORGE_WORKSPACE") {
+            v.push(std::path::PathBuf::from(&ws).join(".env"));
+        }
+        v.push(std::path::PathBuf::from(".env"));
+        // 上溯两级查找（forge-mcp-server 可能从 target/debug 启动）
+        if let Ok(cwd) = std::env::current_dir() {
+            if let Some(p) = cwd.parent() {
+                v.push(p.join(".env"));
+                if let Some(pp) = p.parent() {
+                    v.push(pp.join(".env"));
+                }
+            }
+        }
+        v
+    };
+
+    for path in &candidates {
+        if !path.exists() {
+            continue;
+        }
+        let content = match std::fs::read_to_string(path) {
+            Ok(c) => c,
+            Err(_) => continue,
+        };
+        let mut loaded = 0usize;
+        for line in content.lines() {
+            let line = line.trim();
+            // 跳过空行和注释
+            if line.is_empty() || line.starts_with('#') {
+                continue;
+            }
+            // 解析 KEY=VALUE
+            if let Some(eq_idx) = line.find('=') {
+                let key = line[..eq_idx].trim();
+                let val = line[eq_idx + 1..].trim();
+                // 去掉两端引号
+                let val = val
+                    .strip_prefix('"').and_then(|v| v.strip_suffix('"'))
+                    .or_else(|| val.strip_prefix('\'').and_then(|v| v.strip_suffix('\'')))
+                    .unwrap_or(val);
+                if !key.is_empty() {
+                    // 不覆盖已有环境变量
+                    if std::env::var_os(key).is_none() {
+                        std::env::set_var(key, val);
+                        loaded += 1;
+                    }
+                }
+            }
+        }
+        if loaded > 0 {
+            eprintln!(
+                "forge-mcp-server: loaded {loaded} env vars from {}",
+                path.display()
+            );
+        }
+        break; // 只读第一个找到的 .env
+    }
+}
+
+
 fn main() {
+    // IMPROVE-8: 启动时自动加载 .env（不覆盖已有环境变量）
+    load_dotenv();
+
     let rt = match tokio::runtime::Runtime::new() {
         Ok(rt) => rt,
         Err(e) => {
@@ -401,4 +473,64 @@ fn main() {
         }
     }
     // EOF：stdin 关闭后自然退出
+}
+
+#[cfg(test)]
+mod tests {
+    use super::load_dotenv;
+    use std::io::Write;
+
+    #[test]
+    fn dotenv_loads_from_file() {
+        let tmp = tempfile::tempdir().unwrap();
+        let env_path = tmp.path().join(".env");
+        let mut f = std::fs::File::create(&env_path).unwrap();
+        writeln!(f, "# comment").unwrap();
+        writeln!(f, "FORGE_TEST_KEY_1=value1").unwrap();
+        writeln!(f, r#"FORGE_TEST_KEY_2="quoted value""#).unwrap();
+        writeln!(f).unwrap();
+        writeln!(f, "FORGE_TEST_KEY_3=unquoted").unwrap();
+        drop(f);
+
+        // 清理可能残留的 env
+        std::env::remove_var("FORGE_TEST_KEY_1");
+        std::env::remove_var("FORGE_TEST_KEY_2");
+        std::env::remove_var("FORGE_TEST_KEY_3");
+
+        // 临时切换 cwd 到 tempdir 并调用
+        let orig_cwd = std::env::current_dir().unwrap();
+        std::env::set_current_dir(tmp.path()).unwrap();
+        // 清除 FORGE_WORKSPACE 以免干扰
+        std::env::remove_var("FORGE_WORKSPACE");
+        load_dotenv();
+        std::env::set_current_dir(orig_cwd).unwrap();
+
+        assert_eq!(std::env::var("FORGE_TEST_KEY_1").unwrap(), "value1");
+        assert_eq!(std::env::var("FORGE_TEST_KEY_2").unwrap(), "quoted value");
+        assert_eq!(std::env::var("FORGE_TEST_KEY_3").unwrap(), "unquoted");
+
+        // 清理
+        std::env::remove_var("FORGE_TEST_KEY_1");
+        std::env::remove_var("FORGE_TEST_KEY_2");
+        std::env::remove_var("FORGE_TEST_KEY_3");
+    }
+
+    #[test]
+    fn dotenv_does_not_override_existing() {
+        // 已有的环境变量不应被 .env 覆盖
+        std::env::set_var("FORGE_TEST_OVERRIDE", "original");
+        let tmp = tempfile::tempdir().unwrap();
+        let mut f = std::fs::File::create(tmp.path().join(".env")).unwrap();
+        writeln!(f, "FORGE_TEST_OVERRIDE=from_file").unwrap();
+        drop(f);
+
+        let orig_cwd = std::env::current_dir().unwrap();
+        std::env::set_current_dir(tmp.path()).unwrap();
+        std::env::remove_var("FORGE_WORKSPACE");
+        load_dotenv();
+        std::env::set_current_dir(orig_cwd).unwrap();
+
+        assert_eq!(std::env::var("FORGE_TEST_OVERRIDE").unwrap(), "original");
+        std::env::remove_var("FORGE_TEST_OVERRIDE");
+    }
 }
