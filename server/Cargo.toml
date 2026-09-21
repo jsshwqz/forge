@@ -28,7 +28,7 @@ forge-event = { path = "../core/event" }
 forge-evidence = { path = "../verification/evidence" }
 forge-workspace = { path = "../execution/workspace" }
 tower-http = { version = "0.5", features = ["cors"] }
-reqwest = { version = "0.12", default-features = false, features = ["native-tls", "json"] }
+reqwest = { version = "0.12", default-features = false, features = ["rustls-tls", "json"] }
 axum = "0.7"
 tokio = { version = "1", features = ["macros", "rt-multi-thread", "net", "signal"] }
 serde = { version = "1", features = ["derive"] }

@@ -374,17 +374,32 @@ impl Tool for ForgeOrchestrateTool {
             .iter()
             .map(|d| d.name.clone())
             .collect::<Vec<_>>();
+        // IMPROVE-10: 从 task store 取 goal/constraints/acceptance 供 autoselect 引擎使用
+        let task = self.ctx.sdk.get_task(&id).await.ok();
+        let (goal, constraints, acceptance): (String, Vec<String>, String) = match &task {
+            Some(t) => (
+                t.goal.clone(),
+                t.constraints.clone(),
+                t.acceptance.iter().map(|a| a.description.clone()).collect::<Vec<_>>().join("; "),
+            ),
+            None => (String::new(), Vec::new(), String::new()),
+        };
         let (planner, replanner): (
             Option<Arc<dyn forge_planner::Planner>>,
             Option<Arc<dyn forge_plan_llm::Replanner>>,
         ) = if llm_wire::llm_configured() {
-            // 有 LLM 配置：显式模型直接装配；未显式 → 自动探测模型（list_models+偏好）
-            match llm_wire::wire_from_env(exec_tools.clone()) {
+            // 有 LLM 配置：显式模型直接装配；未显式 → 自动探测模型（autoselect引擎+偏好回退）
+            match llm_wire::wire_from_env(
+                exec_tools.clone(),
+                goal.clone(),
+                constraints.clone(),
+                acceptance.clone(),
+            ) {
                 Some(llm_wire::LlmPlannerWire::Ready { planner, replanner }) => {
                     (Some(planner), Some(replanner))
                 }
-                Some(llm_wire::LlmPlannerWire::AutoDetect { base_url, api_key, tools }) => {
-                    match llm_wire::auto_model(&base_url, &api_key).await {
+                Some(llm_wire::LlmPlannerWire::AutoDetect { base_url, api_key, tools, goal, constraints, acceptance }) => {
+                    match llm_wire::auto_model(&base_url, &api_key, &goal, &constraints, &acceptance).await {
                         Ok(model) => {
                             if let Some(llm_wire::LlmPlannerWire::Ready { planner, replanner }) =
                                 llm_wire::wire_from_parts(

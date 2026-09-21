@@ -26,6 +26,7 @@ forge-task = { path = "../../core/task", optional = true }
 forge-planner = { path = "../../planning/planner", optional = true }
 forge-plan-llm = { path = "../../planning/llm", optional = true }
 forge-api = { path = "../../capability/api", optional = true }
+forge-pipeline = { path = "../../agents/pipeline", optional = true }
 forge-worklog = { path = "../../tools/worklog", optional = true }
 async-trait = { version = "0.1", optional = true }
 chrono = { version = "0.4", features = ["serde"], optional = true }
@@ -54,6 +55,7 @@ server-bin = [
   "dep:forge-planner",
   "dep:forge-plan-llm",
   "dep:forge-api",
+  "dep:forge-pipeline",
   "dep:forge-worklog",
   "dep:async-trait",
   "dep:chrono",
