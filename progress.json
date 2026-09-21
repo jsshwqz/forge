@@ -993,11 +993,11 @@
   },
   {
     "task_id": "IMPROVE-2",
-    "name": "修复测试并行隔离——market_artifact 真隔离（R7更正：首版虚报，见R7-019）",
-    "status": "Wip",
+    "name": "修复测试并行隔离——market_artifact 真隔离（R7更正：首版虚报，见R7-019） [由 IMPROVE-2R 承接]",
+    "status": "Completed",
     "owner": "DeepSeek",
     "last_record": "2026-09-21",
-    "commit": "5bc1106"
+    "commit": "b981cbe"
   },
   {
     "task_id": "IMPROVE-3",

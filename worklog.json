@@ -1436,6 +1436,15 @@
     "title": "IMPROVE-8R/2R 完成: .env收口 + stderr inherit + 并行隔离PID前缀修复",
     "body": "## IMPROVE-8R/2R 交付\n\n### IMPROVE-8R (main.rs)\n- load_dotenv() 只认 FORGE_WORKSPACE/.env，删 cwd 上溯兜底\n- 5 条 dotenv 测试全绿\n\n### IMPROVE-8R (client.rs)  \n- MCP client stderr 从 null 改为 inherit\n\n### IMPROVE-2R (market_artifact.rs)\n- 根因: test_id() 每次进程启动从 t0 开始，跨次运行 publisher_id 撞 publisher_keys_pkey\n- 修法: test_id() 加 PID 前缀 → p{pid}-t{n}，跨次天然唯一\n- 不需要 per-test schema 或 test_run_id 列（DS 方案 A/B 过度工程）\n- 验收: 串行 3 次 + 并行 3 次 (threads=4) 全部 12/12 全绿\n- FORGE_PG_URL=postgres://postgres@127.0.0.1:5432/forge_test\n\n### Gates\n- G1 clippy 0 warnings\n- G2 workspace 599 passed / 0 failed  \n- G3 market_artifact 12/12 (6 次连跑)\n- G4 无 artifact 泄漏\n\n### DS 诊断验证\n- DS ① PG未设FORGE_PG_URL导致skip → 完全正确，最致命\n- DS ② ENV_GUARD残留env竞态 → 真实隐患但非当前卡点（已加注释说明）\n- DS ③ count==0未过滤 → DS自己已纠正，实际是 WHERE name= AND version= 已安全\n- DS 漏掉的真根因: test_id() 跨次ID冲突（PID前缀一行修复）\n\nCommit: b981cbe\n",
     "task_id": "IMPROVE-8R",
-    "at": "2026-09-21T12:24:58.938763"
+    "at": "2026-09-21T12:24:58.938763",
+    "id": "R1-117"
+  },
+  {
+    "id": "R1-118",
+    "kind": "R1",
+    "title": "IMPROVE-2R 补完: ENV_GUARD 彻底消除 (commit 86a2385)",
+    "body": "## ENV_GUARD 残留竞态彻底消除\n\n### 修法\nupload_exceeds_max_bytes_rejected 不再设 FORGE_PACKAGE_MAX_BYTES env:\n- 直接构造 vec![0u8; 16_777_217] (16MB+1) 触发默认限制 413\n- 删除 ENV_GUARD Mutex 定义和所有引用 (净删 19 行)\n- 不碰 env、不需要 Mutex、并行安全\n\n### 为什么这是更优解\n- 不降性能升性能: 从 Mutex 串行化变为完全并行无锁\n- 不碰 routes/market.rs (红线内)\n- 用默认限制边界值测试, 比 set 100 字节更贴近真实场景\n- 代价仅单次 2.7s (16MB 内存分配), 完全可接受\n\n### 台账修复\n- IMPROVE-2 卡漏关 → Completed (由 IMPROVE-2R 承接)\n- worklog R1-117 id=None → 补编号 R1-117\n\nCommit: 86a2385\n",
+    "task_id": "IMPROVE-2R",
+    "at": "2026-09-21T12:46:36.040280"
   }
 ]
