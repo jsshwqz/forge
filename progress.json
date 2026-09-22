@@ -1110,5 +1110,13 @@
     "owner": "Qwen",
     "last_record": null,
     "commit": "2099c44"
+  },
+  {
+    "task_id": "IMPROVE-9-SPEC",
+    "name": "IMPROVE-9 施工规格起草(纯文档批,零代码)",
+    "status": "Completed",
+    "owner": "Cline",
+    "last_record": null,
+    "commit": "n/a"
   }
 ]

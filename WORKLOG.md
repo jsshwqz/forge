@@ -1872,3 +1872,31 @@ clippy 0 告警. workspace 574 passed 0 failed (PG 不可用 skip). MCP 13+10+3 
 
 ---
 
+## [R7-024] ⚠️ 偏差/风险 · 2026-09-22 · R7-028: Windows 平台 Command 验收缺口实测(既有, 非本批引入)
+
+- **任务 ID**：IMPROVE-9-SPEC
+Cline 2026-09-22 本机基线门禁实测发现 582 passed / 2 failed。两处失败同根因: MCP 编排 e2e 用例验收硬编码 {Command:true}(orchestrate_tools.rs L518 / tests/orchestrate.rs L147), 而 CommandVerifier 在 Windows 走 cmd /C(build_c.md L200 冻结, verification/verifier/src/command.rs L29-31), cmd 下无 true 命令 -> 验收 Fail -> 任务 Failed。证据: 同批 practice1_file_exists_orchestrate_completes(FileExists 验收) 全绿, 证明编排链本身无回归; 该两用例系 GLM 于 Linux 容器编写/验收(R1-125 记录 574 passed 0 failed), 在 Windows 从未绿过。处置建议: 单独小批(或并入 IMPROVE-9 施工批经批准)把测试验收改为跨平台命令(Windows: cmd /C exit 0; 非 Windows: true), 属测试卫生修补, 本规格批零代码不动。
+
+---
+
+## [R1-126] ✅ 成功 · 2026-09-22 · IMPROVE-9 施工规格起草交付(AF-BP-IMP9-001, 纯文档批/零代码) + 本机基线门禁实测
+
+- **任务 ID**：IMPROVE-9-SPEC
+交付物: D:/test/aionui/新forge/build_improve9.md (AF-BP-IMP9-001, 218 行, 第 0-7 章 + 风险增量)。内容: 路径 B 契约化 = ①规划器预制注入(PrefabPlanner 插既有 OrchestratorDeps.planner 槽位, 执行链 run_end_to_end 零改动); ②结构+能力白名单双重校验(validate_plan_structure 复用 build_dag 环/悬空检测, 规模上限 32 步/64KB 单步); ③验收权不外包(Plan 契约无验收字段, 测试 #9 实证 Gate 仍裁决); ④replanner=None 冻结, 重规划责任在 Agent 侧; ⑤服务端接管 plan.id/task_id/status 防伪造谱系。行级证据 A1-A10 全部实测核对(基线 HEAD 003ba08)。入口形态分叉 D18 建议采纳 B(新工具 forge_plan_execute, forge_orchestrate 一字不动), 待项目所有人拍板。测试矩阵 11 项冻结测试名 + 门禁 G-IMP9 五项。
+
+---
+
+## [R6-041] ⚖️ 决策 · 2026-09-22 · 编号顺延说明: IMPROVE-9 规格风险自 R7-025 起(R7-024 被 Windows 缺口记录占用)
+
+- **任务 ID**：IMPROVE-9-SPEC
+Cline 2026-09-22 补录: 依 AI_WORKFLOW 9.9, 先写的 R7-024(Windows 平台 Command 验收缺口实测) 占用该号; 规格 build_improve9.md 内预留的四条风险增量顺延为 R7-025(超大Plan)/R7-026(未知工具名)/R7-027(绕过验收)/R7-028(plan 与 replanner 混用), 文档已同步修订, 无内容变更。
+
+---
+
+## [R6-042] ⚖️ 决策 · 2026-09-22 · 笔误说明: R7-024 标题自标号写作 R7-028(cosmetic), 记录 ID/正文以 R7-024 为准
+
+- **任务 ID**：IMPROVE-9-SPEC
+Cline 2026-09-22 补录: 追加 R7-024 时标题误带预期自标号 R7-028, 与自动分配 ID R7-024 不一致。编号权威 = 记录 ID(自动分配) 与正文(正文未出现错误编号); forge-worklog 无 edit 子命令, 禁手改 worklog.json, 故以本记录更正, 不改数据。下游引用该缺口时请用 R7-024。
+
+---
+

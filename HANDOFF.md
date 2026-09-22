@@ -1,7 +1,7 @@
 # HANDOFF · 交接快照（由 forge-worklog 自动生成）
 
-- **更新时间**：2026-09-22 00:33
-- **当前状态**：IMPROVE-10 完成: MCP 选模接 forge-pipeline autoselect 引擎 (commit 2099c44). 硬编码偏好序降为兜底. 5 单测全绿, clippy 0 告警. 139 卡全 Completed.
+- **更新时间**：2026-09-22 11:09
+- **当前状态**：IMPROVE-9 施工规格 (AF-BP-IMP9-001, build_improve9.md) 已起草交付, 待项目所有人 P8 批准; 本机基线门禁实测 clippy 全绿 / 582 passed 2 failed(既有 Windows Command:true 平台缺口, R7-024)。
 
 ## 🚧 阻塞项
 
@@ -25,4 +25,4 @@
 
 ## 🚀 建议
 
-IMPROVE-10 已交付: pick_via_engine 纯函数接 autoselect 引擎, auto_model 优先引擎+逃生阀+回退偏好序. reqwest 改 rustls-tls (容器无 openssl-dev). 后续: IMPROVE-9 或用户指定.
+下一步: ① 项目所有人 P8 批准 build_improve9.md 并裁决 D18(建议 B: 新工具 forge_plan_execute); ② 批准后可下发施工(执行方≠复核方); ③ 建议并入 R7-024 测试卫生修补(验收命令改跨平台)。
