@@ -1126,5 +1126,13 @@
     "owner": null,
     "last_record": null,
     "commit": null
+  },
+  {
+    "task_id": "IMPROVE-9",
+    "name": "Agent 生成 Plan -> Forge 执行 路径B (D18=B: 新独立工具 forge_plan_execute, 复用 OrchestratorDeps.planner 注入槽位)",
+    "status": "NotStarted",
+    "owner": null,
+    "last_record": null,
+    "commit": null
   }
 ]
