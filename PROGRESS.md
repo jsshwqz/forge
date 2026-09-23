@@ -142,6 +142,6 @@
 | MCP-005 | MCP server 通用化: 各 agent 经 stdio 标准接入, 缺省全注册, 不限任务 | ✅ 完成 | GLM | - | f6b640b |
 | MKT-P1-LIVE | P1: LLM 编排闭环 e2e 实证 (IMPROVE-6/7 真模型验证) | ✅ 完成 | GLM | - | - |
 | MKT-P2-TENANT | P2: 缺省单机租户态 PG 接入 (new_with_pg 构造器) | ✅ 完成 | GLM | - | - |
-| IMPROVE-10-AUTOSELECT | MCP 选模接 forge-pipeline autoselect 引擎 (硬编码偏好序降为兜底, D17-A) | ✅ 完成 | Qwen | - | 2099c44 |
+| IMPROVE-10-AUTOSELECT | MCP 选模接 forge-pipeline autoselect 引擎 (硬编码偏好序降为兜底, D17-A) | ✅ 完成 | GLM(执行方·行天容器, commit 2099c44); 复核方=Qwen红档重跑过(clippy0/603-2) | - | 2099c44 |
 | IMPROVE-9-SPEC | IMPROVE-9 施工规格起草(纯文档批,零代码) | ✅ 完成 | Cline | - | n/a |
 | MKT-FIX-001 | market DELETE/YANK 匿名越权真修(私钥持有证明+publisher_id泄露收口)·红档安全单 | ⬜ 未开始 | - | - | - |

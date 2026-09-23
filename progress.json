@@ -1107,7 +1107,7 @@
     "task_id": "IMPROVE-10-AUTOSELECT",
     "name": "MCP 选模接 forge-pipeline autoselect 引擎 (硬编码偏好序降为兜底, D17-A)",
     "status": "Completed",
-    "owner": "Qwen",
+    "owner": "GLM(执行方·行天容器, commit 2099c44); 复核方=Qwen红档重跑过(clippy0/603-2)",
     "last_record": null,
     "commit": "2099c44"
   },

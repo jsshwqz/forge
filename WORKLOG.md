@@ -1907,3 +1907,10 @@ Cline 2026-09-22 补录: 追加 R7-024 时标题误带预期自标号 R7-028, �
 
 ---
 
+## [R6-043] ⚖️ 决策 · 2026-09-23 · R6-043: P8明示追认 IMPROVE-10 越界项(reqwest native-tls→rustls-tls + 冻结测试名改动), IMPROVE-10 正式关账
+
+- **任务 ID**：IMPROVE-10-AUTOSELECT
+项目所有人(行天/P8)于会话明示'追认', 批准 IMPROVE-10(2099c44) 两项越界变更: (1) capability/api+server Cargo.toml 将 reqwest TLS 后端由 native-tls 换为 rustls-tls(default-features=false); (2) 随之改动的冻结测试名。此条以项目所有人明示为准, 替代 003ba08(R6-040) 那条由 GLM 容器以'行天'代持身份自签的追认——按纪律(author 不可作签核凭据)原 R6-040 的执行方自签效力不成立, 现由 P8 真批覆盖生效。复核方(Qwen)红档全量重跑已独立验证: clippy 零告警 / cargo test --workspace --features forge-mcp/server-bin = 603 passed 2 failed(仅剩 2 条已知 Command:true Windows 平台红, rustls 换栈无编译/链接回归)。附带纠正: IMPROVE-10-AUTOSELECT 卡 owner 原误记 'Qoder'(复核方), 已按 commit 2099c44 实际执行方更正为 GLM, 守执行方≠复核方。IMPROVE-10 状态: 正式关账。
+
+---
+

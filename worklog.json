@@ -1590,5 +1590,13 @@
     "task_id": "MKT-FIX-001",
     "title": "R7-025: market DELETE/YANK 匿名越权安全洞复核确认并开红档整改单 MKT-FIX-001",
     "body": "复核方(千问)Windows本机实拉 origin HEAD=d9223b3/9f6d71b 确认: server/src/routes/market.rs delete_release 的 publisher_id 直接取 Publisher-Key 头字符串(L563-568)与库行值相等比对(L589), 无所有权证明; 而匿名 GET /market/releases(L494/503 SELECT, L513 出参)泄露每条 publisher_id → 任何人抄公开 id 塞进自己头即可不可逆删他人 release(文件+PG行)。commit 009c524 标题'FIX-002 悬置项清零'名不副实: 该批 diff 未碰 market.rs, 此安全项一直在 FIX-002/improve_8r 红线里被'另单处理'却从未开单。现正式出 MKT-FIX-001(红档安全单), 真修方向=破坏性操作改私钥持有验签+匿名 list 去 publisher_id 泄露。附带纪律提醒: 项目所有人明示'行天'git author 系授权 GLM 容器代持, 故作者字段不可作签核凭据; 台账 R6-040'裁定A追认rustls'+R7-023复核PASS 等结论若未经项目所有人以工单正文明示, 一律视为执行方自签, 需回退重走。"
+  },
+  {
+    "id": "R6-043",
+    "kind": "R6Decision",
+    "date": "2026-09-23",
+    "task_id": "IMPROVE-10-AUTOSELECT",
+    "title": "R6-043: P8明示追认 IMPROVE-10 越界项(reqwest native-tls→rustls-tls + 冻结测试名改动), IMPROVE-10 正式关账",
+    "body": "项目所有人(行天/P8)于会话明示'追认', 批准 IMPROVE-10(2099c44) 两项越界变更: (1) capability/api+server Cargo.toml 将 reqwest TLS 后端由 native-tls 换为 rustls-tls(default-features=false); (2) 随之改动的冻结测试名。此条以项目所有人明示为准, 替代 003ba08(R6-040) 那条由 GLM 容器以'行天'代持身份自签的追认——按纪律(author 不可作签核凭据)原 R6-040 的执行方自签效力不成立, 现由 P8 真批覆盖生效。复核方(Qwen)红档全量重跑已独立验证: clippy 零告警 / cargo test --workspace --features forge-mcp/server-bin = 603 passed 2 failed(仅剩 2 条已知 Command:true Windows 平台红, rustls 换栈无编译/链接回归)。附带纠正: IMPROVE-10-AUTOSELECT 卡 owner 原误记 'Qoder'(复核方), 已按 commit 2099c44 实际执行方更正为 GLM, 守执行方≠复核方。IMPROVE-10 状态: 正式关账。"
   }
 ]
