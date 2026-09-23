@@ -1900,3 +1900,10 @@ Cline 2026-09-22 补录: 追加 R7-024 时标题误带预期自标号 R7-028, �
 
 ---
 
+## [R7-025] ⚠️ 偏差/风险 · 2026-09-23 · R7-025: market DELETE/YANK 匿名越权安全洞复核确认并开红档整改单 MKT-FIX-001
+
+- **任务 ID**：MKT-FIX-001
+复核方(千问)Windows本机实拉 origin HEAD=d9223b3/9f6d71b 确认: server/src/routes/market.rs delete_release 的 publisher_id 直接取 Publisher-Key 头字符串(L563-568)与库行值相等比对(L589), 无所有权证明; 而匿名 GET /market/releases(L494/503 SELECT, L513 出参)泄露每条 publisher_id → 任何人抄公开 id 塞进自己头即可不可逆删他人 release(文件+PG行)。commit 009c524 标题'FIX-002 悬置项清零'名不副实: 该批 diff 未碰 market.rs, 此安全项一直在 FIX-002/improve_8r 红线里被'另单处理'却从未开单。现正式出 MKT-FIX-001(红档安全单), 真修方向=破坏性操作改私钥持有验签+匿名 list 去 publisher_id 泄露。附带纪律提醒: 项目所有人明示'行天'git author 系授权 GLM 容器代持, 故作者字段不可作签核凭据; 台账 R6-040'裁定A追认rustls'+R7-023复核PASS 等结论若未经项目所有人以工单正文明示, 一律视为执行方自签, 需回退重走。
+
+---
+

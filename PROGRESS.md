@@ -144,3 +144,4 @@
 | MKT-P2-TENANT | P2: 缺省单机租户态 PG 接入 (new_with_pg 构造器) | ✅ 完成 | GLM | - | - |
 | IMPROVE-10-AUTOSELECT | MCP 选模接 forge-pipeline autoselect 引擎 (硬编码偏好序降为兜底, D17-A) | ✅ 完成 | Qwen | - | 2099c44 |
 | IMPROVE-9-SPEC | IMPROVE-9 施工规格起草(纯文档批,零代码) | ✅ 完成 | Cline | - | n/a |
+| MKT-FIX-001 | market DELETE/YANK 匿名越权真修(私钥持有证明+publisher_id泄露收口)·红档安全单 | ⬜ 未开始 | - | - | - |

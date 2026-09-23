@@ -1118,5 +1118,13 @@
     "owner": "Cline",
     "last_record": null,
     "commit": "n/a"
+  },
+  {
+    "task_id": "MKT-FIX-001",
+    "name": "market DELETE/YANK 匿名越权真修(私钥持有证明+publisher_id泄露收口)·红档安全单",
+    "status": "NotStarted",
+    "owner": null,
+    "last_record": null,
+    "commit": null
   }
 ]
