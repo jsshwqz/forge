@@ -1606,5 +1606,13 @@
     "task_id": "IMPROVE-9",
     "title": "P8批准双单: MKT-FIX-001(红档安全 P0 优先) + IMPROVE-9(D18=B 路径B forge_plan_execute)",
     "body": "项目所有人会话明示'按你建议'-> 复核方(千问)落 P8 决议. [一] MKT-FIX-001 批准下发: 红档安全单, P0, docs/handoff/mkt_fix_001_kickoff.json 现成. 复核方回代码实证 R7-025 发现为真(server/src/routes/market.rs L488-600 亲读: delete_release L563-589 publisher_id 走 Publisher-Key 头字符串直接等值比对, 匿名 GET /market/releases L494/503/513 明文回吐 publisher_id -> 抄 id 塞头即可不可逆删他人 release). 修法 A/B 规格合理, 特别含'禁把 header 相等改成 EXISTS 检查'的假修禁令命中'存在!=拥有'反复踩过的坑. 门禁红档口径: 真 PG 并行连跑3次, 全量 workspace 除既有 Windows 2 平台红外零回归. [二] IMPROVE-9 批准施工 + D18=B 决议: docs/spec_improve9.md 全文通读独立复核通过, 规格质量高, §0.3 P7 防线冻结(Plan 契约不含验收字段, task.acceptance 权威, 测试 #9 实证), §A3 OrchestratorDeps.planner 注入槽位复用最小侵入, §3.3 服务端接管 plan.id/task_id/status + 反序列化目标仅 Vec<PlanStep> 双管齐下堵死客户端伪造谱系. D18 采 B: 新独立工具 forge_plan_execute, forge_orchestrate 一字不动. 理由: A 方案'单工具双模态'allowlist 无法分模态闸控 + 现有 13+10+3 集成测试回归面扩大, 与项目'能力先注册后使用'纪律背离; B 成本仅 +1 descriptor. 已建 IMPROVE-9 施工卡(NotStarted), 出 docs/handoff/improve9_kickoff.json. [三] 优先与并行: MKT-FIX-001 与 IMPROVE-9 文件面零交集(market.rs vs planning/mcp), 台账经 forge-worklog CLI 持锁串行(COMP-003b), 可并行下发; 若单人接两单, 先 MKT-FIX-001(P0 安全). [四] 编号占位号澄清: spec_improve9.md 风险表 R7-025~028 为起草期占位, 实际 R7-025 已被 MKT-FIX-001 安全发现(93d927f)占用, 施工 log add 时以 worklog CLI 自动续号为准(工单ID唯一性纪律). [五] 治理: 双单执行方=GLM, 复核方=千问(Qoder Windows 本机), 严守执行方!=复核方; 行天 git author 系 GLM 容器代持不可作签核凭据(R6-043 已固化), owner 如实记 GLM, 关账须由复核方独立重跑后判定. 本次 P8 由项目所有人会话明示+复核方独立回代码实证+CLI 追加记录路径合规."
+  },
+  {
+    "id": "R6-045",
+    "kind": "R6Decision",
+    "date": "2026-09-25",
+    "task_id": "FIX-003-WIN",
+    "title": "规划三件收口: PACK-4 TENANT-001 关闭(非缺口) + FIX-003-WIN 建卡下发 + PG 6连跑全绿(R7-019 硬证)",
+    "body": "全做完毕. [#1 TENANT-001] 代码核验 server/src/lib.rs L1422-1451 serve 路径按 FORGE_PG_URL 路由(new_with_pg=PgTenantKeyStore/InMemoryTenantKeyStore), 注释 L184 明示设计选择, 关闭无缺口. [#2 FIX-003-WIN] 建卡+出 kickoff docs/handoff/fix003_win_cmd_kickoff.json. [#3 PG 6连跑] 本机 podman forge-pg(15432) 起 PG, cargo test -p forge-server --test market_signing --test market_artifact 背靠背 6 轮: 每轮 12+4 passed 0 failed (~12s), R7-019 命门并行隔离彻底钉死(f8321e9 -{tid} 修法真机验证 PASS). 执行方GLM!=复核方Qoder."
   }
 ]

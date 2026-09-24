@@ -1921,3 +1921,10 @@ Cline 2026-09-22 补录: 追加 R7-024 时标题误带预期自标号 R7-028, �
 
 ---
 
+## [R6-045] ⚖️ 决策 · 2026-09-25 · 规划三件收口: PACK-4 TENANT-001 关闭(非缺口) + FIX-003-WIN 建卡下发 + PG 6连跑全绿(R7-019 硬证)
+
+- **任务 ID**：FIX-003-WIN
+全做完毕. [#1 TENANT-001] 代码核验 server/src/lib.rs L1422-1451 serve 路径按 FORGE_PG_URL 路由(new_with_pg=PgTenantKeyStore/InMemoryTenantKeyStore), 注释 L184 明示设计选择, 关闭无缺口. [#2 FIX-003-WIN] 建卡+出 kickoff docs/handoff/fix003_win_cmd_kickoff.json. [#3 PG 6连跑] 本机 podman forge-pg(15432) 起 PG, cargo test -p forge-server --test market_signing --test market_artifact 背靠背 6 轮: 每轮 12+4 passed 0 failed (~12s), R7-019 命门并行隔离彻底钉死(f8321e9 -{tid} 修法真机验证 PASS). 执行方GLM!=复核方Qoder.
+
+---
+

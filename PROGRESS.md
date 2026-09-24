@@ -146,3 +146,4 @@
 | IMPROVE-9-SPEC | IMPROVE-9 施工规格起草(纯文档批,零代码) | ✅ 完成 | Cline | - | n/a |
 | MKT-FIX-001 | market DELETE/YANK 匿名越权真修(私钥持有证明+publisher_id泄露收口)·红档安全单 | ⬜ 未开始 | - | - | - |
 | IMPROVE-9 | Agent 生成 Plan -> Forge 执行 路径B (D18=B: 新独立工具 forge_plan_execute, 复用 OrchestratorDeps.planner 注入槽位) | ⬜ 未开始 | - | - | - |
+| FIX-003-WIN | Windows Command:true 平台红修复 (orchestrate 2 测试 exit 0 跨平台, R7-024 收口) | ⬜ 未开始 | - | - | - |
