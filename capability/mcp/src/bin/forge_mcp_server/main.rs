@@ -32,6 +32,7 @@
 
 mod llm_wire;
 mod orchestrate_tools;
+mod plan_execute_tools;
 mod planner;
 mod worklog_tools;
 

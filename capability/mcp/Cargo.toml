@@ -24,6 +24,7 @@ forge-workspace = { path = "../../execution/workspace", optional = true }
 forge-recovery = { path = "../../recovery", optional = true }
 forge-task = { path = "../../core/task", optional = true }
 forge-planner = { path = "../../planning/planner", optional = true }
+forge-dag = { path = "../../planning/dag", optional = true }
 forge-plan-llm = { path = "../../planning/llm", optional = true }
 forge-api = { path = "../../capability/api", optional = true }
 forge-pipeline = { path = "../../agents/pipeline", optional = true }
@@ -53,6 +54,7 @@ server-bin = [
   "dep:forge-recovery",
   "dep:forge-task",
   "dep:forge-planner",
+  "dep:forge-dag",
   "dep:forge-plan-llm",
   "dep:forge-api",
   "dep:forge-pipeline",
