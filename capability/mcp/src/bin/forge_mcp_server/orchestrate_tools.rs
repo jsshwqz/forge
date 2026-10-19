@@ -515,7 +515,7 @@ mod tests {
                 "acceptance": [{
                     "id": "AC-1",
                     "description": "command true passes",
-                    "check": { "Command": "true" }
+                    "check": { "Command": "exit 0" }
                 }]
             }))
             .await
