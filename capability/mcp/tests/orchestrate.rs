@@ -144,7 +144,7 @@ async fn orchestrate_end_to_end_via_mcp() {
                 "acceptance": [{
                     "id": "AC-1",
                     "description": "sh true passes",
-                    "check": { "Command": "true" }
+                    "check": { "Command": "exit 0" }
                 }]
             }),
         )

@@ -509,8 +509,9 @@ pub async fn list_releases(
     };
     let items: Vec<serde_json::Value> = rows
         .into_iter()
-        .map(|(name, version, publisher_id, review_status, package_hash, deprecated)| {
-            serde_json::json!({ "name": name, "version": version, "publisher_id": publisher_id,
+        .map(|(name, version, _publisher_id, review_status, package_hash, deprecated)| {
+            // MKT-FIX-001: publisher_id 不暴露到公开目录（泄露收口）
+            serde_json::json!({ "name": name, "version": version,
                                 "review_status": review_status, "package_hash": package_hash,
                                 "deprecated": deprecated })
         })
@@ -547,9 +548,55 @@ pub(crate) async fn install_signature_recheck(
     Ok(())
 }
 
+/// MKT-FIX-001: 操作签名覆盖的规范字节：`{name}\n{version}\n{op}`。
+fn operation_bytes(name: &str, version: &str, op: &str) -> Vec<u8> {
+    format!("{name}\n{version}\n{op}").into_bytes()
+}
+
+/// MKT-FIX-001: 验证操作签名（私钥持有证明）。
+///
+/// 从 releases 表查 publisher_id → 查 publisher_keys.public_key →
+/// 用 ed25519 验签 `{name}\n{version}\n{op}`。
+/// 返回 release_id 和 artifact_path（验签通过后供调用方使用）。
+async fn verify_operation_signature(
+    pool: &sqlx::PgPool,
+    name: &str,
+    version: &str,
+    op: &str,
+    signature: &str,
+) -> Result<(i64, Option<String>), (StatusCode, String)> {
+    // 查 release + publisher 公钥
+    let row: Option<(i64, Option<String>, String)> = sqlx::query_as(
+        "SELECT r.id, r.artifact_path, pk.public_key FROM releases r \
+         JOIN publisher_keys pk ON pk.publisher_id = r.publisher_id \
+         WHERE r.name = $1 AND r.version = $2 ORDER BY r.id DESC LIMIT 1",
+    )
+    .bind(name)
+    .bind(version)
+    .fetch_optional(pool)
+    .await
+    .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let Some((release_id, artifact_path, public_key)) = row else {
+        return Err((StatusCode::NOT_FOUND, "release not found".into()));
+    };
+
+    // 验签：签名必须匹配 publisher 登记公钥（私钥持有证明）
+    let bytes = operation_bytes(name, version, op);
+    let ok = signing::verify_package(&public_key, &bytes, signature)
+        .map_err(|e| (StatusCode::BAD_REQUEST, e.to_string()))?;
+    if !ok {
+        return Err((StatusCode::FORBIDDEN, "signature verification failed".into()));
+    }
+
+    Ok((release_id, artifact_path))
+}
+
 /// DELETE /market/releases/{name}/{version} — 删除 release（制品字节 + 元数据同删）。
 ///
-/// 鉴权: Publisher-Key 必须匹配 release 的 publisher_id。
+/// MKT-FIX-001: 鉴权升级——不再仅靠 Publisher-Key 字符串匹配（匿名越权），
+/// 要求请求者用其私钥对 `{name}\n{version}\ndelete` 做 ed25519 签名，
+/// 服务端用 publisher 登记公钥验签（私钥持有证明）。
 /// 制品字节通过 ArtifactStore::delete 清理（幂等）; PG 行通过 DELETE 清理。
 pub async fn delete_release(
     State(state): State<AppState>,
@@ -560,35 +607,21 @@ pub async fn delete_release(
         return Err((StatusCode::SERVICE_UNAVAILABLE, "releases require PostgreSQL storage".into()));
     };
 
-    let publisher_id = headers
-        .get("Publisher-Key")
+    // MKT-FIX-001: 签名头（hex ed25519 签名）
+    let signature = headers
+        .get("Signature")
         .and_then(|v| v.to_str().ok())
         .unwrap_or("")
         .trim()
         .to_string();
-    if publisher_id.is_empty() {
-        return Err((StatusCode::FORBIDDEN, "missing Publisher-Key".into()));
+    if signature.is_empty() {
+        return Err((StatusCode::FORBIDDEN, "missing Signature header".into()));
     }
 
-    // 查询 release
-    let row: Option<(i64, String, Option<String>)> = sqlx::query_as(
-        "SELECT id, publisher_id, artifact_path FROM releases \
-         WHERE name = $1 AND version = $2 ORDER BY id DESC LIMIT 1",
-    )
-    .bind(&name)
-    .bind(&version)
-    .fetch_optional(&pool)
-    .await
-    .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-
-    let Some((release_id, row_publisher_id, artifact_path)) = row else {
-        return Err((StatusCode::NOT_FOUND, "release not found".into()));
-    };
-
-    // 鉴权: 只有发布者本人可删
-    if row_publisher_id != publisher_id {
-        return Err((StatusCode::FORBIDDEN, "not the release publisher".into()));
-    }
+    // 验签 + 查 release（私钥持有证明）
+    let (release_id, artifact_path) = verify_operation_signature(
+        &pool, &name, &version, "delete", &signature,
+    ).await?;
 
     // 删制品文件（幂等; 失败不阻塞 PG 行删除——孤儿文件由 D9 清理策略兜底）
     if let Some(path) = artifact_path {
@@ -606,4 +639,43 @@ pub async fn delete_release(
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
     Ok(StatusCode::NO_CONTENT)
+}
+
+/// POST /market/releases/{name}/{version}/yank — 撤回 release（标记 yanked=true）。
+///
+/// MKT-FIX-001: 同 delete，要求 ed25519 签名 `{name}\n{version}\nyank`。
+/// yanked release 对 install/list/download 不可见（既有过滤逻辑不变）。
+pub async fn yank_release(
+    State(state): State<AppState>,
+    axum::extract::Path((name, version)): axum::extract::Path<(String, String)>,
+    headers: HeaderMap,
+) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    let Some(pool) = state.pool.clone() else {
+        return Err((StatusCode::SERVICE_UNAVAILABLE, "releases require PostgreSQL storage".into()));
+    };
+
+    // MKT-FIX-001: 签名头
+    let signature = headers
+        .get("Signature")
+        .and_then(|v| v.to_str().ok())
+        .unwrap_or("")
+        .trim()
+        .to_string();
+    if signature.is_empty() {
+        return Err((StatusCode::FORBIDDEN, "missing Signature header".into()));
+    }
+
+    // 验签 + 查 release
+    let (release_id, _) = verify_operation_signature(
+        &pool, &name, &version, "yank", &signature,
+    ).await?;
+
+    // 标记 yanked = true
+    sqlx::query("UPDATE releases SET yanked = true WHERE id = $1")
+        .bind(release_id)
+        .execute(&pool)
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    Ok(Json(serde_json::json!({ "release_id": release_id, "yanked": true })))
 }
