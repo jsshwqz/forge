@@ -1949,3 +1949,10 @@ Cline 2026-09-22 补录: 追加 R7-024 时标题误带预期自标号 R7-028, �
 
 ---
 
+## [R1-130] ✅ 成功 · 2026-10-20 · MKT-FIX-001增强: DELETE/YANK时间戳防重放验证(±300s)与测试升级
+
+- **任务 ID**：MKT-FIX-001
+1. server/src/routes/market.rs: verify_operation_signature 增加可选 X-Forge-Timestamp 时间戳校验(±300s窗口防重放); 2. server/tests/market_artifact.rs: delete_removes_artifact_and_metadata 升级为使用发布者私钥签名调用; 3. server/tests/market_signing.rs: 增加 delete_with_expired_timestamp_rejected 验证超时拦截; 4. cargo test -p forge-server 15+12 passed 全绿, clippy 零告警。
+
+---
+
