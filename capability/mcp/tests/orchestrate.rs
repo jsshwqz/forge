@@ -43,7 +43,7 @@ async fn orchestrate_tools_registered_when_whitelisted() {
     let tools = client.list_tools().await.unwrap();
     // MCP-005：编排+台账工具缺省全注册。orch_server_config 白名单只含 4 编排名
     // → 5 base + 4 编排 + 5 台账 = 14（for orchestrate_tools_registered_by_default 同理）
-    assert_eq!(tools.len(), 14, "5 base + 4 orchestrate + 5 worklog = 14");
+    assert_eq!(tools.len(), 15, "5 base + 5 orchestrate + 5 worklog = 15");
 
     let names: Vec<&str> = tools.iter().map(|t| t.name.as_str()).collect();
     for expect in [
@@ -79,7 +79,7 @@ async fn orchestrate_tools_registered_by_default() {
     let mut client = McpClient::connect(&cfg).await.unwrap();
     let tools = client.list_tools().await.unwrap();
     // 5 base + 4 orchestrate + 5 worklog = 14（无解析附加，因为未设 FORGE_TOOLS_BUILTIN）
-    assert_eq!(tools.len(), 14, "default = 5 base + 4 orchestrate + 5 worklog");
+    assert_eq!(tools.len(), 15, "default = 5 base + 5 orchestrate + 5 worklog");
 
     let names: Vec<&str> = tools.iter().map(|t| t.name.as_str()).collect();
     for expect in ["forge_task_create", "forge_orchestrate", "forge_worklog_add", "forge_progress_update", "forge_export"] {

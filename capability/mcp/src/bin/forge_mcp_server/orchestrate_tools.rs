@@ -31,6 +31,7 @@ pub const ORCHESTRATE_TOOLS: &[&str] = &[
     "forge_task_get",
     "forge_task_list",
     "forge_orchestrate",
+    "forge_plan_execute",
 ];
 
 /// 编排上下文：MCP-002 工具共享的运行时依赖。
@@ -70,7 +71,7 @@ impl OrchestrateContext {
 
     /// 按任务 workdir 构造执行 router（文件工具 root=workdir，保证工具写文件
     /// 与验收核对在同一目录——Practice-1 实证 MCP-002 的 root 分裂缺陷）。
-    fn exec_router_for(workdir: &std::path::Path) -> forge_exec::ToolRouter {
+    pub(crate) fn exec_router_for(workdir: &std::path::Path) -> forge_exec::ToolRouter {
         use forge_exec::{EchoTool, WriteFileTool, ReadFileTool, ListDirTool, EditPatchTool};
         let r = forge_exec::ToolRouter::new();
         // 基础 5 工具（与 MCP-001 BASE_TOOLS 对齐），文件类以 workdir 为 root
@@ -92,7 +93,7 @@ impl OrchestrateContext {
     }
 
     /// 组装 OrchestratorDeps（每次调用新建，workdir 由调用方解析）。
-    fn make_deps_for_full(
+    pub(crate) fn make_deps_for_full(
         &self,
         workdir: &std::path::Path,
         planner: Option<Arc<dyn forge_planner::Planner>>,
@@ -463,6 +464,7 @@ pub fn construct_orchestrate_tool(
         "forge_task_get" => Some(Box::new(ForgeTaskGetTool::new(ctx.clone()))),
         "forge_task_list" => Some(Box::new(ForgeTaskListTool::new(ctx.clone()))),
         "forge_orchestrate" => Some(Box::new(ForgeOrchestrateTool::new(ctx.clone()))),
+        "forge_plan_execute" => Some(Box::new(crate::plan_execute_tools::ForgePlanExecuteTool::new(ctx.clone()))),
         _ => None,
     }
 }
