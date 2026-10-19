@@ -272,3 +272,237 @@ async fn pinned_to_yanked_conflict_409() {
     .await;
     assert_eq!(status, StatusCode::NOT_FOUND, "全 yanked 时 * 必须 404");
 }
+
+// ==================== MKT-FIX-001: 匿名越权修复测试 ====================
+
+/// 辅助：注册 publisher + 发布 release + 返回 (sk, pk, publisher_id, name)
+async fn setup_publisher_and_release(pool: &sqlx::PgPool, tid: &str, version: &str) -> (String, String, String, String) {
+    let (sk, pk) = signing::generate_keypair();
+    let publisher_id = format!("pub-fix-{tid}");
+    let name = format!("cap-fix-{tid}");
+    sqlx::query("INSERT INTO publisher_keys (publisher_id, public_key) VALUES ($1, $2)")
+        .bind(&publisher_id)
+        .bind(&pk)
+        .execute(pool)
+        .await
+        .unwrap();
+    // 签名 release
+    let pkg_bytes = format!("{name}\n{version}\nhash-fix");
+    let sig = signing::sign_package(&sk, pkg_bytes.as_bytes()).unwrap();
+    sqlx::query(
+        "INSERT INTO releases (name, version, publisher_id, package_hash, signature, review_status) \
+         VALUES ($1, $2, $3, 'hash-fix', $4, 'published')",
+    )
+    .bind(&name)
+    .bind(version)
+    .bind(&publisher_id)
+    .bind(&sig)
+    .execute(pool)
+    .await
+    .unwrap();
+    (sk, pk, publisher_id, name)
+}
+
+/// MKT-FIX-001 冻结测试：DELETE 仅重放 publisher_id 或无有效签名（无私钥持有证明）→ 403。
+#[tokio::test]
+async fn delete_without_proof_of_possession_rejected() {
+    tokio::time::timeout(std::time::Duration::from_secs(30), async {
+        let Some((app, pool, tid)) = setup_app().await else { return; };
+        let (_sk, _pk, pub_id, name) = setup_publisher_and_release(&pool, &tid, "1.0.0").await;
+
+        // 仅重放 Publisher-Key 头、无有效签名 → 403
+        let req = Request::delete(format!("/market/releases/{name}/1.0.0"))
+            .header("Publisher-Key", &pub_id)
+            .body(Body::empty())
+            .unwrap();
+        let (status, _body) = send(app, req).await;
+        assert_eq!(status, StatusCode::FORBIDDEN, "DELETE 仅重放 publisher_id 无签名必须 403");
+    })
+    .await
+    .unwrap();
+}
+
+/// MKT-FIX-001 冻结测试：DELETE 持注册私钥正确签名 → 204。
+#[tokio::test]
+async fn delete_with_valid_signature_ok() {
+    tokio::time::timeout(std::time::Duration::from_secs(30), async {
+        let Some((app, pool, tid)) = setup_app().await else { return; };
+        let (sk, _pk, _pub, name) = setup_publisher_and_release(&pool, &tid, "1.0.0").await;
+
+        let op_bytes = format!("{name}\n1.0.0\ndelete");
+        let sig = signing::sign_package(&sk, op_bytes.as_bytes()).unwrap();
+
+        let req = Request::delete(format!("/market/releases/{name}/1.0.0"))
+            .header("Signature", &sig)
+            .body(Body::empty())
+            .unwrap();
+        let (status, _body) = send(app, req).await;
+        assert_eq!(status, StatusCode::NO_CONTENT, "DELETE 正确签名必须 204");
+    })
+    .await
+    .unwrap();
+}
+
+/// MKT-FIX-001 冻结测试：匿名 GET /market/releases 不泄露 publisher_id。
+#[tokio::test]
+async fn anonymous_list_does_not_leak_publisher_id() {
+    tokio::time::timeout(std::time::Duration::from_secs(30), async {
+        let Some((app, pool, tid)) = setup_app().await else { return; };
+        let (_sk, _pk, _pub, name) = setup_publisher_and_release(&pool, &tid, "1.0.0").await;
+
+        let req = Request::get("/market/releases").body(Body::empty()).unwrap();
+        let (status, body) = send(app, req).await;
+        assert_eq!(status, StatusCode::OK);
+        let items = body["items"].as_array().unwrap();
+        let our_item = items.iter().find(|i| i["name"] == name).expect("release should be listed");
+        assert!(
+            our_item.get("publisher_id").is_none() || our_item["publisher_id"].is_null(),
+            "publisher_id must not be leaked in list_releases: {our_item}"
+        );
+    })
+    .await
+    .unwrap();
+}
+
+/// MKT-FIX-001: DELETE 无签名 → 403。
+#[tokio::test]
+async fn delete_without_signature_rejected() {
+    tokio::time::timeout(std::time::Duration::from_secs(30), async {
+        let Some((app, pool, tid)) = setup_app().await else { return; };
+        let (_sk, _pk, _pub, name) = setup_publisher_and_release(&pool, &tid, "1.0.0").await;
+
+        let req = Request::delete(format!("/market/releases/{name}/1.0.0"))
+            .body(Body::empty())
+            .unwrap();
+        let (status, _body) = send(app, req).await;
+        assert_eq!(status, StatusCode::FORBIDDEN, "DELETE 无签名必须 403");
+    })
+    .await
+    .unwrap();
+}
+
+/// MKT-FIX-001: DELETE 错误签名 → 403。
+#[tokio::test]
+async fn delete_with_wrong_signature_rejected() {
+    tokio::time::timeout(std::time::Duration::from_secs(30), async {
+        let Some((app, pool, tid)) = setup_app().await else { return; };
+        let (_sk, _pk, _pub, name) = setup_publisher_and_release(&pool, &tid, "1.0.0").await;
+
+        // 用另一个密钥对签名
+        let (wrong_sk, _) = signing::generate_keypair();
+        let op_bytes = format!("{name}\n1.0.0\ndelete");
+        let wrong_sig = signing::sign_package(&wrong_sk, op_bytes.as_bytes()).unwrap();
+
+        let req = Request::delete(format!("/market/releases/{name}/1.0.0"))
+            .header("Signature", &wrong_sig)
+            .body(Body::empty())
+            .unwrap();
+        let (status, _body) = send(app, req).await;
+        assert_eq!(status, StatusCode::FORBIDDEN, "DELETE 错签名必须 403");
+    })
+    .await
+    .unwrap();
+}
+
+/// MKT-FIX-001: DELETE 正确签名 → 204。
+#[tokio::test]
+async fn delete_with_valid_signature_succeeds() {
+    tokio::time::timeout(std::time::Duration::from_secs(30), async {
+        let Some((app, pool, tid)) = setup_app().await else { return; };
+        let (sk, _pk, _pub, name) = setup_publisher_and_release(&pool, &tid, "1.0.0").await;
+
+        let op_bytes = format!("{name}\n1.0.0\ndelete");
+        let sig = signing::sign_package(&sk, op_bytes.as_bytes()).unwrap();
+
+        let req = Request::delete(format!("/market/releases/{name}/1.0.0"))
+            .header("Signature", &sig)
+            .body(Body::empty())
+            .unwrap();
+        let (status, _body) = send(app, req).await;
+        assert_eq!(status, StatusCode::NO_CONTENT, "DELETE 正确签名必须 204");
+    })
+    .await
+    .unwrap();
+}
+
+/// MKT-FIX-001: YANK 无签名 → 403。
+#[tokio::test]
+async fn yank_without_signature_rejected() {
+    tokio::time::timeout(std::time::Duration::from_secs(30), async {
+        let Some((app, pool, tid)) = setup_app().await else { return; };
+        let (_sk, _pk, _pub, name) = setup_publisher_and_release(&pool, &tid, "1.0.0").await;
+
+        let req = Request::post(format!("/market/releases/{name}/1.0.0/yank"))
+            .body(Body::empty())
+            .unwrap();
+        let (status, _body) = send(app, req).await;
+        assert_eq!(status, StatusCode::FORBIDDEN, "YANK 无签名必须 403");
+    })
+    .await
+    .unwrap();
+}
+
+/// MKT-FIX-001: YANK 错误签名 → 403。
+#[tokio::test]
+async fn yank_with_wrong_signature_rejected() {
+    tokio::time::timeout(std::time::Duration::from_secs(30), async {
+        let Some((app, pool, tid)) = setup_app().await else { return; };
+        let (_sk, _pk, _pub, name) = setup_publisher_and_release(&pool, &tid, "1.0.0").await;
+
+        let (wrong_sk, _) = signing::generate_keypair();
+        let op_bytes = format!("{name}\n1.0.0\nyank");
+        let wrong_sig = signing::sign_package(&wrong_sk, op_bytes.as_bytes()).unwrap();
+
+        let req = Request::post(format!("/market/releases/{name}/1.0.0/yank"))
+            .header("Signature", &wrong_sig)
+            .body(Body::empty())
+            .unwrap();
+        let (status, _body) = send(app, req).await;
+        assert_eq!(status, StatusCode::FORBIDDEN, "YANK 错签名必须 403");
+    })
+    .await
+    .unwrap();
+}
+
+/// MKT-FIX-001: YANK 正确签名 → 200 + yanked=true。
+#[tokio::test]
+async fn yank_with_valid_signature_succeeds() {
+    tokio::time::timeout(std::time::Duration::from_secs(30), async {
+        let Some((app, pool, tid)) = setup_app().await else { return; };
+        let (sk, _pk, _pub, name) = setup_publisher_and_release(&pool, &tid, "1.0.0").await;
+
+        let op_bytes = format!("{name}\n1.0.0\nyank");
+        let sig = signing::sign_package(&sk, op_bytes.as_bytes()).unwrap();
+
+        let req = Request::post(format!("/market/releases/{name}/1.0.0/yank"))
+            .header("Signature", &sig)
+            .body(Body::empty())
+            .unwrap();
+        let (status, body) = send(app, req).await;
+        assert_eq!(status, StatusCode::OK, "YANK 正确签名必须 200: {body}");
+        assert_eq!(body["yanked"], true);
+    })
+    .await
+    .unwrap();
+}
+
+/// MKT-FIX-001: list_releases 不暴露 publisher_id。
+#[tokio::test]
+async fn list_releases_does_not_leak_publisher_id() {
+    tokio::time::timeout(std::time::Duration::from_secs(30), async {
+        let Some((app, pool, tid)) = setup_app().await else { return; };
+        let (_sk, _pk, _pub, name) = setup_publisher_and_release(&pool, &tid, "1.0.0").await;
+
+        let req = Request::get("/market/releases").body(Body::empty()).unwrap();
+        let (status, body) = send(app, req).await;
+        assert_eq!(status, StatusCode::OK);
+        let items = body["items"].as_array().unwrap();
+        let our_item = items.iter().find(|i| i["name"] == name).expect("release should be listed");
+        assert!(
+            our_item.get("publisher_id").is_none() || our_item["publisher_id"].is_null(),
+            "publisher_id must not be leaked in list_releases: {our_item}"
+        );
+    })
+    .await
+    .unwrap();
+}
