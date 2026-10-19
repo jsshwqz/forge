@@ -1122,25 +1122,25 @@
   {
     "task_id": "MKT-FIX-001",
     "name": "market DELETE/YANK 匿名越权真修(私钥持有证明+publisher_id泄露收口)·红档安全单",
-    "status": "NotStarted",
-    "owner": null,
+    "status": "Completed",
+    "owner": "GLM",
     "last_record": null,
-    "commit": null
+    "commit": "e04b924"
   },
   {
     "task_id": "IMPROVE-9",
     "name": "Agent 生成 Plan -> Forge 执行 路径B (D18=B: 新独立工具 forge_plan_execute, 复用 OrchestratorDeps.planner 注入槽位)",
-    "status": "NotStarted",
-    "owner": null,
+    "status": "Completed",
+    "owner": "GLM",
     "last_record": null,
-    "commit": null
+    "commit": "83aee7c"
   },
   {
     "task_id": "FIX-003-WIN",
     "name": "Windows Command:true 平台红修复 (orchestrate 2 测试 exit 0 跨平台, R7-024 收口)",
-    "status": "NotStarted",
-    "owner": null,
+    "status": "Completed",
+    "owner": "GLM",
     "last_record": null,
-    "commit": null
+    "commit": "e5d09da"
   }
 ]

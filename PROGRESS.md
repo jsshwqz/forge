@@ -144,6 +144,6 @@
 | MKT-P2-TENANT | P2: 缺省单机租户态 PG 接入 (new_with_pg 构造器) | ✅ 完成 | GLM | - | - |
 | IMPROVE-10-AUTOSELECT | MCP 选模接 forge-pipeline autoselect 引擎 (硬编码偏好序降为兜底, D17-A) | ✅ 完成 | GLM(执行方·行天容器, commit 2099c44); 复核方=Qwen红档重跑过(clippy0/603-2) | - | 2099c44 |
 | IMPROVE-9-SPEC | IMPROVE-9 施工规格起草(纯文档批,零代码) | ✅ 完成 | Cline | - | n/a |
-| MKT-FIX-001 | market DELETE/YANK 匿名越权真修(私钥持有证明+publisher_id泄露收口)·红档安全单 | ⬜ 未开始 | - | - | - |
-| IMPROVE-9 | Agent 生成 Plan -> Forge 执行 路径B (D18=B: 新独立工具 forge_plan_execute, 复用 OrchestratorDeps.planner 注入槽位) | ⬜ 未开始 | - | - | - |
-| FIX-003-WIN | Windows Command:true 平台红修复 (orchestrate 2 测试 exit 0 跨平台, R7-024 收口) | ⬜ 未开始 | - | - | - |
+| MKT-FIX-001 | market DELETE/YANK 匿名越权真修(私钥持有证明+publisher_id泄露收口)·红档安全单 | ✅ 完成 | GLM | - | e04b924 |
+| IMPROVE-9 | Agent 生成 Plan -> Forge 执行 路径B (D18=B: 新独立工具 forge_plan_execute, 复用 OrchestratorDeps.planner 注入槽位) | ✅ 完成 | GLM | - | 83aee7c |
+| FIX-003-WIN | Windows Command:true 平台红修复 (orchestrate 2 测试 exit 0 跨平台, R7-024 收口) | ✅ 完成 | GLM | - | e5d09da |

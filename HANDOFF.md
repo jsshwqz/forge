@@ -1,7 +1,7 @@
 # HANDOFF · 交接快照（由 forge-worklog 自动生成）
 
-- **更新时间**：2026-09-22 11:09
-- **当前状态**：IMPROVE-9 施工规格 (AF-BP-IMP9-001, build_improve9.md) 已起草交付, 待项目所有人 P8 批准; 本机基线门禁实测 clippy 全绿 / 582 passed 2 failed(既有 Windows Command:true 平台缺口, R7-024)。
+- **更新时间**：2026-10-19 20:52
+- **当前状态**：MKT-FIX-001 (e04b924)、FIX-003-WIN (e5d09da)、IMPROVE-9 (83aee7c) 三张工单已全部完成修补、门禁验证并合入 master，台账五件套(R1-127~R1-129)已同步导出。
 
 ## 🚧 阻塞项
 
@@ -25,4 +25,4 @@
 
 ## 🚀 建议
 
-下一步: ① 项目所有人 P8 批准 build_improve9.md 并裁决 D18(建议 B: 新工具 forge_plan_execute); ② 批准后可下发施工(执行方≠复核方); ③ 建议并入 R7-024 测试卫生修补(验收命令改跨平台)。
+当前所有在途工单均已 Completed 收口，Windows 本机 clippy 零告警、market_signing 3连跑全绿、plan_execute 与 orchestrate 全绿，可由复核方拉取远端 master 独立复核签核。

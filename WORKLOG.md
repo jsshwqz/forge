@@ -1928,3 +1928,24 @@ Cline 2026-09-22 补录: 追加 R7-024 时标题误带预期自标号 R7-028, �
 
 ---
 
+## [R1-127] ✅ 成功 · 2026-10-19 · MKT-FIX-001 完成: market DELETE/YANK 私钥持有证明验签 + 匿名列表 publisher_id 泄露收口
+
+- **任务 ID**：MKT-FIX-001
+1. server/src/routes/market.rs: delete_release 与 yank_release 改为 ed25519 私钥持有证明验签(verify_operation_signature 校验 {name}\n{version}\n{op} 签名与 publisher_keys.public_key); list_releases 移除公开出参中的明文 publisher_id 防止冒用泄露。2. install 同口径排查说明: install_capability 仅做本地激活不删改他人 release 资源，且出站已有 install_signature_recheck 制品签名复验，故无需发布者私钥操作验签。3. server/tests/market_signing.rs: 补齐冻结测试 delete_without_proof_of_possession_rejected / delete_with_valid_signature_ok / anonymous_list_does_not_leak_publisher_id 等全部包裹 30s tokio::time::timeout (R1-094 口径)，cargo test -p forge-server --test market_signing -j 2 连跑 3 轮全绿。合入提交: e04b924 (分支提交 aa84fc3 / 55d4792)。
+
+---
+
+## [R1-128] ✅ 成功 · 2026-10-19 · FIX-003-WIN 完成: orchestrate 测试 Command:true 改为 exit 0 跨平台修复 (R7-024 收口)
+
+- **任务 ID**：FIX-003-WIN
+将 capability/mcp/src/bin/forge_mcp_server/orchestrate_tools.rs (~L518) 与 capability/mcp/tests/orchestrate.rs (~L147) 中验收命令 {Command: 'true'} 改为跨平台 {'Command': 'exit 0'}，不碰 verification/verifier/src/command.rs 产线逻辑，Windows 本机 orchestrate 10/10 全绿。合入提交: e5d09da (分支提交 b0a8ef2)。
+
+---
+
+## [R1-129] ✅ 成功 · 2026-10-19 · IMPROVE-9 完成: Agent 生成 Plan -> Forge 执行 (路径B D18=B 新工具 forge_plan_execute)
+
+- **任务 ID**：IMPROVE-9
+1. 新增 planning/planner/src/prefab.rs (PrefabPlanner)、planning/dag/src/validate.rs (validate_plan_structure)、capability/mcp/src/bin/forge_mcp_server/plan_execute_tools.rs (ForgePlanExecuteTool, D18=B 独立工具 forge_plan_execute)，在 orchestrate_tools.rs 注册并保持 run_end_to_end 执行链与 task.acceptance 验收门禁零改动。2. 消解与 FIX-003-WIN 在 orchestrate_tools.rs / orchestrate.rs 的上下文冲突(保留 exit 0、forge_plan_execute 注册分支及工具数 15 断言)。3. 门禁实测: cargo clippy --workspace --all-targets --features forge-mcp/server-bin -j 2 -- -D warnings 零告警; plan_execute 9/9 + planner/dag 单测(#10/#11) 11 项冻结测试全绿; orchestrate 10/10 全绿。合入提交: 83aee7c (分支提交 db4d3fc / fd70089)。
+
+---
+
