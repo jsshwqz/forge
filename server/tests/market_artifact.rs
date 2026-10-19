@@ -332,11 +332,11 @@ async fn download_yanked_returns_409() {
 
 // ==================== MKT-104C 验收面: 5 个新冻结用例 ====================
 
-/// 辅助：DELETE 请求构造。
-fn delete_req(uri: &str, publisher: Option<&str>) -> Request<Body> {
+/// 辅助：DELETE 请求构造（MKT-FIX-001 升级后使用 ed25519 Signature 头）。
+fn delete_req(uri: &str, signature: Option<&str>) -> Request<Body> {
     let mut b = Request::delete(uri);
-    if let Some(pk) = publisher {
-        b = b.header("Publisher-Key", pk);
+    if let Some(sig) = signature {
+        b = b.header("Signature", sig);
     }
     b.body(Body::empty()).unwrap()
 }
@@ -376,8 +376,8 @@ async fn register_capability(
         .unwrap();
 }
 
-/// 辅助：发布带制品的 release + 注册 capability，返回 (router, name, version, content, pool, tempdir, publisher_id)。
-/// 用于 install 测试——需要 capability 存在才能 install 成功。
+/// 辅助：发布带制品的 release + 注册 capability，返回 (router, name, version, content, pool, tempdir, publisher_sk)。
+/// 用于 install / delete 测试——需要 capability 存在才能 install 成功，DELETE 需要私钥签名。
 /// IMPROVE-2R: 每次调用创建独立 tempdir + 唯一 publisher_id/name。
 async fn setup_for_install(
     content: &[u8],
@@ -438,7 +438,7 @@ async fn setup_for_install(
     .await;
     assert_eq!(status, StatusCode::ACCEPTED, "publish must succeed: {}", String::from_utf8_lossy(&body));
 
-    (app, name, version.to_string(), content.to_vec(), pool, dir, publisher_id)
+    (app, name, version.to_string(), content.to_vec(), pool, dir, sk)
 }
 
 /// 辅助：计算 artifact 在 FileArtifactStore 中的文件路径。
@@ -584,7 +584,7 @@ async fn delete_removes_artifact_and_metadata() {
     let Some((_router, _dir, _pool, _tid)) = setup_app().await else { return; };
 
     let content = b"delete test content";
-    let (app, name, version, _content, pool, dir, publisher_id) = timeout(
+    let (app, name, version, _content, pool, dir, sk) = timeout(
         Duration::from_secs(30),
         setup_for_install(content, "cap-delete", "1.0.0"),
     )
@@ -595,11 +595,13 @@ async fn delete_removes_artifact_and_metadata() {
     let file_path = artifact_file_path(dir.path(), content);
     assert!(file_path.exists(), "artifact file must exist before delete");
 
-    // DELETE（用返回的 publisher_id）
+    // DELETE（MKT-FIX-001：用发布者私钥对 {name}\n{version}\ndelete 签名）
+    let op_bytes = format!("{name}\n{version}\ndelete");
+    let sig = signing::sign_package(&sk, op_bytes.as_bytes()).unwrap();
     let url = format!("/market/releases/{name}/{version}");
     let (status, _body) = timeout(
         Duration::from_secs(15),
-        send(app, delete_req(&url, Some(&publisher_id))),
+        send(app, delete_req(&url, Some(&sig))),
     )
     .await
     .unwrap();

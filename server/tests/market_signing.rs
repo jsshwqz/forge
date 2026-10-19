@@ -506,3 +506,27 @@ async fn list_releases_does_not_leak_publisher_id() {
     .await
     .unwrap();
 }
+
+/// MKT-FIX-001 增强: DELETE 携带过期 X-Forge-Timestamp（超出 ±300s 窗口）→ 403。
+#[tokio::test]
+async fn delete_with_expired_timestamp_rejected() {
+    tokio::time::timeout(std::time::Duration::from_secs(30), async {
+        let Some((app, pool, tid)) = setup_app().await else { return; };
+        let (sk, _pk, _pub, name) = setup_publisher_and_release(&pool, &tid, "1.0.0").await;
+
+        let expired_ts = chrono::Utc::now().timestamp() - 600;
+        let op_bytes = format!("{name}\n1.0.0\ndelete\n{expired_ts}");
+        let sig = signing::sign_package(&sk, op_bytes.as_bytes()).unwrap();
+
+        let req = Request::delete(format!("/market/releases/{name}/1.0.0"))
+            .header("Signature", &sig)
+            .header("X-Forge-Timestamp", expired_ts.to_string())
+            .body(Body::empty())
+            .unwrap();
+        let (status, _body) = send(app, req).await;
+        assert_eq!(status, StatusCode::FORBIDDEN, "过期时间戳签名必须 403");
+    })
+    .await
+    .unwrap();
+}
+
