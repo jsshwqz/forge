@@ -411,3 +411,93 @@ async fn plan_execute_gate_governs_completion() {
 
     client.shutdown().await.unwrap();
 }
+
+// ── #10: workspace_task resume preserves prior step outputs ($s1.output.*) ──
+
+#[tokio::test]
+async fn plan_execute_workspace_resume_preserves_step_outputs() {
+    let cfg = plan_exec_server_config();
+    let mut client = McpClient::connect(&cfg).await.unwrap();
+
+    // 第 1 次调用：s1 写入 resumed.txt 成功，s2 读取不存在文件失败
+    let task1_id = create_task(
+        &mut client,
+        "partial run",
+        serde_json::json!([{
+            "id": "AC-1", "description": "noop", "check": { "Command": "exit 0" }
+        }]),
+    )
+    .await;
+
+    let plan1 = plan_with_steps(vec![
+        step(
+            "s1",
+            "write file in run 1",
+            vec![],
+            "write_file",
+            serde_json::json!({ "path": "resumed.txt", "content": "persisted_across_runs" }),
+        ),
+        step(
+            "s2",
+            "fail on missing file",
+            vec!["s1"],
+            "read_file",
+            serde_json::json!({ "path": "missing_in_run1.txt" }),
+        ),
+    ]);
+
+    let res1 = tokio::time::timeout(
+        std::time::Duration::from_secs(60),
+        call_plan_execute(&mut client, &task1_id, plan1),
+    )
+    .await
+    .expect("timeout")
+    .expect("run 1 report");
+    assert_eq!(res1["final_status"], "Failed");
+
+    // 第 2 次调用：新建修复任务并传入 workspace_task = task1_id，
+    // 新计划只有 s3（不再声明 s1 依赖，但 input 直接引用第 1 次已成功步骤的 $s1.output.written）
+    let task2_id = create_task(
+        &mut client,
+        "resume run",
+        serde_json::json!([{
+            "id": "AC-1",
+            "description": "resumed.txt exists from run 1",
+            "check": { "FileContains": { "path": "resumed.txt", "needle": "persisted_across_runs" } }
+        }]),
+    )
+    .await;
+
+    let plan2 = plan_with_steps(vec![
+        step(
+            "s3",
+            "read file via $s1.output.written from previous run",
+            vec![],
+            "read_file",
+            serde_json::json!({ "path": "$s1.output.written" }),
+        ),
+    ]);
+
+    let res2_raw = tokio::time::timeout(
+        std::time::Duration::from_secs(60),
+        client.call_tool(
+            "forge_plan_execute",
+            serde_json::json!({
+                "task_id": task2_id,
+                "plan": plan2,
+                "workspace_task": task1_id,
+            }),
+        ),
+    )
+    .await
+    .expect("timeout")
+    .expect("run 2 report");
+    let text2 = res2_raw["content"][0]["text"].as_str().expect("text content");
+    let res2: serde_json::Value = serde_json::from_str(text2).expect("valid json");
+
+    assert_eq!(res2["final_status"], "Completed");
+    assert_eq!(res2["gate"]["passed"], true);
+
+    client.shutdown().await.unwrap();
+}
+
