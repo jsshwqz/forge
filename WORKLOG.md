@@ -1949,3 +1949,10 @@ Cline 2026-09-22 补录: 追加 R7-024 时标题误带预期自标号 R7-028, �
 
 ---
 
+## [R1-130] ✅ 成功 · 2026-10-20 · FIX-MCP-001: 同步 forge_server 测试中工具数断言(14->15)
+
+- **任务 ID**：FIX-MCP-001
+1. capability/mcp/tests/forge_server.rs: 因 IMPROVE-9 (D18=B) 注册了独立工具 forge_plan_execute，默认工具数由 14 增至 15；同步更新 4 处断言 (14->15, 14+2->17, 14+1->16); 2. cargo test -p forge-mcp --features forge-mcp/server-bin --test forge_server 10/10 全绿。
+
+---
+
