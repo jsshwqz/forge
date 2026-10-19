@@ -63,7 +63,8 @@ pub fn validate_plan_structure(plan: &Plan) -> ForgeResult<()> {
                 .map_err(|e| ForgeError::InvalidState(format!("plan: serialize step input: {e}")))?;
             if bytes.len() > max_input_bytes {
                 return Err(ForgeError::InvalidState(format!(
-                    "plan: step input too large ({} > {})",
+                    "plan: step {} input too large ({} > {})",
+                    step.id,
                     bytes.len(),
                     max_input_bytes
                 )));

@@ -319,7 +319,6 @@ impl ForgeOrchestrateTool {
             ctx,
             descriptor: orch_desc(
                 "forge_orchestrate",
-    "forge_plan_execute",
                 "Run end-to-end orchestration for a task: plan -> wave execute -> verify acceptance -> gate -> status. Returns OrchestratorReport JSON.",
                 json!({
                     "type": "object",

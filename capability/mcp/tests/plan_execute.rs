@@ -103,12 +103,15 @@ async fn plan_execute_happy_path_with_step_ref() {
     )
     .await;
 
-    let plan = plan_with_steps(vec![
-        step("s1", "write file", vec![], "write_file",
-             serde_json::json!({ "path": "out.txt", "content": "hello" })),
-        step("s2", "read file", vec!["s1"], "read_file",
-             serde_json::json!({ "path": "out.txt" })),
-    ]);
+    let plan = serde_json::json!({
+        "id": "plan_forged_by_client",
+        "steps": [
+            step("s1", "write file", vec![], "write_file",
+                 serde_json::json!({ "path": "out.txt", "content": "hello" })),
+            step("s2", "read file", vec!["s1"], "read_file",
+                 serde_json::json!({ "path": "$s1.output.written" })),
+        ]
+    });
 
     let result = tokio::time::timeout(
         std::time::Duration::from_secs(60),
@@ -122,6 +125,7 @@ async fn plan_execute_happy_path_with_step_ref() {
     // plan.id is server-generated (not a client-forged value)
     let plan_id = result["plan"]["id"].as_str().unwrap();
     assert!(plan_id.starts_with("plan_"), "server-generated plan id: {plan_id}");
+    assert_ne!(plan_id, "plan_forged_by_client");
 
     client.shutdown().await.unwrap();
 }

@@ -10,7 +10,7 @@ use forge_core::{ForgeError, ForgeResult, PlanId, TaskId};
 use forge_dag::validate_plan_structure;
 use forge_exec::{PermissionLevel, Tool, ToolDescriptor};
 use forge_planner::{Plan, PlanStatus, PrefabPlanner, StepAction};
-use forge_sdk::{Orchestrator, OrchestratorDeps};
+use forge_sdk::Orchestrator;
 use serde_json::{json, Value};
 use std::sync::Arc;
 
@@ -94,15 +94,35 @@ impl Tool for ForgePlanExecuteTool {
             .and_then(|v| v.as_str())
             .map(|s| s.to_string());
 
-        // ── 反序列化 Plan ──
-        let mut plan: Plan = serde_json::from_value(plan_value.clone()).map_err(|e| {
-            ForgeError::InvalidState(format!("forge_plan_execute: bad plan: {e}"))
-        })?;
+        // ── 反序列化 Plan.steps（depends_on 缺省 = []，忽略客户端 id/task_id/status）──
+        let steps_raw = plan_value
+            .get("steps")
+            .and_then(|v| v.as_array())
+            .ok_or_else(|| {
+                ForgeError::InvalidState("forge_plan_execute: plan.steps array required".into())
+            })?;
+        let normalized_steps: Vec<Value> = steps_raw
+            .iter()
+            .map(|s| {
+                let mut v = s.clone();
+                if let Some(obj) = v.as_object_mut() {
+                    obj.entry("depends_on").or_insert_with(|| json!([]));
+                }
+                v
+            })
+            .collect();
+        let steps: Vec<forge_planner::PlanStep> =
+            serde_json::from_value(Value::Array(normalized_steps)).map_err(|e| {
+                ForgeError::InvalidState(format!("forge_plan_execute: bad plan: {e}"))
+            })?;
 
         // ── 服务端接管字段（冻结）：客户端传的 id/task_id/status 一律忽略 ──
-        plan.id = PlanId::new_plan_id();
-        plan.task_id = task_id.clone();
-        plan.status = PlanStatus::Ready;
+        let plan = Plan {
+            id: PlanId::new_plan_id(),
+            task_id: task_id.clone(),
+            steps,
+            status: PlanStatus::Ready,
+        };
 
         // ── 校验链（顺序冻结，任一失败即返回，不进入执行）──
 

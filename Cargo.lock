@@ -927,6 +927,7 @@ dependencies = [
  "forge-api",
  "forge-cap",
  "forge-core",
+ "forge-dag",
  "forge-evidence",
  "forge-exec",
  "forge-pipeline",
