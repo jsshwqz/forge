@@ -1,7 +1,7 @@
 # HANDOFF · 交接快照（由 forge-worklog 自动生成）
 
-- **更新时间**：2026-10-19 20:52
-- **当前状态**：MKT-FIX-001 (e04b924)、FIX-003-WIN (e5d09da)、IMPROVE-9 (83aee7c) 三张工单已全部完成修补、门禁验证并合入 master，台账五件套(R1-127~R1-129)已同步导出。
+- **更新时间**：2026-10-20 10:45
+- **当前状态**：MKT-FIX-001 防重放时间窗与全仓 PG/MCP 门禁修复(PR #4, 9450a69)及 P8 批准的 CTX-001 跨次步骤输出恢复增强(PR #5)已全部通过本地与云端 GitHub Actions(PG 16)全量门禁并合入 master，台账 R1-130/R1-131/R6-046 与三张 MD 同步完成。
 
 ## 🚧 阻塞项
 
@@ -25,4 +25,4 @@
 
 ## 🚀 建议
 
-当前所有在途工单均已 Completed 收口，Windows 本机 clippy 零告警、market_signing 3连跑全绿、plan_execute 与 orchestrate 全绿，可由复核方拉取远端 master 独立复核签核。
+全仓 143 项任务全部 Completed，本地与 GitHub Actions 云端(含真实 PostgreSQL 16) check/clippy/test 全量 100% 绿，无遗留阻塞项。
