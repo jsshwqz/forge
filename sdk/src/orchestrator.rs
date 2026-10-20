@@ -72,6 +72,9 @@ struct EngineStepExecutor {
     step_counter: std::sync::atomic::AtomicU64,
     /// B-REAL-001C：已完成步骤输出表（step_id → output），供后续步骤引用。
     done: std::sync::Mutex<BTreeMap<String, serde_json::Value>>,
+    /// V8 CTX-001 增强：跨次调用步骤输出快照文件（存于 workdir 同级 `<workdir>.step_outputs.json`，
+    /// 不污染工作区内文件列表，支持 `workspace_task` 续跑引用前次已成功步骤的 `$sN.output`）。
+    outputs_file: Option<std::path::PathBuf>,
 }
 
 #[async_trait::async_trait]
@@ -111,11 +114,16 @@ impl forge_scheduler::StepExecutor for EngineStepExecutor {
                         result.status, detail
                     )));
                 }
-                // B-REAL-001C R5：成功后才入 done 表
-                self.done
-                    .lock()
-                    .unwrap()
-                    .insert(step_id.to_string(), result.output.clone());
+                // B-REAL-001C R5：成功后才入 done 表，并同步落盘供跨次续作引用
+                {
+                    let mut done = self.done.lock().unwrap();
+                    done.insert(step_id.to_string(), result.output.clone());
+                    if let Some(path) = &self.outputs_file {
+                        if let Ok(bytes) = serde_json::to_vec(&*done) {
+                            let _ = std::fs::write(path, bytes);
+                        }
+                    }
+                }
                 Ok(result.output)
             }
             StepAction::HumanApproval(msg) => Err(ForgeError::InvalidState(format!(
@@ -188,11 +196,24 @@ impl ForgeSdk {
             self.sessions.clone(), // 引擎双写事件至同一会话
             deps.timeout,
         ));
+        let outputs_file = workdir.parent().map(|parent| {
+            let dir_name = workdir
+                .file_name()
+                .map(|n| n.to_string_lossy().into_owned())
+                .unwrap_or_else(|| "workspace".to_string());
+            parent.join(format!("{dir_name}.step_outputs.json"))
+        });
+        let initial_done: BTreeMap<String, serde_json::Value> = outputs_file
+            .as_ref()
+            .and_then(|p| std::fs::read(p).ok())
+            .and_then(|bytes| serde_json::from_slice(&bytes).ok())
+            .unwrap_or_default();
         let step_exec = EngineStepExecutor {
             engine,
             session_id: session.id.clone(),
             step_counter: std::sync::atomic::AtomicU64::new(0),
-            done: std::sync::Mutex::new(BTreeMap::new()),
+            done: std::sync::Mutex::new(initial_done),
+            outputs_file,
         };
 
         // 计划版本链：v1 = 初始计划；其后为每次 replan 产物。Session 全程留痕。
@@ -264,6 +285,9 @@ impl ForgeSdk {
                                 .await;
                             // B-REAL-001C R6：新计划版本 → 清空 done 表（防旧版本 step 歧义）
                             step_exec.done.lock().unwrap().clear();
+                            if let Some(path) = &step_exec.outputs_file {
+                                let _ = std::fs::remove_file(path);
+                            }
                             eprintln!(
                                 "orchestrator: replan v{}, cleared done table",
                                 plans.len()

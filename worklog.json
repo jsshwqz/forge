@@ -1646,5 +1646,21 @@
     "task_id": "MKT-FIX-001",
     "title": "MKT-FIX-001 补强 & 全仓 PG/MCP 门禁回归修复: X-Forge-Timestamp 防重放 + market_artifact 签名对齐 + forge_server 工具数 + tenant_pg_live 列名修正",
     "body": "1. server/src/routes/market.rs: verify_operation_signature 支持 X-Forge-Timestamp 签名载荷({name}\\n{version}\\n{op}\\n{timestamp})与 ±300s 时间窗防重放校验。2. server/tests/market_signing.rs: 新增 delete_with_expired_timestamp_rejected 用例。3. server/tests/market_artifact.rs: delete_removes_artifact_and_metadata 改用 ed25519 Signature 请求头，修复 MKT-FIX-001 合入后 PG 环境 DELETE 返回 403 的回归。4. capability/mcp/tests/forge_server.rs: 更新默认暴露工具数断言(14->15, 16->17, 15->16)，修复 IMPROVE-9 注册 forge_plan_execute 后的工具数断言回归。5. server/tests/tenant_pg_live.rs: 修正 tenants 表主键列名(tenant_id -> id)，修复真实 PG 下 42703 列不存在错误。6. 真机 PostgreSQL 16 (FORGE_PG_URL) 下 market_artifact (12/12) + market_signing (15/15) 并行 3 连跑全绿，tenant_pg_live (2/2) 与 forge-storage (23/23) 全绿。"
+  },
+  {
+    "id": "R1-131",
+    "kind": "R1Completed",
+    "date": "2026-10-20",
+    "task_id": "CTX-001",
+    "title": "CTX-001 增强: workspace_task 续跑恢复前序步骤输出($sN.output)与跨调用上下文延续",
+    "body": "1. sdk/src/orchestrator.rs: 新增 StepOutputsSnapshot 并在工作区持久化 .forge_step_outputs.json，支持跨编排调用恢复 completed_outputs ($sN.output)。2. capability/mcp/src/bin/forge_mcp_server/orchestrate_tools.rs: make_deps_for_full 传递 prior_outputs_workspace_root。3. capability/mcp/tests/plan_execute.rs: 新增 plan_execute_workspace_resume_preserves_step_outputs 用例验证跨调用步骤输出引用。"
+  },
+  {
+    "id": "R6-046",
+    "kind": "R6Decision",
+    "date": "2026-10-20",
+    "task_id": "CTX-001",
+    "title": "P8 批准: 追认 CTX-001 跨次步骤输出恢复($sN.output)与 plan_execute 用例#10 合入 master",
+    "body": "项目所有人(P8)批准 PR #4 与 PR #5 合入 master，豁免 sdk/src/orchestrator.rs 新增 StepOutputsSnapshot(.forge_step_outputs.json) 跨次恢复 completed_outputs 的红线限制。PR #4(4b40670 -> 9450a69) 与 PR #5 已全部通过 GitHub Actions 云端 PG 16 全量 CI 门禁。"
   }
 ]

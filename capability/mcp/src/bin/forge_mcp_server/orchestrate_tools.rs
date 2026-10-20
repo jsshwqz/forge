@@ -41,7 +41,7 @@ pub const ORCHESTRATE_TOOLS: &[&str] = &[
 pub struct OrchestrateContext {
     pub sdk: ForgeSdk,
     pub workspace: Arc<WorkspaceManager>,
-    pub evidence: Arc<InMemoryEvidenceStore>,
+    pub evidence: Arc<dyn forge_evidence::EvidenceStore>,
     pub timeout: Duration,
 }
 
@@ -61,10 +61,12 @@ impl OrchestrateContext {
             .map(std::path::PathBuf::from)
             .unwrap_or_else(|_| std::env::temp_dir().join("forge-mcp-workspaces"));
         let workspace = Arc::new(WorkspaceManager::new(ws_root)?);
+        let evidence: Arc<dyn forge_evidence::EvidenceStore> =
+            Arc::new(InMemoryEvidenceStore::default());
         Ok(Self {
             sdk,
             workspace,
-            evidence: Arc::new(InMemoryEvidenceStore::default()),
+            evidence,
             timeout: Duration::from_secs(300),
         })
     }

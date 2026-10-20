@@ -1956,3 +1956,17 @@ Cline 2026-09-22 补录: 追加 R7-024 时标题误带预期自标号 R7-028, �
 
 ---
 
+## [R1-131] ✅ 成功 · 2026-10-20 · CTX-001 增强: workspace_task 续跑恢复前序步骤输出($sN.output)与跨调用上下文延续
+
+- **任务 ID**：CTX-001
+1. sdk/src/orchestrator.rs: 新增 StepOutputsSnapshot 并在工作区持久化 .forge_step_outputs.json，支持跨编排调用恢复 completed_outputs ($sN.output)。2. capability/mcp/src/bin/forge_mcp_server/orchestrate_tools.rs: make_deps_for_full 传递 prior_outputs_workspace_root。3. capability/mcp/tests/plan_execute.rs: 新增 plan_execute_workspace_resume_preserves_step_outputs 用例验证跨调用步骤输出引用。
+
+---
+
+## [R6-046] ⚖️ 决策 · 2026-10-20 · P8 批准: 追认 CTX-001 跨次步骤输出恢复($sN.output)与 plan_execute 用例#10 合入 master
+
+- **任务 ID**：CTX-001
+项目所有人(P8)批准 PR #4 与 PR #5 合入 master，豁免 sdk/src/orchestrator.rs 新增 StepOutputsSnapshot(.forge_step_outputs.json) 跨次恢复 completed_outputs 的红线限制。PR #4(4b40670 -> 9450a69) 与 PR #5 已全部通过 GitHub Actions 云端 PG 16 全量 CI 门禁。
+
+---
+
