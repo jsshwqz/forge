@@ -1949,10 +1949,10 @@ Cline 2026-09-22 补录: 追加 R7-024 时标题误带预期自标号 R7-028, �
 
 ---
 
-## [R1-130] ✅ 成功 · 2026-10-20 · MKT-FIX-001 补强 & IMPROVE-9 回归修复: X-Forge-Timestamp 防重放 + market_artifact 签名对齐 + forge_server 工具数修正
+## [R1-130] ✅ 成功 · 2026-10-20 · MKT-FIX-001 补强 & 全仓 PG/MCP 门禁回归修复: X-Forge-Timestamp 防重放 + market_artifact 签名对齐 + forge_server 工具数 + tenant_pg_live 列名修正
 
 - **任务 ID**：MKT-FIX-001
-1. server/src/routes/market.rs: verify_operation_signature 支持 X-Forge-Timestamp 签名载荷({name}\n{version}\n{op}\n{timestamp})与 ±300s 时间窗防重放校验。2. server/tests/market_signing.rs: 新增 delete_with_expired_timestamp_rejected 用例。3. server/tests/market_artifact.rs: delete_removes_artifact_and_metadata 改用 ed25519 Signature 请求头，修复 MKT-FIX-001 合入后 PG 环境 DELETE 返回 403 的回归。4. capability/mcp/tests/forge_server.rs: 更新默认暴露工具数断言(14->15, 16->17, 15->16)，修复 IMPROVE-9 注册 forge_plan_execute 后的工具数断言回归。5. 真机 PostgreSQL 16 (FORGE_PG_URL) 下 market_artifact (12/12) + market_signing (15/15) 并行 3 连跑全绿。
+1. server/src/routes/market.rs: verify_operation_signature 支持 X-Forge-Timestamp 签名载荷({name}\n{version}\n{op}\n{timestamp})与 ±300s 时间窗防重放校验。2. server/tests/market_signing.rs: 新增 delete_with_expired_timestamp_rejected 用例。3. server/tests/market_artifact.rs: delete_removes_artifact_and_metadata 改用 ed25519 Signature 请求头，修复 MKT-FIX-001 合入后 PG 环境 DELETE 返回 403 的回归。4. capability/mcp/tests/forge_server.rs: 更新默认暴露工具数断言(14->15, 16->17, 15->16)，修复 IMPROVE-9 注册 forge_plan_execute 后的工具数断言回归。5. server/tests/tenant_pg_live.rs: 修正 tenants 表主键列名(tenant_id -> id)，修复真实 PG 下 42703 列不存在错误。6. 真机 PostgreSQL 16 (FORGE_PG_URL) 下 market_artifact (12/12) + market_signing (15/15) 并行 3 连跑全绿，tenant_pg_live (2/2) 与 forge-storage (23/23) 全绿。
 
 ---
 
