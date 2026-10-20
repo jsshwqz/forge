@@ -1638,5 +1638,13 @@
     "task_id": "IMPROVE-9",
     "title": "IMPROVE-9 完成: Agent 生成 Plan -> Forge 执行 (路径B D18=B 新工具 forge_plan_execute)",
     "body": "1. 新增 planning/planner/src/prefab.rs (PrefabPlanner)、planning/dag/src/validate.rs (validate_plan_structure)、capability/mcp/src/bin/forge_mcp_server/plan_execute_tools.rs (ForgePlanExecuteTool, D18=B 独立工具 forge_plan_execute)，在 orchestrate_tools.rs 注册并保持 run_end_to_end 执行链与 task.acceptance 验收门禁零改动。2. 消解与 FIX-003-WIN 在 orchestrate_tools.rs / orchestrate.rs 的上下文冲突(保留 exit 0、forge_plan_execute 注册分支及工具数 15 断言)。3. 门禁实测: cargo clippy --workspace --all-targets --features forge-mcp/server-bin -j 2 -- -D warnings 零告警; plan_execute 9/9 + planner/dag 单测(#10/#11) 11 项冻结测试全绿; orchestrate 10/10 全绿。合入提交: 83aee7c (分支提交 db4d3fc / fd70089)。"
+  },
+  {
+    "id": "R1-130",
+    "kind": "R1Completed",
+    "date": "2026-10-20",
+    "task_id": "MKT-FIX-001",
+    "title": "MKT-FIX-001 补强 & 全仓 PG/MCP 门禁回归修复: X-Forge-Timestamp 防重放 + market_artifact 签名对齐 + forge_server 工具数 + tenant_pg_live 列名修正",
+    "body": "1. server/src/routes/market.rs: verify_operation_signature 支持 X-Forge-Timestamp 签名载荷({name}\\n{version}\\n{op}\\n{timestamp})与 ±300s 时间窗防重放校验。2. server/tests/market_signing.rs: 新增 delete_with_expired_timestamp_rejected 用例。3. server/tests/market_artifact.rs: delete_removes_artifact_and_metadata 改用 ed25519 Signature 请求头，修复 MKT-FIX-001 合入后 PG 环境 DELETE 返回 403 的回归。4. capability/mcp/tests/forge_server.rs: 更新默认暴露工具数断言(14->15, 16->17, 15->16)，修复 IMPROVE-9 注册 forge_plan_execute 后的工具数断言回归。5. server/tests/tenant_pg_live.rs: 修正 tenants 表主键列名(tenant_id -> id)，修复真实 PG 下 42703 列不存在错误。6. 真机 PostgreSQL 16 (FORGE_PG_URL) 下 market_artifact (12/12) + market_signing (15/15) 并行 3 连跑全绿，tenant_pg_live (2/2) 与 forge-storage (23/23) 全绿。"
   }
 ]

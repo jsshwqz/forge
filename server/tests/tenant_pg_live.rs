@@ -33,7 +33,7 @@ async fn tenant_keys_and_quotas_survive_restart_via_new_with_pg() {
 
     // 注册租户 (插入 tenants 表)
     let tenant_id = format!("tenant-p2-{}", std::process::id());
-    sqlx::query("INSERT INTO tenants (tenant_id, name) VALUES ($1, $2) ON CONFLICT DO NOTHING")
+    sqlx::query("INSERT INTO tenants (id, name) VALUES ($1, $2) ON CONFLICT DO NOTHING")
         .bind(&tenant_id)
         .bind("P2 test tenant")
         .execute(&pool_a)
@@ -102,7 +102,7 @@ async fn tenant_keys_and_quotas_survive_restart_via_new_with_pg() {
         .execute(state_a.pool.as_ref().unwrap())
         .await
         .unwrap();
-    sqlx::query("DELETE FROM tenants WHERE tenant_id = $1")
+    sqlx::query("DELETE FROM tenants WHERE id = $1")
         .bind(&tenant_id)
         .execute(state_a.pool.as_ref().unwrap())
         .await

@@ -548,15 +548,37 @@ pub(crate) async fn install_signature_recheck(
     Ok(())
 }
 
-/// MKT-FIX-001: 操作签名覆盖的规范字节：`{name}\n{version}\n{op}`。
-fn operation_bytes(name: &str, version: &str, op: &str) -> Vec<u8> {
-    format!("{name}\n{version}\n{op}").into_bytes()
+/// MKT-FIX-001: 操作签名覆盖的规范字节：无时间戳时为 `{name}\n{version}\n{op}`，
+/// 携带 `X-Forge-Timestamp` 防重放头时为 `{name}\n{version}\n{op}\n{timestamp}`。
+fn operation_bytes(name: &str, version: &str, op: &str, timestamp: Option<i64>) -> Vec<u8> {
+    match timestamp {
+        Some(ts) => format!("{name}\n{version}\n{op}\n{ts}").into_bytes(),
+        None => format!("{name}\n{version}\n{op}").into_bytes(),
+    }
 }
 
-/// MKT-FIX-001: 验证操作签名（私钥持有证明）。
+/// 从请求头提取可选 `X-Forge-Timestamp`（Unix 秒），格式非法返回 400。
+fn extract_timestamp(headers: &HeaderMap) -> Result<Option<i64>, (StatusCode, String)> {
+    let Some(val) = headers.get("X-Forge-Timestamp") else {
+        return Ok(None);
+    };
+    let raw = val
+        .to_str()
+        .map_err(|_| (StatusCode::BAD_REQUEST, "invalid X-Forge-Timestamp header".into()))?
+        .trim();
+    if raw.is_empty() {
+        return Ok(None);
+    }
+    let ts = raw
+        .parse::<i64>()
+        .map_err(|_| (StatusCode::BAD_REQUEST, "X-Forge-Timestamp must be unix seconds".into()))?;
+    Ok(Some(ts))
+}
+
+/// MKT-FIX-001: 验证操作签名（私钥持有证明 + 可选时间戳防重放窗口 ±300s）。
 ///
 /// 从 releases 表查 publisher_id → 查 publisher_keys.public_key →
-/// 用 ed25519 验签 `{name}\n{version}\n{op}`。
+/// 用 ed25519 验签 `{name}\n{version}\n{op}`（或带 `\n{timestamp}`）。
 /// 返回 release_id 和 artifact_path（验签通过后供调用方使用）。
 async fn verify_operation_signature(
     pool: &sqlx::PgPool,
@@ -564,7 +586,18 @@ async fn verify_operation_signature(
     version: &str,
     op: &str,
     signature: &str,
+    timestamp: Option<i64>,
 ) -> Result<(i64, Option<String>), (StatusCode, String)> {
+    if let Some(ts) = timestamp {
+        let now = chrono::Utc::now().timestamp();
+        if (now - ts).abs() > 300 {
+            return Err((
+                StatusCode::FORBIDDEN,
+                "signature timestamp expired (outside ±300s window)".into(),
+            ));
+        }
+    }
+
     // 查 release + publisher 公钥
     let row: Option<(i64, Option<String>, String)> = sqlx::query_as(
         "SELECT r.id, r.artifact_path, pk.public_key FROM releases r \
@@ -582,7 +615,7 @@ async fn verify_operation_signature(
     };
 
     // 验签：签名必须匹配 publisher 登记公钥（私钥持有证明）
-    let bytes = operation_bytes(name, version, op);
+    let bytes = operation_bytes(name, version, op, timestamp);
     let ok = signing::verify_package(&public_key, &bytes, signature)
         .map_err(|e| (StatusCode::BAD_REQUEST, e.to_string()))?;
     if !ok {
@@ -617,10 +650,11 @@ pub async fn delete_release(
     if signature.is_empty() {
         return Err((StatusCode::FORBIDDEN, "missing Signature header".into()));
     }
+    let timestamp = extract_timestamp(&headers)?;
 
     // 验签 + 查 release（私钥持有证明）
     let (release_id, artifact_path) = verify_operation_signature(
-        &pool, &name, &version, "delete", &signature,
+        &pool, &name, &version, "delete", &signature, timestamp,
     ).await?;
 
     // 删制品文件（幂等; 失败不阻塞 PG 行删除——孤儿文件由 D9 清理策略兜底）
@@ -664,10 +698,11 @@ pub async fn yank_release(
     if signature.is_empty() {
         return Err((StatusCode::FORBIDDEN, "missing Signature header".into()));
     }
+    let timestamp = extract_timestamp(&headers)?;
 
     // 验签 + 查 release
     let (release_id, _) = verify_operation_signature(
-        &pool, &name, &version, "yank", &signature,
+        &pool, &name, &version, "yank", &signature, timestamp,
     ).await?;
 
     // 标记 yanked = true
